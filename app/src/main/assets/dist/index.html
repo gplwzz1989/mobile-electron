@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mobile Electron 控制台</title>
+    <!-- 引入刚刚构建的 Mobile Electron 统一 SDK -->
+    <script src="./mobile-electron-sdk.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --safe-top: env(safe-area-inset-top, 24px);
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            padding-top: var(--safe-top);
+            padding-bottom: calc(var(--safe-bottom) + 60px);
+            overflow-x: hidden;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* 顶部 Web 驱动的状态栏与导航 */
+        .app-header {
+            background: #ffffff;
+            padding: 12px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .app-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pill {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+        .status-pill.online {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        /* 地址导航栏 */
+        .url-bar-wrap {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .url-input {
+            flex: 1;
+            height: 38px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0 10px;
+            font-size: 13px;
+            color: #0f172a;
+            outline: none;
+        }
+        .url-input:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        .btn-icon {
+            height: 38px;
+            padding: 0 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: #ffffff;
+            white-space: nowrap;
+        }
+        .btn-icon:active { opacity: 0.85; }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        /* 主体内容区 */
+        .container {
+            padding: 14px 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 标签导航栏 */
+        .tab-bar {
+            display: flex;
+            background: #e2e8f0;
+            padding: 3px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+        }
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 8px;
+            color: #64748b;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-item.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* 功能卡片 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-desc {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        /* 按钮与表单 */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .btn-block {
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn {
+            height: 38px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: opacity 0.15s;
+        }
+        .btn:active { opacity: 0.8; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+        }
+
+        /* 控制台输出框 */
+        .log-box {
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 11px;
+            padding: 12px;
+            border-radius: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部 Web 驱动导航栏 -->
+    <header class="app-header">
+        <div class="header-top">
+            <div class="app-title">
+                <span>🚀 Mobile Electron</span>
+                <span class="status-pill" id="platformBadge">加载中...</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn btn-outline" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="toggleFullscreen()">全屏</button>
+                <button class="btn btn-outline" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="toggleDebugBar()">调试工具条</button>
+            </div>
+        </div>
+        <div class="url-bar-wrap">
+            <input type="text" class="url-input" id="targetUrlInput" value="https://m.baidu.com" placeholder="输入网址跳转...">
+            <button class="btn-icon" onclick="navigateTargetUrl()">前往</button>
+            <button class="btn-icon btn-secondary" onclick="reloadApp()">刷新</button>
+        </div>
+    </header>
+
+    <!-- 主体容器 -->
+    <main class="container">
+
+        <!-- 选项卡切换 -->
+        <nav class="tab-bar">
+            <div class="tab-item active" onclick="switchTab('tab-profile')">多Profile隔离</div>
+            <div class="tab-item" onclick="switchTab('tab-cookie')">Cookie中心</div>
+            <div class="tab-item" onclick="switchTab('tab-stealth')">硬件指纹</div>
+            <div class="tab-item" onclick="switchTab('tab-fs')">本地文件/存储</div>
+            <div class="tab-item" onclick="switchTab('tab-native')">原生系统能力</div>
+        </nav>
+
+        <!-- 选项卡 1: 多 Profile 独立沙箱隔离 -->
+        <section id="tab-profile" class="tab-pane active">
+            <div class="card" style="border-left: 4px solid #8b5cf6;">
+                <div class="card-header">
+                    <span class="card-title">🛡️ 多 Profile 物理数据目录隔离</span>
+                    <span class="badge" id="profileEngineBadge">检测中</span>
+                </div>
+                <p class="card-desc">
+                    通过 Chromium <code>ProfileStore</code> 机制，不同任务拥有独立 Cookie SQLite 库与 LocalStorage，实现多账号物理隔离防串号。
+                </p>
+                <div class="btn-grid">
+                    <button class="btn btn-primary" onclick="testCreateIsolatedPage('alpha')">+ 创建 Profile Alpha</button>
+                    <button class="btn btn-primary" onclick="testCreateIsolatedPage('beta')">+ 创建 Profile Beta</button>
+                    <button class="btn btn-outline" onclick="testBringPageFront('alpha')">切到 Alpha 前台</button>
+                    <button class="btn btn-outline" onclick="testBringPageFront('beta')">切到 Beta 前台</button>
+                </div>
+                <button class="btn btn-success btn-block" onclick="testRunFullIsolationVerify()">⚡ 一键执行双账号隔离比对验证</button>
+                <button class="btn btn-outline btn-block" onclick="refreshPagesList()">刷新活跃页面列表</button>
+            </div>
+
+            <!-- 抖音创作者中心隐形扫码专区 -->
+            <div class="card" style="border-left: 4px solid #f43f5e;">
+                <div class="card-header">
+                    <span class="card-title" style="color: #e11d48;">🎬 抖音创作者中心隐形扫码登录</span>
+                    <span class="badge">自动化登录</span>
+                </div>
+                <p class="card-desc">
+                    后台无界面静默拉取 <code>creator.douyin.com</code>，通过原生 Material 弹窗实时同步二维码、监控扫码并抓取登录态 Cookie。
+                </p>
+                <button class="btn btn-danger btn-block" onclick="startDouyinQrLogin()">唤起抖音扫码登录监控任务</button>
+            </div>
+        </section>
+
+        <!-- 选项卡 2: Cookie 管理中心 -->
+        <section id="tab-cookie" class="tab-pane">
+            <div class="card" style="border-left: 4px solid #0284c7;">
+                <div class="card-header">
+                    <span class="card-title">🍪 Cookie 实时读写与分区管理</span>
+                </div>
+                <p class="card-desc">
+                    可指定 URL 及 Profile 分区，实现底层 SQLite 数据库级的读取、批量注入与一键清空。
+                </p>
+                <div style="margin-bottom: 10px;">
+                    <input type="text" class="url-input" id="cookieQueryUrl" value="https://m.baidu.com" style="width: 100%; margin-bottom: 8px;" placeholder="目标域名 URL">
+                    <input type="text" class="url-input" id="cookieImportInput" value="ME_SESSION_ID=test_123456; USER_TOKEN=token_abc888" style="width: 100%;" placeholder="Cookie 注入内容 (key=val; key2=val2)">
+                </div>
+                <div class="btn-grid">
+                    <button class="btn btn-primary" onclick="queryTargetCookies()">读取目标 Cookie</button>
+                    <button class="btn btn-success" onclick="importTargetCookies()">注入指定 Cookie</button>
+                    <button class="btn btn-outline" onclick="copyCurrentCookies()">复制到剪贴板</button>
+                    <button class="btn btn-danger" onclick="clearTargetCookies()">清空该域 Cookie</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 选项卡 3: 硬件指纹防检测伪装 -->
+        <section id="tab-stealth" class="tab-pane">
+            <div class="card" style="border-left: 4px solid #10b981;">
+                <div class="card-header">
+                    <span class="card-title">🎭 硬件参数注入与设备指纹虚拟化</span>
+                </div>
+                <p class="card-desc">
+                    在 Chromium DOM 树构建前 (DocumentStart) 动态注入并伪装 CPU 核心、设备内存、WebGL 显卡供应商与渲染器，支持 Function.toString 防 Hook 检测。
+                </p>
+                <div class="btn-grid">
+                    <button class="btn btn-outline" onclick="checkCurrentHardware()">检测当前指纹</button>
+                    <button class="btn btn-primary" onclick="applyPresetHardware('flagship')">骁龙8旗舰机 (16核/32G)</button>
+                    <button class="btn btn-primary" onclick="applyPresetHardware('desktop')">桌面工作站 (32核/64G)</button>
+                    <button class="btn btn-outline" onclick="applyPresetHardware('budget')">入门千元机 (4核/4G)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 选项卡 4: 原生系统能力 -->
+        <section id="tab-native" class="tab-pane">
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+                <div class="card-header">
+                    <span class="card-title">⚡ 原生系统与硬件底层交互</span>
+                </div>
+                <p class="card-desc">
+                    绕过浏览器 CORS 跨域限制发起底层请求、沉浸式状态栏微调、系统级剪贴板、原生 Toast 与退出应用。
+                </p>
+                <div class="btn-grid">
+                    <button class="btn btn-primary" onclick="testCorsBypassFetch()">CORS 穿透请求</button>
+                    <button class="btn btn-outline" onclick="testNativeToast()">原生 Toast 提示</button>
+                    <button class="btn btn-outline" onclick="testClipboardSync()">剪贴板双向同步</button>
+                    <button class="btn btn-outline" onclick="setStatusBarLight()">沉浸式亮色状态栏</button>
+                    <button class="btn btn-outline" onclick="setStatusBarDark()">深色全黑状态栏</button>
+                    <button class="btn btn-danger" onclick="exitAppContainer()">安全退出应用</button>
+        </section>
+
+        <!-- 选项卡 5: 本地文件与持久化存储 -->
+        <section id="tab-fs" class="tab-pane">
+            <div class="card" style="border-left: 4px solid #06b6d4;">
+                <div class="card-header">
+                    <span class="card-title">📂 本地安全沙箱文件系统 (electron.fs / file)</span>
+                </div>
+                <p class="card-desc">
+                    突破 Web 无法操控本地文件的限制。支持沙箱目录读写、UTF-8/Base64 编码、目录遍历与网络大文件原生后台下载。
+                </p>
+                <div style="margin-bottom: 8px;">
+                    <input type="text" class="url-input" id="fsFileName" value="test_log.txt" style="width: 100%; margin-bottom: 6px;" placeholder="文件名或相对路径">
+                    <input type="text" class="url-input" id="fsFileContent" value="Hello Mobile Electron! Local File System Works!" style="width: 100%;" placeholder="写入的内容">
+                </div>
+                <div class="btn-grid">
+                    <button class="btn btn-primary" onclick="testFsWriteText()">写入文本文件</button>
+                    <button class="btn btn-outline" onclick="testFsReadText()">读取文件内容</button>
+                    <button class="btn btn-outline" onclick="testFsListDir()">遍历当前沙箱文件</button>
+                    <button class="btn btn-danger" onclick="testFsDelete()">删除该文件</button>
+                </div>
+                <button class="btn btn-success btn-block" onclick="testFsDownload()">原生后台下载网络文件 (1MB 图片)</button>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #3b82f6;">
+                <div class="card-header">
+                    <span class="card-title">💾 原生持久化存储与弹窗 (storage & dialog)</span>
+                </div>
+                <p class="card-desc">
+                    突破 LocalStorage 5MB 上限，支持跨 Profile 共享企业级配置。提供无阻塞 Material/Cupertino 原生弹窗。
+                </p>
+                <div class="btn-grid">
+                    <button class="btn btn-primary" onclick="testStorageSet()">写入 KV 存储</button>
+                    <button class="btn btn-outline" onclick="testStorageGet()">读取 KV 存储</button>
+                    <button class="btn btn-outline" onclick="testNativeAlert()">原生 Alert 弹窗</button>
+                    <button class="btn btn-outline" onclick="testNativeConfirm()">原生 Confirm 确认</button>
+                </div>
+                <button class="btn btn-warning btn-block" onclick="testNativePrompt()">原生 Prompt 文本输入弹窗</button>
+            </div>
+        </section>
+
+        <!-- 统一执行日志视窗 -->
+        <div class="card">
+            <div class="card-header" style="margin-bottom: 6px;">
+                <span class="card-title" style="font-size: 13px;">📟 容器调用日志</span>
+                <button class="btn btn-outline" style="height: 24px; padding: 0 6px; font-size: 11px;" onclick="clearLogs()">清空日志</button>
+            </div>
+            <pre class="log-box" id="logBox">容器初始化就绪，等待指令...</pre>
+        </div>
+
+    </main>
+
+    <script>
+        const sdk = window.MobileElectron;
+        let isFullscreen = false;
+        let isDebugBarVisible = false;
+
+        function log(msg, obj) {
+            const box = document.getElementById('logBox');
+            const time = new Date().toTimeString().split(' ')[0];
+            let line = `[${time}] ${msg}`;
+            if (obj !== undefined) {
+                line += '\n' + (typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2));
+            }
+            box.textContent = line + '\n' + box.textContent;
+        }
+
+        function clearLogs() {
+            document.getElementById('logBox').textContent = '';
+        }
+
+        // 切换选项卡
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // 页面初始化检测
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const badge = document.getElementById('platformBadge');
+                badge.textContent = `平台: ${sdk.platform}`;
+                if (sdk.isNativeContainer) {
+                    badge.classList.add('online');
+                }
+
+                // 获取 App 运行时信息
+                const appInfo = await sdk.app.getInfo();
+                log('App 容器信息已加载:', appInfo);
+
+                const engineBadge = document.getElementById('profileEngineBadge');
+                if (appInfo.multiProfileSupported) {
+                    engineBadge.textContent = '原生物理隔离 (Chromium Multi-Profile)';
+                    engineBadge.style.color = '#15803d';
+                    engineBadge.style.background = '#dcfce7';
+                } else {
+                    engineBadge.textContent = '沙箱会话隔离模式';
+                }
+            } catch (e) {
+                log('初始化检测异常: ' + e.message);
+            }
+        });
+
+        // 导航与视窗
+        async function navigateTargetUrl() {
+            const url = document.getElementById('targetUrlInput').value.trim();
+            if (!url) return;
+            log(`正在跳转至: ${url}`);
+            await sdk.window.loadUrl(url);
+        }
+
+        async function reloadApp() {
+            await sdk.window.reload();
+        }
+
+        async function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            await sdk.window.setFullscreen(isFullscreen);
+            log(`全屏模式已切换为: ${isFullscreen}`);
+        }
+
+        async function toggleDebugBar() {
+            isDebugBarVisible = !isDebugBarVisible;
+            await sdk.window.setDebugToolbarVisible(isDebugBarVisible);
+            log(`原生调试工具栏可见性: ${isDebugBarVisible}`);
+        }
+
+        // 多 Profile 隔离
+        async function testCreateIsolatedPage(profileName) {
+            log(`正在创建独立 Profile [${profileName}] 页面...`);
+            const page = await sdk.browser.newPage({
+                profile: profileName,
+                url: 'https://m.baidu.com',
+                headless: true,
+                hardwarePreset: 'flagship'
+            });
+            log(`页面创建成功! ID: ${page.pageId}, Profile: ${page.profile}`);
+        }
+
+        async function testBringPageFront(profileName) {
+            const pages = await sdk.browser.getAllPages();
+            const target = pages.find(p => p.profile === profileName);
+            if (target) {
+                await sdk.browser.switchToPage(target.pageId);
+                log(`已切换 ${profileName} (${target.pageId}) 到前台展示`);
+            } else {
+                log(`未找到 Profile [${profileName}] 的活跃页面，请先创建`);
+            }
+        }
+
+        async function testRunFullIsolationVerify() {
+            log('开始自动化双 Profile 物理隔离比对...');
+            const alpha = await sdk.browser.newPage({ profile: 'verify_alpha', headless: true, url: 'https://m.baidu.com' });
+            const beta = await sdk.browser.newPage({ profile: 'verify_beta', headless: true, url: 'https://m.baidu.com' });
+
+            await alpha.setCookies('USER=ALICE; TOKEN=AAA111');
+            await beta.setCookies('USER=BOB; TOKEN=BBB222');
+
+            const cAlpha = await alpha.getCookies();
+            const cBeta = await beta.getCookies();
+
+            log('Profile Alpha Cookie: ' + cAlpha);
+            log('Profile Beta Cookie: ' + cBeta);
+
+            if (cAlpha.includes('ALICE') && !cAlpha.includes('BOB') && cBeta.includes('BOB') && !cBeta.includes('ALICE')) {
+                log('🎉 验证成功: 两套 Profile 数据完全独立物理隔离，绝无串号！');
+                await sdk.device.toast('双 Profile 物理隔离验证通过！');
+            } else {
+                log('⚠️ 隔离测试异常，请查看返回内容');
+            }
+        }
+
+        async function refreshPagesList() {
+            const pages = await sdk.browser.getAllPages();
+            log('当前活跃页面列表:', pages);
+        }
+
+        async function startDouyinQrLogin() {
+            log('正在启动抖音创作者中心隐形扫码登录...');
+            const res = await sdk.browser.startDouyinQrLogin();
+            log('任务启动结果:', res);
+        }
+
+        // Cookie 管理
+        async function queryTargetCookies() {
+            const url = document.getElementById('cookieQueryUrl').value;
+            const cookies = await sdk.cookie.get(url);
+            log(`[${url}] 的完整 Cookie:`, cookies || '(空)');
+        }
+
+        async function importTargetCookies() {
+            const url = document.getElementById('cookieQueryUrl').value;
+            const raw = document.getElementById('cookieImportInput').value;
+            const count = await sdk.cookie.set(url, raw);
+            log(`成功向 [${url}] 注入 ${count} 项 Cookie！`);
+            await sdk.device.toast(`成功写入 ${count} 项 Cookie`);
+        }
+
+        async function copyCurrentCookies() {
+            const url = document.getElementById('cookieQueryUrl').value;
+            const cookies = await sdk.cookie.get(url);
+            if (cookies) {
+                await sdk.device.setClipboard(cookies);
+                await sdk.device.toast('已复制到系统剪贴板');
+                log('Cookie 已复制到剪贴板');
+            } else {
+                await sdk.device.toast('当前 Cookie 为空');
+            }
+        }
+
+        async function clearTargetCookies() {
+            await sdk.cookie.clear();
+            await sdk.device.toast('Cookie 已成功清空');
+            log('Cookie 清空完成');
+        }
+
+        // 硬件指纹全维度检测
+        async function checkCurrentHardware() {
+            log('正在提取当前环境全部真实/虚拟硬件指标...');
+
+            // WebGL 显卡硬件提取
+            let glVendor = '未获取', glRenderer = '未获取';
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (dbg) {
+                        glVendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
+                        glRenderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+                    }
+                }
+            } catch(e) {}
+
+            // 电池参数提取
+            let batteryInfo = '不支持';
+            try {
+                if (navigator.getBattery) {
+                    const b = await navigator.getBattery();
+                    batteryInfo = `电量: ${Math.round(b.level * 100)}%, 充电中: ${b.charging}`;
+                }
+            } catch(e) {}
+
+            // Client Hints (高熵硬件提示)
+            let highEntropy = {};
+            try {
+                if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+                    highEntropy = await navigator.userAgentData.getHighEntropyValues(['model', 'architecture', 'bitness']);
+                }
+            } catch(e) {}
+
+            // 网络连接
+            const conn = navigator.connection ? {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink + ' Mbps',
+                rtt: navigator.connection.rtt + ' ms'
+            } : '不支持';
+
+            const summary = {
+                "CPU 核心数 (hardwareConcurrency)": navigator.hardwareConcurrency + ' 核',
+                "设备物理内存 (deviceMemory)": navigator.deviceMemory + ' GB',
+                "系统平台 (platform)": navigator.platform,
+                "触控点数 (maxTouchPoints)": navigator.maxTouchPoints,
+                "机型硬件提示 (ClientHints model)": highEntropy.model || '未声明',
+                "CPU 架构与位数": (highEntropy.architecture || 'arm') + ' (' + (highEntropy.bitness || '64') + '位)',
+                "WebGL 显卡厂商 (Vendor)": glVendor,
+                "WebGL 显卡渲染器 (Renderer)": glRenderer,
+                "屏幕分辨率与颜色深度": `${screen.width}x${screen.height} (DPR: ${window.devicePixelRatio}, 色深: ${screen.colorDepth}bit)`,
+                "电池硬件状态": batteryInfo,
+                "网卡连接状态": conn,
+                "防检测原生代码保护": Function.prototype.toString.call(Object.getOwnPropertyDescriptor(Navigator.prototype, 'hardwareConcurrency')?.get || (()=>{}))
+            };
+
+            log('✅ 全维度硬件指标探测结果:', summary);
+            await sdk.device.toast('全套硬件指纹已检测完毕');
+        }
+
+        async function applyPresetHardware(preset) {
+            log(`正在应用 [${preset}] 硬件指纹预设...`);
+            await sdk.browser.current().setHardware({ preset });
+            log(`预设 [${preset}] 应用成功，下次刷新或新页面生效`);
+            await sdk.device.toast(`已应用 ${preset} 硬件指纹预设`);
+        }
+
+        // 原生系统能力
+        async function testCorsBypassFetch() {
+            log('正在通过原生底座发起跨域请求 (绕过 CORS)...');
+            try {
+                const resp = await sdk.network.fetchNative({
+                    url: 'https://httpbin.org/get',
+                    method: 'GET'
+                });
+                log('原生网络响应状态码: ' + resp.status);
+                log('原生响应内容:', resp.body);
+            } catch (e) {
+                log('网络请求异常: ' + e.message);
+            }
+        }
+
+        async function testNativeToast() {
+            await sdk.device.toast('这是一条通过 SDK 触发的原生 Toast 消息！');
+        }
+
+        async function testClipboardSync() {
+            const testText = 'MobileElectron-' + Date.now();
+            await sdk.device.setClipboard(testText);
+            const readBack = await sdk.device.getClipboard();
+            log(`剪贴板测试: 写入 [${testText}], 读回 [${readBack}]`);
+            await sdk.device.toast('剪贴板同步成功');
+        }
+
+        async function setStatusBarLight() {
+            await sdk.window.setStatusBar({ color: '#FFFFFF', darkIcons: true, immersive: true });
+            log('已应用亮色沉浸式状态栏');
+        }
+
+        async function setStatusBarDark() {
+            await sdk.window.setStatusBar({ color: '#0F172A', darkIcons: false, immersive: true });
+            log('已应用深色状态栏');
+        }
+
+        async function exitAppContainer() {
+            if (confirm('确定要退出应用吗？')) {
+                await sdk.app.exit();
+            }
+        }
+
+        // 文件读写测试
+        async function testFsWriteText() {
+            const path = document.getElementById('fsFileName').value.trim();
+            const text = document.getElementById('fsFileContent').value;
+            const fullPath = await sdk.fs.writeText(path, text);
+            log(`文件成功写入沙箱! 路径: ${fullPath}`);
+            await sdk.device.toast('文件写入成功');
+        }
+
+        async function testFsReadText() {
+            const path = document.getElementById('fsFileName').value.trim();
+            try {
+                const content = await sdk.fs.readText(path);
+                log(`读取文件 [${path}] 内容:\n${content}`);
+            } catch(e) {
+                log('读取失败: ' + e.message);
+            }
+        }
+
+        async function testFsListDir() {
+            const files = await sdk.fs.list('');
+            log('沙箱 documents 目录文件列表:', files);
+        }
+
+        async function testFsDelete() {
+            const path = document.getElementById('fsFileName').value.trim();
+            const ok = await sdk.fs.delete(path);
+            log(`删除文件 [${path}]: ${ok}`);
+            await sdk.device.toast('文件已删除');
+        }
+
+        async function testFsDownload() {
+            log('正在后台原生下载远程测试文件...');
+            try {
+                const res = await sdk.fs.download({
+                    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
+                    destinationPath: 'downloaded_sample.jpg'
+                });
+                log('下载完成! 存入路径:', res);
+                await sdk.device.toast('文件下载完成');
+            } catch(e) {
+                log('下载失败: ' + e.message);
+            }
+        }
+
+        // 持久化存储与弹窗测试
+        async function testStorageSet() {
+            const now = new Date().toISOString();
+            await sdk.storage.setObject('app_session', { loginAt: now, user: 'admin_test' });
+            log('成功存入持久化数据: key=app_session');
+            await sdk.device.toast('KV 写入成功');
+        }
+
+        async function testStorageGet() {
+            const data = await sdk.storage.getObject('app_session');
+            log('读取持久化数据 app_session:', data);
+        }
+
+        async function testNativeAlert() {
+            await sdk.dialog.alert('这是通过 SDK 调用的原生 Material/Cupertino 对话框！', '系统通知');
+            log('原生 Alert 已关闭');
+        }
+
+        async function testNativeConfirm() {
+            const confirmed = await sdk.dialog.confirm('是否立即执行自动化多账号同步任务？', '操作确认');
+            log('原生 Confirm 选择结果: ' + confirmed);
+        }
+
+        async function testNativePrompt() {
+            const val = await sdk.dialog.prompt('请输入自定义 Profile 名称：', 'profile_custom_1');
+            log('原生 Prompt 输入结果: ' + val);
+        }
+    </script>
+</body>
+</html>

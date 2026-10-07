@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "Mobile Electron App",
+    "appId": "com.example.cookiebrowser",
+    "version": "2.0.0"
+  },
+  "window": {
+    "defaultUrl": "file:///android_asset/dist/index.html",
+    "title": "Mobile Electron Application",
+    "fullscreen": false,
+    "immersiveStatusBar": true,
+    "statusBarColor": "#FFFFFF",
+    "statusBarDarkIcons": true,
+    "showNativeDebugToolbar": false
+  },
+  "security": {
+    "whitelist": [
+      "file://*",
+      "https://*.baidu.com",
+      "https://*.douyin.com",
+      "https://*.amemv.com",
+      "https://localhost",
+      "http://localhost"
+    ],
+    "allowInsecureContent": true
+  },
+  "profile": {
+    "defaultProfile": "default",
+    "hardwarePreset": "flagship"
+  }
+}

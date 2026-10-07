@@ -111,15 +111,31 @@ public class WebViewPool {
     }
 
     /**
-     * 注册初始主页面
+     * 注册初始主页面 (支持硬件参数与 Stealth 防检测脚本 DocumentStart 注入)
      */
     public void registerMainPage(String pageId, WebView mainWebView) {
-        registerMainPage(pageId, mainWebView, "default");
+        registerMainPage(pageId, mainWebView, "default", HardwareConfig.createFlagship());
     }
 
     public void registerMainPage(String pageId, WebView mainWebView, String profileName) {
+        registerMainPage(pageId, mainWebView, profileName, HardwareConfig.createFlagship());
+    }
+
+    public void registerMainPage(String pageId, WebView mainWebView, String profileName, HardwareConfig hardwareConfig) {
         this.activeForegroundPageId = pageId;
-        ManagedPage mainPage = new ManagedPage(pageId, mainWebView, false, true, profileName);
+        HardwareConfig hw = hardwareConfig != null ? hardwareConfig : HardwareConfig.createFlagship();
+        final String stealthScript = hw.generateInjectionScript();
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            try {
+                WebViewCompat.addDocumentStartJavaScript(mainWebView, stealthScript, Collections.singleton("*"));
+                Log.i(TAG, "Document-start hardware script registered for main page [CPU: " + hw.cpuCores + " cores, GPU: " + hw.glRenderer + "]");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to addDocumentStartJavaScript on main page: " + e.getMessage());
+            }
+        }
+
+        ManagedPage mainPage = new ManagedPage(pageId, mainWebView, false, true, profileName, hw);
         pages.put(pageId, mainPage);
     }
 

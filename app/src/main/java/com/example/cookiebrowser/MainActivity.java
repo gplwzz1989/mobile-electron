@@ -37,24 +37,33 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.example.cookiebrowser.bridge.JsBridgeEngine;
+import com.example.cookiebrowser.core.AppConfig;
+import com.example.cookiebrowser.core.AppConfigManager;
+import com.example.cookiebrowser.core.HardwareConfig;
 import com.example.cookiebrowser.core.WebViewPool;
+import com.example.cookiebrowser.plugins.AppPlugin;
 import com.example.cookiebrowser.plugins.CookiePlugin;
 import com.example.cookiebrowser.plugins.DevicePlugin;
 import com.example.cookiebrowser.plugins.NetworkPlugin;
 import com.example.cookiebrowser.plugins.PagePlugin;
+import com.example.cookiebrowser.plugins.WindowPlugin;
 import com.example.cookiebrowser.security.DomainWhitelistManager;
 
 import java.util.List;
 import java.util.Set;
 
 /**
- * 商业级 Mobile Electron 容器主界面（支持多 WebView 前后台自由切换）
+ * 商业级 Mobile Electron 容器主界面（支持多 WebView 前后台自由切换与全 Web 界面驱动）
  */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String DEFAULT_URL = "https://m.baidu.com";
+    private LinearLayout layoutTopBar;
+    private LinearLayout layoutBottomBar;
 
     // 顶部组件
     private ImageView ivSecurityLock;
@@ -89,15 +98,29 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 1. 初始化框架应用配置
+        AppConfigManager.getInstance().init(this);
+        AppConfig config = AppConfigManager.getInstance().getConfig();
+
+        // 2. 初始化视图与原生底座
         initViews();
         initContainerEngine();
         setupWebView();
         setupListeners();
 
-        loadUrl(DEFAULT_URL);
+        // 3. 应用配置（状态栏沉浸、全屏模式与调试工具条）
+        applyStatusBarSettings(config.getStatusBarColor(), config.isStatusBarDarkIcons(), config.isImmersiveStatusBar());
+        setFullscreenMode(config.isFullscreen());
+        setDebugToolbarVisible(config.isShowNativeDebugToolbar());
+
+        // 4. 加载配置中指定的默认启动网页
+        loadUrl(config.getDefaultUrl());
     }
 
     private void initViews() {
+        layoutTopBar = findViewById(R.id.layout_top_bar);
+        layoutBottomBar = findViewById(R.id.layout_bottom_bar);
+
         ivSecurityLock = findViewById(R.id.iv_security_lock);
         etUrl = findViewById(R.id.et_url);
         ivClearUrl = findViewById(R.id.iv_clear_url);
@@ -121,9 +144,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initContainerEngine() {
+        AppConfig config = AppConfigManager.getInstance().getConfig();
+        HardwareConfig hwConfig = HardwareConfig.fromPresetOrParams(config.getHardwarePreset(), null);
+
         webViewPool = new WebViewPool(this, offscreenContainer);
         webViewPool.setForegroundContainer(webviewContainer);
-        webViewPool.registerMainPage("main", webView, "default");
+        webViewPool.registerMainPage("main", webView, config.getDefaultProfile(), hwConfig);
 
         // 统一为池中所有 WebView（无论是主页面还是后续创建的独立 Profile 页面）绑定 JS Bridge
         webViewPool.setPageConfigurator((targetWebView, pageId, profileName) -> {
@@ -132,6 +158,11 @@ public class MainActivity extends AppCompatActivity {
             pageEngine.registerPlugin(new PagePlugin(webViewPool, MainActivity.this));
             pageEngine.registerPlugin(new NetworkPlugin());
             pageEngine.registerPlugin(new DevicePlugin(MainActivity.this));
+            pageEngine.registerPlugin(new WindowPlugin(MainActivity.this, webViewPool));
+            pageEngine.registerPlugin(new AppPlugin(MainActivity.this));
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(MainActivity.this));
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(MainActivity.this));
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(MainActivity.this));
             targetWebView.addJavascriptInterface(pageEngine, "AndroidBridge");
         });
 
@@ -152,6 +183,11 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine.registerPlugin(new PagePlugin(webViewPool, this));
         bridgeEngine.registerPlugin(new NetworkPlugin());
         bridgeEngine.registerPlugin(new DevicePlugin(this));
+        bridgeEngine.registerPlugin(new WindowPlugin(this, webViewPool));
+        bridgeEngine.registerPlugin(new AppPlugin(this));
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(this));
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(this));
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(this));
 
         webView.addJavascriptInterface(bridgeEngine, "AndroidBridge");
     }
@@ -212,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
                 Toast.makeText(MainActivity.this, "检测到渲染进程异常，已自动恢复", Toast.LENGTH_SHORT).show();
-                view.loadUrl(DEFAULT_URL);
+                view.loadUrl(AppConfigManager.getInstance().getConfig().getDefaultUrl());
                 return true;
             }
         });
@@ -298,12 +334,53 @@ public class MainActivity extends AppCompatActivity {
         loadUrl(input);
     }
 
-    private void loadUrl(String url) {
-        etUrl.setText(url);
+    public void loadUrl(String url) {
+        if (etUrl != null) {
+            etUrl.setText(url);
+        }
         WebView active = getActiveWebView();
         if (active != null) {
             active.loadUrl(url);
         }
+    }
+
+    public void setDebugToolbarVisible(boolean visible) {
+        if (layoutTopBar != null) layoutTopBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+        if (layoutBottomBar != null) layoutBottomBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    public void applyStatusBarSettings(String colorHex, boolean darkIcons, boolean immersive) {
+        try {
+            Window window = getWindow();
+            if (window == null) return;
+
+            WindowCompat.setDecorFitsSystemWindows(window, !immersive);
+
+            if (colorHex != null && !colorHex.trim().isEmpty()) {
+                window.setStatusBarColor(Color.parseColor(colorHex.trim()));
+            }
+
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
+            if (insetsController != null) {
+                insetsController.setAppearanceLightStatusBars(darkIcons);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public void setFullscreenMode(boolean fullscreen) {
+        try {
+            Window window = getWindow();
+            if (window == null) return;
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
+            if (insetsController != null) {
+                if (fullscreen) {
+                    insetsController.hide(WindowInsetsCompat.Type.systemBars());
+                    insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                } else {
+                    insetsController.show(WindowInsetsCompat.Type.systemBars());
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private void hideKeyboard(View view) {
