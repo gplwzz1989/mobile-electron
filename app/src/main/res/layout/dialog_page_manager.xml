@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- 顶部拖动手柄指示条 -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:background="#CBD5E1" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="多页面与独立 Profile 沙箱调度"
+                android:textColor="@color/text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_page_manager_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="正在统计运行中的页面..."
+                android:textColor="@color/text_sub"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_close_page_manager"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_close" />
+    </RelativeLayout>
+
+    <!-- Profile 隔离引擎状态提示 -->
+    <LinearLayout
+        android:id="@+id/layout_profile_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#F1F5F9"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:id="@+id/tv_profile_engine_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="🛡️ Multi-Profile 数据隔离引擎：检测中"
+            android:textColor="#334155"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- 快捷操作栏（支持创建共享与独立Profile） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/btn_create_sample_headless"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_address_bar"
+            android:text="+ 默认会话任务"
+            android:textColor="@color/primary"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_create_profile_headless"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1.3"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_button_export"
+            android:text="+ 独立沙箱 Profile (多开)"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- 抖音创作者平台隐形扫码登录监控特权功能入口 -->
+    <Button
+        android:id="@+id/btn_start_douyin_qr_login"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_button_export"
+        android:text="🎬 启动抖音创作者中心 (隐形WebView扫码监控)"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="320dp">
+
+        <LinearLayout
+            android:id="@+id/layout_page_cards"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+</LinearLayout>

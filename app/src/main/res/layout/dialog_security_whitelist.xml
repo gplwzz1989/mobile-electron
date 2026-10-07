@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- 顶部拖动手柄指示条 -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:background="#CBD5E1" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="安全沙箱与白名单中心"
+                android:textColor="@color/text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="基于 RFC-001 的动态分级访问控制"
+                android:textColor="@color/text_sub"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_close_whitelist"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_close" />
+    </RelativeLayout>
+
+    <!-- 当前站点安全状态卡片 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_chip_tier"
+        android:padding="12dp"
+        android:layout_marginBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_shield_check" />
+
+            <TextView
+                android:id="@+id/tv_current_origin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="当前站点: 正在分析..."
+                android:textColor="#065F46"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tv_tier_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#D1FAE5"
+                android:textColor="#047857"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:text="Tier 2 (核心特权)" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_tier_desc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="该域名已被授予 Cookie 跨域控制、无头 WebView 调度与原生网络穿透权限。"
+            android:textColor="#047857"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- 动态添加白名单规则 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="动态添加白名单规则 (例如: *.example.com 或精确域名)"
+        android:textColor="@color/text_main"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <EditText
+            android:id="@+id/et_new_domain"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_address_bar"
+            android:hint="输入域名，如 *.mycorp.com"
+            android:textColor="@color/text_main"
+            android:textColorHint="@color/text_hint"
+            android:textSize="13sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:inputType="textUri" />
+
+        <Button
+            android:id="@+id/btn_add_domain"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_button_export"
+            android:text="添加规则"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:minWidth="72dp" />
+    </LinearLayout>
+
+    <!-- 已生效白名单规则 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="当前生效的特权白名单 (Tier 2 核心规则)"
+        android:textColor="@color/text_sub"
+        android:textSize="12sp"
+        android:layout_marginBottom="6dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="140dp">
+
+        <LinearLayout
+            android:id="@+id/layout_whitelist_rules"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+</LinearLayout>

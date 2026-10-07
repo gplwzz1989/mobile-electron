@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- 顶部拖动手柄指示条 -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:background="#CBD5E1" />
+
+    <!-- 标题与关闭按钮 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="抖音创作者平台 · 扫码登录"
+                android:textColor="@color/text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_douyin_qr_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="后台隐形 WebView 实时双向监控中 (creator.douyin.com)"
+                android:textColor="@color/text_sub"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_close_douyin_dialog"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_close" />
+    </RelativeLayout>
+
+    <!-- 状态指示徽标 -->
+    <LinearLayout
+        android:id="@+id/layout_status_badge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="14dp">
+
+        <TextView
+            android:id="@+id/tv_qr_status_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#FEF3C7"
+            android:textColor="#D97706"
+            android:text="● 正在后台加载 creator.douyin.com..."
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp" />
+    </LinearLayout>
+
+    <!-- 二维码展示卡片容器 -->
+    <FrameLayout
+        android:layout_width="230dp"
+        android:layout_height="230dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_card_cookie"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp">
+
+        <ProgressBar
+            android:id="@+id/pb_qr_loading"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:indeterminate="true" />
+
+        <ImageView
+            android:id="@+id/iv_douyin_qr_code"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- 扫码提示文字 -->
+    <TextView
+        android:id="@+id/tv_qr_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="请打开手机【抖音 App】 ➔ 点击【我】 ➔ 右上角【扫一扫】"
+        android:textColor="#475569"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 登录成功捕获的 Cookie 预览框 (初始隐藏) -->
+    <LinearLayout
+        android:id="@+id/layout_success_cookie"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#F0FDF4"
+        android:padding="12dp"
+        android:layout_marginBottom="14dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎉 登录成功！已成功截获创作者中心 Cookie"
+            android:textColor="#15803D"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_cookie_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#166534"
+            android:textSize="11sp"
+            android:maxLines="3"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- 操作按钮组 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn_refresh_douyin_qr"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_address_bar"
+            android:text="刷新二维码 🔄"
+            android:textColor="@color/primary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_switch_douyin_front"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1.2"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_button_export"
+            android:text="切到前台展示 ↗"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_copy_douyin_cookie"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_button_export"
+        android:text="一键复制登录完整 Cookie 📋"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+</LinearLayout>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Electron 容器开发测试面板</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        h2 { margin-top: 0; color: #0f172a; font-size: 18px; }
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .btn {
+            background: #4f46e5;
+            color: #ffffff;
+            border: none;
+            padding: 9px 13px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+        .btn:active { opacity: 0.85; }
+        .btn-green { background: #10b981; }
+        .btn-purple { background: #8b5cf6; }
+        .btn-amber { background: #f59e0b; color: #000; }
+        .btn-gray { background: #64748b; }
+        .btn-danger { background: #ef4444; }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            overflow-x: auto;
+            max-height: 220px;
+            margin-bottom: 0;
+            white-space: pre-wrap;
+        }
+        .status-badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #15803d;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <span class="status-badge" id="containerStatus">检测容器状态中...</span>
+        <h2>Mobile Electron 商业级容器控制台</h2>
+        <p style="font-size: 12px; color: #64748b; margin-top: 4px;">
+            原生 Chromium 底座 + JSON-RPC 2.0 桥接协议 + 多 Profile 物理数据目录完全隔离 + 前后台无缝调度。
+        </p>
+    </div>
+
+    <!-- 核心亮点 0：抖音创作者平台隐形扫码登录与实时监控 -->
+    <div class="card" style="border-left: 4px solid #f43f5e;">
+        <h3 style="font-size: 15px; margin-top: 0; color: #e11d48;">★ 抖音创作者中心 · 隐形扫码登录与状态监控 (creator.douyin.com)</h3>
+        <p style="font-size: 12px; color: #475569; margin: 4px 0 10px 0;">
+            点击后在后台隐形创建无界面 Headless WebView，加载 <code>creator.douyin.com</code>，通过原生 Material 对话框实时同步二维码、扫码状态与自动截获登录 Cookie。
+        </p>
+        <button class="btn" style="background: #e11d48;" onclick="testStartDouyinQrLogin()">🎬 启动抖音创作者中心 (隐形WebView扫码监控)</button>
+        <button class="btn btn-purple" onclick="testCreateCustomUrlPage()">+ 创建指定自定义地址页面 (creator.douyin.com)</button>
+    </div>
+
+    <!-- 核心亮点 1：多 Profile 独立数据目录物理隔离 -->
+    <div class="card" style="border-left: 4px solid #8b5cf6;">
+        <h3 style="font-size: 15px; margin-top: 0; color: #6d28d9;">★ 独立数据目录 (Profile) 物理隔离测试 (多账号多开)</h3>
+        <p style="font-size: 12px; color: #475569; margin: 4px 0 10px 0;">
+            通过 Chromium <code>ProfileStore</code> 机制，使不同 WebView 拥有专属 SQLite Cookie 库及 LocalStorage，绝无串号泄漏。
+        </p>
+        <button class="btn btn-purple" onclick="testRunProfileIsolationVerification()">⚡ 一键自动化双 Profile 隔离比对验证</button>
+        <button class="btn" onclick="testBringAlphaToFront()">切到 Profile Alpha 前台</button>
+        <button class="btn" onclick="testBringBetaToFront()">切到 Profile Beta 前台</button>
+        <button class="btn btn-amber" onclick="testSendToBack()">切回控制面板</button>
+        <button class="btn btn-gray" onclick="testListProfiles()">查看所有 Profile 列表</button>
+    </div>
+
+    <!-- 核心亮点 2：硬件参数注入与设备指纹伪装 -->
+    <div class="card" style="border-left: 4px solid #0284c7;">
+        <h3 style="font-size: 15px; margin-top: 0; color: #0369a1;">★ 硬件参数注入与设备指纹伪装测试 (CPU / 内存 / GPU / 屏幕)</h3>
+        <p style="font-size: 12px; color: #475569; margin: 4px 0 10px 0;">
+            在 <code>DocumentStart</code> 阶段注入 Stealth 防检测脚本，伪装 <code>navigator.hardwareConcurrency</code> (CPU核心数)、<code>navigator.deviceMemory</code> (内存大小) 及 WebGL 显卡。
+        </p>
+        <button class="btn btn-green" onclick="testDetectCurrentHardware()">1. 检测当前页面真实硬件参数</button>
+        <button class="btn btn-purple" onclick="testCreateFlagshipDevice()">2. 注入创建 16核/32G 旗舰机</button>
+        <button class="btn btn-amber" onclick="testCreateBudgetDevice()">3. 注入创建 4核/4G 入门机</button>
+        <button class="btn" onclick="testVerifyRemotePageHardware()">4. 远程检测目标页面注入结果</button>
+    </div>
+
+    <!-- 核心亮点 3：无头页面与前台切换 -->
+    <div class="card">
+        <h3 style="font-size: 14px; margin-top: 0; color: #4338ca;">★ 多页面调度与前后台切换 (Headless / BringToFront)</h3>
+        <button class="btn btn-purple" onclick="testCreateHeadless()">1. 创建默认后台页面 (百度)</button>
+        <button class="btn btn-green" onclick="testBringToFront()">2. 将后台页面切换到前台显示 ↗</button>
+        <button class="btn btn-amber" onclick="testSendToBack()">3. 切回主页面 (后台继续运行)</button>
+        <button class="btn" onclick="testListPages()">查询所有运行中页面列表</button>
+        <button class="btn btn-gray" onclick="testCloseHeadless()">关闭销毁当前无头页面</button>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 14px; margin-top: 0;">1. Cookie 深度控制 (Tier 2 核心特权)</h3>
+        <button class="btn" onclick="testReadCookie()">读取当前Cookie</button>
+        <button class="btn btn-green" onclick="testSetCookie()">注入测试Cookie</button>
+        <button class="btn btn-gray" onclick="testClearCookie()">清空Cookie</button>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 14px; margin-top: 0;">2. 原生穿透网络请求 (绕过前端 CORS)</h3>
+        <button class="btn btn-green" onclick="testNativeFetch()">原生发起跨域 HTTP 请求</button>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 14px; margin-top: 0;">3. 原生系统设备交互</h3>
+        <button class="btn" onclick="testToast()">触发原生 Toast</button>
+        <button class="btn" onclick="testClipboard()">写入剪贴板</button>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 14px; margin-top: 0;">执行日志控制台</h3>
+        <pre id="logArea">等待执行指令...</pre>
+    </div>
+
+    <script>
+        const pendingCallbacks = {};
+
+        function callNative(module, action, params) {
+            return new Promise((resolve, reject) => {
+                if (!window.AndroidBridge) {
+                    return reject(new Error("非 Mobile Electron 原生容器环境"));
+                }
+                const reqId = "rpc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
+                pendingCallbacks[reqId] = { resolve, reject };
+
+                const payload = JSON.stringify({
+                    id: reqId,
+                    module: module,
+                    action: action,
+                    params: params || {},
+                    timestamp: Date.now()
+                });
+
+                window.AndroidBridge.dispatch(payload);
+            });
+        }
+
+        window.__onNativeRpcResponse = function(response) {
+            const resp = typeof response === 'string' ? JSON.parse(response) : response;
+            const cb = pendingCallbacks[resp.id];
+            if (cb) {
+                delete pendingCallbacks[resp.id];
+                if (resp.code === 200) {
+                    cb.resolve(resp.data);
+                } else {
+                    cb.reject(new Error(`[${resp.code}] ${resp.message}`));
+                }
+            }
+        };
+
+        function log(msg) {
+            const el = document.getElementById('logArea');
+            el.innerText = `[${new Date().toLocaleTimeString()}] ` + (typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg) + '\n\n' + el.innerText;
+        }
+
+        window.onload = function() {
+            if (window.AndroidBridge) {
+                document.getElementById('containerStatus').innerText = "✓ 容器已就绪 (AndroidBridge 连接成功)";
+                log("Mobile Electron 容器环境初始化成功，白名单与独立 Profile 隔离引擎已激活。");
+            } else {
+                document.getElementById('containerStatus').innerText = "✗ 普通浏览器环境 (未挂载容器)";
+                document.getElementById('containerStatus').style.background = "#fee2e2";
+                document.getElementById('containerStatus').style.color = "#b91c1c";
+            }
+        };
+
+        let currentHeadlessPageId = null;
+        let profileAlphaPageId = null;
+        let profileBetaPageId = null;
+
+        // ==========================================
+        // 双 Profile 独立隔离自动化测试
+        // ==========================================
+        async function testRunProfileIsolationVerification() {
+            try {
+                log(">>> 开始自动化双 Profile 隔离比对验证流程...");
+
+                // 1. 创建 Profile A
+                log("[Step 1] 创建独立沙箱 Profile A (标识: profile_alpha)...");
+                const resA = await callNative('page', 'create', { profile: 'profile_alpha' });
+                profileAlphaPageId = resA.pageId;
+                log(`✓ Profile A 创建成功: pageId = ${profileAlphaPageId}, profile = ${resA.profile}`);
+
+                // 2. 创建 Profile B
+                log("[Step 2] 创建独立沙箱 Profile B (标识: profile_beta)...");
+                const resB = await callNative('page', 'create', { profile: 'profile_beta' });
+                profileBetaPageId = resB.pageId;
+                log(`✓ Profile B 创建成功: pageId = ${profileBetaPageId}, profile = ${resB.profile}`);
+
+                // 3. 向 Profile A 写入专用 Cookie
+                const cookieA = "account_user=User_Alpha; token=ALPHA_SECRET_TOKEN_888; role=admin";
+                log("[Step 3] 向 Profile A 注入独有 Cookie:\n" + cookieA);
+                await callNative('page', 'setCookies', { pageId: profileAlphaPageId, cookies: cookieA });
+
+                // 4. 向 Profile B 写入专用 Cookie
+                const cookieB = "account_user=User_Beta; token=BETA_SECRET_TOKEN_999; role=guest";
+                log("[Step 4] 向 Profile B 注入独有 Cookie:\n" + cookieB);
+                await callNative('page', 'setCookies', { pageId: profileBetaPageId, cookies: cookieB });
+
+                // 5. 跨 Profile 交叉读取比对
+                log("[Step 5] 开始交叉验证隔离情况...");
+                const checkA = await callNative('page', 'getCookies', { pageId: profileAlphaPageId });
+                const checkB = await callNative('page', 'getCookies', { pageId: profileBetaPageId });
+
+                log(`【Profile A (Alpha) 实际 Cookie】:\n${checkA.cookies}`);
+                log(`【Profile B (Beta) 实际 Cookie】:\n${checkB.cookies}`);
+
+                const hasLeakInA = checkA.cookies.includes("BETA_SECRET_TOKEN");
+                const hasLeakInB = checkB.cookies.includes("ALPHA_SECRET_TOKEN");
+
+                if (!hasLeakInA && !hasLeakInB) {
+                    log("🎉【测试结果: 100% 隔离成功】\nProfile A 与 Profile B 数据完全物理隔离，各自独立的 Cookie 库互不干扰，零串号、零泄漏！");
+                } else {
+                    log("⚠️【测试警告】检测到数据串号泄漏！");
+                }
+            } catch (err) {
+                log("测试失败: " + err.message);
+            }
+        }
+
+        async function testBringAlphaToFront() {
+            if (!profileAlphaPageId) return log("请先执行一键双 Profile 隔离验证创建实例！");
+            try {
+                await callNative('page', 'bringToFront', { pageId: profileAlphaPageId });
+                log("已将 Profile Alpha 切换至前台展示！");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testBringBetaToFront() {
+            if (!profileBetaPageId) return log("请先执行一键双 Profile 隔离验证创建实例！");
+            try {
+                await callNative('page', 'bringToFront', { pageId: profileBetaPageId });
+                log("已将 Profile Beta 切换至前台展示！");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testListProfiles() {
+            try {
+                const res = await callNative('page', 'listProfiles', {});
+                log("当前容器内现存的 Profile 分区目录: \n" + JSON.stringify(res, null, 2));
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        // ==========================================
+        // 基础页面调度与前后台切换测试
+        // ==========================================
+        async function testCreateHeadless() {
+            try {
+                log("正在后台静默创建新的默认 Profile WebView 任务...");
+                const res = await callNative('page', 'create', {});
+                currentHeadlessPageId = res.pageId;
+                log("页面已在后台创建，ID = " + currentHeadlessPageId + "，正在后台预加载 https://m.baidu.com ...");
+
+                await callNative('page', 'goto', { pageId: currentHeadlessPageId, url: 'https://m.baidu.com' });
+                log("后台页面加载完成！现在可以点击【切换到前台显示 ↗】将该页面瞬时呈现在屏幕上。");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testBringToFront() {
+            if (!currentHeadlessPageId) {
+                return log("请先点击步骤 1 创建后台页面！");
+            }
+            try {
+                log("正在将后台页面 " + currentHeadlessPageId + " 切换到前台显示...");
+                await callNative('page', 'bringToFront', { pageId: currentHeadlessPageId });
+                log("成功切换到前台！页面已全屏展示，顶栏地址与底栏状态已自动同步。");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testSendToBack() {
+            try {
+                log("正在切回主页面，将当前页面下沉回后台继续静默运行...");
+                await callNative('page', 'sendToBack', {});
+                log("已切回主控制台！原后台页面依然在后台保留状态并正常运行。");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testListPages() {
+            try {
+                log("正在拉取当前容器内所有运行中的 WebView 实例及 Profile 绑定信息...");
+                const res = await callNative('page', 'list', {});
+                log(res.pages);
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testCloseHeadless() {
+            if (!currentHeadlessPageId) {
+                return log("暂无运行中的后台页面");
+            }
+            try {
+                await callNative('page', 'close', { pageId: currentHeadlessPageId });
+                log("后台页面 " + currentHeadlessPageId + " 已安全销毁回收。");
+                currentHeadlessPageId = null;
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testReadCookie() {
+            try {
+                log("正在读取当前 Profile Cookie...");
+                const res = await callNative('cookie', 'get', { url: window.location.href });
+                log("当前 Cookie (" + res.profile + "): " + (res.cookies || "（暂无 Cookie）"));
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testSetCookie() {
+            try {
+                const sample = "test_token=electron_mobile_8888; session_id=session_abc123";
+                log("正在注入 Cookie: " + sample);
+                const res = await callNative('cookie', 'import', { url: window.location.href, input: sample });
+                log("成功注入 " + res.count + " 个 Cookie 到 Profile (" + res.profile + ")！");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testClearCookie() {
+            try {
+                const res = await callNative('cookie', 'clear', {});
+                log("Cookie 已清空 (" + res.profile + ")！");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testNativeFetch() {
+            try {
+                log("正在通过原生发起 HTTP 请求 (完全不受前端 CORS 限制)...");
+                const res = await callNative('network', 'fetch', {
+                    url: 'https://httpbin.org/get',
+                    method: 'GET'
+                });
+                log("原生请求返回状态: " + res.status + "\n响应体:\n" + res.body);
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        function getWebGlRenderer() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) return "WebGL 不可用";
+                const ext = gl.getExtension('WEBGL_debug_renderer_info');
+                return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+            } catch(e) {
+                return e.message;
+            }
+        }
+
+        function testDetectCurrentHardware() {
+            const info = {
+                cpuCores: navigator.hardwareConcurrency,
+                deviceMemory: navigator.deviceMemory || "未暴露",
+                platform: navigator.platform,
+                maxTouchPoints: navigator.maxTouchPoints,
+                webglRenderer: getWebGlRenderer(),
+                screen: `${screen.width} x ${screen.height}`,
+                devicePixelRatio: window.devicePixelRatio
+            };
+            log("【当前页面原生硬件参数检测】:\n" + JSON.stringify(info, null, 2));
+        }
+
+        let spoofedPageId = null;
+
+        async function testCreateFlagshipDevice() {
+            try {
+                log("正在创建 16 核 CPU / 32G 内存 旗舰机 (Adreno 740) 独立 WebView...");
+                const res = await callNative('page', 'create', {
+                    profile: 'hw_flagship',
+                    hardware: {
+                        cpuCores: 16,
+                        deviceMemory: 32,
+                        glVendor: 'Qualcomm',
+                        glRenderer: 'Adreno (TM) 740',
+                        platform: 'Linux aarch64'
+                    }
+                });
+                spoofedPageId = res.pageId;
+                log(`✓ 旗舰机 WebView 创建成功: pageId = ${spoofedPageId}\n注入硬件: ` + JSON.stringify(res.hardware, null, 2));
+                log("提示: 请点击【4. 远程检测目标页面注入结果】进行校验。");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testCreateBudgetDevice() {
+            try {
+                log("正在创建 4 核 CPU / 4G 内存 入门机 (Mali G715) 独立 WebView...");
+                const res = await callNative('page', 'create', {
+                    profile: 'hw_budget',
+                    hardware: {
+                        cpuCores: 4,
+                        deviceMemory: 4,
+                        glVendor: 'ARM',
+                        glRenderer: 'Mali-G715-MC11',
+                        platform: 'Linux armv8l'
+                    }
+                });
+                spoofedPageId = res.pageId;
+                log(`✓ 入门机 WebView 创建成功: pageId = ${spoofedPageId}\n注入硬件: ` + JSON.stringify(res.hardware, null, 2));
+                log("提示: 请点击【4. 远程检测目标页面注入结果】进行校验。");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testVerifyRemotePageHardware() {
+            if (!spoofedPageId) return log("请先执行步骤 2 或 步骤 3 创建带有硬件伪装的 WebView！");
+            try {
+                log(`正在向目标页面 [${spoofedPageId}] 执行指纹读取脚本 (page.evaluate)...`);
+                const script = `(function() {
+                    let glR = 'N/A';
+                    try {
+                        const c = document.createElement('canvas');
+                        const gl = c.getContext('webgl');
+                        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+                        if (ext) glR = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+                    } catch(e) {}
+                    return {
+                        injectedCpuCores: navigator.hardwareConcurrency,
+                        injectedDeviceMemory: navigator.deviceMemory,
+                        injectedPlatform: navigator.platform,
+                        injectedGlRenderer: glR
+                    };
+                })()`;
+                const res = await callNative('page', 'evaluate', { pageId: spoofedPageId, script: script });
+                log("🎉【目标页面指纹读取验证结果】:\n" + JSON.stringify(res.result, null, 2));
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testToast() {
+            try {
+                await callNative('device', 'toast', { message: '这是由 Web 通过 Mobile Electron 调用的原生 Toast！' });
+                log("原生 Toast 已触发");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+
+        async function testStartDouyinQrLogin() {
+            log("正在通过原生 Page 插件启动抖音创作者中心 (creator.douyin.com) 扫码登录监控...");
+            try {
+                const res = await callNative('page', 'startDouyinQrLogin', {});
+                log("✓ 已成功唤起抖音扫码登录原生监控面板: " + JSON.stringify(res));
+            } catch (err) {
+                log("启动失败: " + err.message);
+            }
+        }
+
+        async function testCreateCustomUrlPage() {
+            log("正在创建指定自定义地址 (creator.douyin.com) 的无头 WebView...");
+            try {
+                const res = await callNative('page', 'create', {
+                    url: 'https://creator.douyin.com/',
+                    profile: 'douyin_creator',
+                    preset: 'desktop'
+                });
+                log("✓ 自定义地址 WebView 创建成功: pageId = " + res.pageId + " | profile = " + res.profile + "\n加载地址: " + res.url);
+                log("提示: 可在【页面/任务】面板中将其随时切换至前台展示。");
+            } catch (err) {
+                log("创建失败: " + err.message);
+            }
+        }
+
+        async function testClipboard() {
+            try {
+                await callNative('device', 'setClipboard', { text: '从 Mobile Electron 复制的测试文本' });
+                log("已成功复制到系统剪贴板！");
+            } catch (err) {
+                log("错误: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Cookie浏览器</string>
+    <string name="btn_export_cookie">导出 Cookie</string>
+    <string name="btn_import_cookie">导入 Cookie</string>
+    <string name="btn_go">前往</string>
+    <string name="btn_refresh">刷新</string>
+    <string name="hint_enter_url">输入网址 (例如: https://baidu.com)</string>
+    <string name="export_dialog_title">导出 Cookie (当前网页)</string>
+    <string name="import_dialog_title">导入 Cookie (当前网页)</string>
+    <string name="import_dialog_hint">请粘贴 Cookie 内容，支持多种格式：\n1. key1=val1; key2=val2\n2. JSON 格式 (EditThisCookie/数组/对象)\n3. 多行 key=val 或 Set-Cookie 头\n4. Netscape/cURL 格式</string>
+    <string name="btn_copy">复制到剪贴板</string>
+    <string name="btn_paste">从剪贴板粘贴</string>
+    <string name="btn_clear_cookie">清空当前Cookie</string>
+    <string name="btn_ok">确定导入</string>
+    <string name="btn_cancel">取消</string>
+    <string name="btn_close">关闭</string>
+</resources>

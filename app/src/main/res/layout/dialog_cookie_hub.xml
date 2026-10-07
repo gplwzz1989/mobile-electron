@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- 顶部拖动手柄指示条 -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="12dp"
+        android:background="#CBD5E1" />
+
+    <!-- 弹窗标题栏 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_hub_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cookie 智能管理中心"
+                android:textColor="@color/text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_hub_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="当前站点: 正在读取..."
+                android:textColor="@color/text_sub"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/iv_close_dialog"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_close" />
+    </RelativeLayout>
+
+    <!-- 切换 Tab 按钮组 -->
+    <LinearLayout
+        android:id="@+id/layout_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_address_bar"
+        android:padding="3dp"
+        android:layout_marginBottom="14dp">
+
+        <TextView
+            android:id="@+id/tab_inspect"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="结构化浏览"
+            android:textColor="@color/primary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/tab_export"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="导出 Cookie"
+            android:textColor="@color/text_sub"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tab_import"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="导入 Cookie"
+            android:textColor="@color/text_sub"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- TAB 1: 结构化浏览列表 -->
+    <LinearLayout
+        android:id="@+id/view_inspect_container"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_cookie_summary"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="共加载 0 项 Cookie"
+                android:textColor="@color/text_sub"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/btn_clear_all_cookies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清空当前所有 Cookie"
+                android:textColor="@color/btn_danger_bg"
+                android:textSize="12sp"
+                android:padding="4dp"
+                android:background="?android:attr/selectableItemBackground" />
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/layout_cookie_items"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- TAB 2: 导出视图 -->
+    <LinearLayout
+        android:id="@+id/view_export_container"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- 格式选择器 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <Button
+                android:id="@+id/btn_fmt_standard"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/bg_button_export"
+                android:text="标准 (a=b; c=d)"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btn_fmt_json"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_address_bar"
+                android:text="JSON 数组"
+                android:textColor="@color/text_main"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- 代码显示框 -->
+        <EditText
+            android:id="@+id/et_export_code"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#0F172A"
+            android:textColor="#38BDF8"
+            android:fontFamily="monospace"
+            android:textSize="12sp"
+            android:padding="12dp"
+            android:gravity="top|start"
+            android:inputType="textMultiLine"
+            android:scrollbars="vertical" />
+
+        <Button
+            android:id="@+id/btn_copy_export"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_button_export"
+            android:text="一键复制到剪贴板"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- TAB 3: 导入视图 -->
+    <LinearLayout
+        android:id="@+id/view_import_container"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="智能多格式解析引擎（自动识别 JSON、分号分隔、多行或 Netscape 格式）"
+            android:textColor="@color/text_sub"
+            android:textSize="11sp"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/et_import_input"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card_cookie"
+            android:hint="请在此处粘贴 Cookie 文本内容..."
+            android:textColor="@color/text_main"
+            android:textColorHint="@color/text_hint"
+            android:textSize="13sp"
+            android:padding="12dp"
+            android:gravity="top|start"
+            android:inputType="textMultiLine" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/btn_paste_from_clipboard"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_address_bar"
+                android:text="剪贴板粘贴"
+                android:textColor="@color/text_main"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btn_confirm_import"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_button_import"
+                android:text="确定导入并生效"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
