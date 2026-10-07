@@ -91,25 +91,54 @@ await electron.app.exit();
 
 ### 2.3 底层 Cookie 读写模块 (`electron.cookie`)
 
-直接操作 Chromium 底层 SQLite 数据库的 Cookie，支持按域名及 Profile 分区隔离读写。
+直接操作 Chromium 底层 SQLite 数据库与 iOS `WKHTTPCookieStore`，**突破浏览器安全沙箱限制，100% 完整提取包含 HttpOnly、Secure 在内的全部 Cookie**，支持按域名及 Profile 分区隔离读写。
 
 | 方法名 | 参数 | 返回值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `get(url, target?)` | `url: string, target?: { pageId?: string; profile?: string }` | `Promise<string>` | 读取指定 URL 的完整 Cookie 字符串 |
-| `set(url, rawInput, target?)` | `url: string, rawInput: string, target?: { pageId?: string; profile?: string }` | `Promise<number>` | 批量或单条写入 Cookie，返回导入成功的键值对数量 |
+| `getAll(options?)` | `{ pageId?: string; profile?: string; url?: string; domain?: string; all?: boolean }` | `Promise<CookieDetail[]>` | **全量提取底层所有 Cookie 结构化对象（包括所有 HttpOnly、Secure、Domain、Path、Expires）** |
+| `getDetails(url?, target?)` | `url?: string, target?: { pageId?: string; profile?: string }` | `Promise<CookieDetail[]>` | 提取指定 URL 下的所有结构化 Cookie 对象（含 HttpOnly） |
+| `get(url?, target?)` | `url?: string, target?: { pageId?: string; profile?: string }` | `Promise<string>` | 读取指定 URL 的标准 Cookie 字符串 (`k1=v1; k2=v2`) |
+| `set(url, cookies, target?)` | `url: string, cookies: string \| CookieDetail[], target?` | `Promise<number>` | 批量或单条写入 Cookie（支持传入结构体对象数组，**支持显式注入 `httpOnly: true`**） |
 | `clear(target?)` | `target?: { pageId?: string; profile?: string }` | `Promise<boolean>` | 清空全局或指定 Profile 分区的 Cookie |
+
+#### `CookieDetail` 结构体：
+```typescript
+interface CookieDetail {
+    name: string;        // Cookie 键名
+    value: string;       // Cookie 明文键值
+    domain: string;      // 作用域名 (如 .douyin.com)
+    path: string;        // 作用路径 (如 /)
+    httpOnly: boolean;   // 核心安全标识: 是否为 HttpOnly Cookie
+    secure: boolean;     // 是否要求 HTTPS 传输
+    expires?: number;    // Unix 过期时间戳（秒），0 表示 Session 会话 Cookie
+    sameSite?: string;   // SameSite 规则 ('Lax' | 'Strict' | 'None' | 'Unspecified')
+}
+```
 
 #### 示例：
 ```typescript
-// 读取指定 URL 的 Cookie
+// 1. 全量提取某 WebView 下的所有 Cookie (含所有 HttpOnly)
+const allCookies = await electron.cookie.getAll({ url: 'https://creator.douyin.com' });
+allCookies.forEach(c => {
+    console.log(`${c.name}=${c.value}`, c.httpOnly ? '[HttpOnly]' : '');
+});
+
+// 2. 注入带 HttpOnly 标志的高危 Session Cookie
+await electron.cookie.set('https://creator.douyin.com', [
+    {
+        name: 'session_token',
+        value: 'ABC_XYZ_SECRET_TOKEN',
+        domain: '.douyin.com',
+        path: '/',
+        httpOnly: true,
+        secure: true
+    }
+]);
+
+// 3. 读取标准格式分号拼接字符串
 const cookieStr = await electron.cookie.get('https://m.baidu.com');
-
-// 写入 Cookie 至默认 Profile
-await electron.cookie.set('https://m.baidu.com', 'BAIDUID=XXXX; PSTM=123456');
-
-// 写入 Cookie 至独立隔离的 Profile 'account_vip'
-await electron.cookie.set('https://m.baidu.com', 'USER=VIP', { profile: 'account_vip' });
 ```
+
 
 ---
 
@@ -130,10 +159,15 @@ await electron.cookie.set('https://m.baidu.com', 'USER=VIP', { profile: 'account
 #### `Page` 实例成员方法：
 
 - `page.goto(url, timeoutMs?)`: 导航至指定地址；
-- `page.bringToFront()`: 将此页面切到前台展示；
+- `page.bringToFront()`: 将此页面切到前台全屏展示；
 - `page.sendToBack()`: 将此页面退至后台，切回主页；
-- `page.getCookies()`: 获取此页面当前 URL 底层的 Cookie（自动匹配其所属 Profile）；
-- `page.setCookies(cookies)`: 向此页面所属 Profile 注入 Cookie；
+- `page.getAllCookies(url?)`: **全量提取该页面底层所有 Cookie 结构体对象 (包含所有 HttpOnly、Secure、Domain、Path、Expires)**；
+- `page.getCookies(url?)`: 获取此页面底层标准 Cookie 字符串 (`k1=v1; k2=v2`，自动匹配独立 Profile 分区)；
+- `page.setCookies(cookies)`: 向此页面所属 Profile 注入 Cookie（支持字符串或 `CookieDetail[]`，**支持显式注入 `httpOnly: true`**）；
+- `page.getLocalStorage()`: **读取当前页面域名下的完整 `window.localStorage` 键值字典**；
+- `page.setLocalStorage(data)`: **向当前页面的 `window.localStorage` 批量写入键值对**；
+- `page.clearLocalStorage()`: **清空当前页面的 `window.localStorage`**；
+- `page.dumpStorage()`: **一键导出当前页面的全量存储快照 (全部含 HttpOnly 的 Cookie + LocalStorage + SessionStorage)**；
 - `page.clearData()`: 清空此 Profile 的所有 Cookie 和本地存储；
 - `page.extractQrCode(selector?)`: 从页面 DOM/Canvas 中抓取二维码 Base64 图片；
 - `page.evaluate<T>(script)`: 在目标页面上下文中执行任意 JS 脚本；
@@ -141,6 +175,7 @@ await electron.cookie.set('https://m.baidu.com', 'USER=VIP', { profile: 'account
 - `page.setHardware(hw)`: 动态重置该页面的硬件指纹；
 - `page.onResponse(urlPattern, callback)`: 监听目标页面捕获的网络响应；
 - `page.close()`: 销毁并释放该 WebView 原生内存。
+
 
 #### 示例：
 ```typescript
@@ -226,21 +261,53 @@ await electron.fs.download({
 
 ---
 
-### 2.8 原生持久化键值存储 (`electron.storage`)
+### 2.8 原生持久化与 WebView LocalStorage 存储 (`electron.storage`)
 
-突破 Web 端 `localStorage` 5MB 大小限制，跨 Profile 共享，持久化安全存储企业配置与 Token。
+包含两大核心能力：
+1. **原生持久化 KV 存储**：突破 Web 端 `localStorage` 5MB 大小限制，跨 Profile 共享，持久化安全存储企业配置与 Token。
+2. **WebView LocalStorage 深度操控**：直接在目标 WebView 实例上下文读取、批量写入、清空 `window.localStorage`，并支持一键导出包含 HttpOnly Cookie 与本地存储的完整快照。
 
 | 方法名 | 参数 | 返回值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `set(key, value)` | `key: string, value: string` | `Promise<boolean>` | 保存字符串键值 |
-| `get(key)` | `key: string` | `Promise<string \| null>` | 读取字符串键值 |
+| `getLocalStorage(options?)` | `{ pageId?: string }` | `Promise<Record<string, string>>` | **读取目标 WebView 实例的完整 LocalStorage 键值字典** |
+| `setLocalStorage(data, options?)` | `data: Record<string, string>, options?` | `Promise<boolean>` | **向目标 WebView 实例批量写入 LocalStorage 键值** |
+| `clearLocalStorage(options?)` | `{ pageId?: string }` | `Promise<boolean>` | **清空目标 WebView 实例的 LocalStorage** |
+| `getSessionStorage(options?)` | `{ pageId?: string }` | `Promise<Record<string, string>>` | 读取目标 WebView 实例的 SessionStorage |
+| `setSessionStorage(data, options?)` | `data: Record<string, string>, options?` | `Promise<boolean>` | 写入 SessionStorage |
+| `clearSessionStorage(options?)` | `{ pageId?: string }` | `Promise<boolean>` | 清空 SessionStorage |
+| `dumpStorage(options?)` | `{ pageId?: string }` | `Promise<StorageDump>` | **一键导出目标页面的全量存储快照 (全部含 HttpOnly 的 Cookie + LocalStorage + SessionStorage)** |
+| `set(key, value)` | `key: string, value: string` | `Promise<boolean>` | 保存原生持久化字符串键值 |
+| `get(key)` | `key: string` | `Promise<string \| null>` | 读取原生持久化字符串键值 |
 | `setObject(key, obj)` | `key: string, obj: any` | `Promise<boolean>` | 快捷保存 JSON 对象 |
 | `getObject(key)` | `key: string` | `Promise<T \| null>` | 快捷读取 JSON 对象 |
 | `remove(key)` | `key: string` | `Promise<boolean>` | 删除指定键 |
 | `clear()` | 无 | `Promise<boolean>` | 清空所有键值 |
 | `keys()` | 无 | `Promise<string[]>` | 获取全部已存储的键名列表 |
 
+#### 示例：
+```typescript
+// 1. 读取指定 WebView 实例的 LocalStorage
+const ls = await electron.storage.getLocalStorage({ pageId: 'page_headless_101' });
+console.log('LocalStorage 内容:', ls);
+
+// 2. 向前台 WebView 写入 LocalStorage
+await electron.storage.setLocalStorage({
+    user_token: 'TOKEN_123456',
+    theme: 'dark'
+});
+
+// 3. 一键导出全量存储快照
+const dump = await electron.storage.dumpStorage();
+console.log('快照导出:', {
+    url: dump.url,
+    cookies: dump.cookies, // 包含所有 HttpOnly Cookie
+    localStorage: dump.localStorage,
+    sessionStorage: dump.sessionStorage
+});
+```
+
 ---
+
 
 ### 2.9 原生弹窗与对话框交互 (`electron.dialog`)
 

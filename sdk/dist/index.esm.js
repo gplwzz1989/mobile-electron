@@ -94,18 +94,97 @@ var MockEngine = class {
       case "device.setClipboard":
         return Promise.resolve({ success: true });
       case "cookie.get":
+      case "cookie.getAll":
+      case "page.getCookies":
+      case "page.getAllCookies": {
+        const rawDoc = typeof document !== "undefined" ? document.cookie : "";
+        const items = rawDoc.split(";").filter(Boolean).map((p) => {
+          const idx = p.indexOf("=");
+          const name = idx > -1 ? p.slice(0, idx).trim() : p.trim();
+          const value = idx > -1 ? p.slice(idx + 1).trim() : "";
+          return {
+            name,
+            value,
+            domain: typeof window !== "undefined" ? window.location.hostname : "localhost",
+            path: "/",
+            secure: false,
+            httpOnly: false
+          };
+        });
         return Promise.resolve({
-          cookies: typeof document !== "undefined" ? document.cookie : "",
+          cookies: rawDoc,
+          details: items,
+          count: items.length,
           profile: params.profile || "default"
         });
+      }
       case "cookie.import":
       case "cookie.set":
-        if (typeof document !== "undefined" && params.input) {
-          document.cookie = params.input;
+      case "page.setCookies":
+        if (typeof document !== "undefined") {
+          if (Array.isArray(params.cookies)) {
+            params.cookies.forEach((c) => {
+              if (c.name) document.cookie = `${c.name}=${c.value}; path=${c.path || "/"}`;
+            });
+          } else if (params.input || params.cookies) {
+            document.cookie = params.input || params.cookies;
+          }
         }
-        return Promise.resolve({ count: 1, profile: params.profile || "default" });
+        return Promise.resolve({ count: 1, success: true, profile: params.profile || "default" });
       case "cookie.clear":
         return Promise.resolve({ success: true, profile: params.profile || "default" });
+      case "storage.getLocalStorage":
+      case "page.getLocalStorage": {
+        const data = {};
+        if (typeof localStorage !== "undefined") {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && !k.startsWith("me_")) data[k] = localStorage.getItem(k) || "";
+          }
+        }
+        return Promise.resolve({ data, count: Object.keys(data).length });
+      }
+      case "storage.setLocalStorage":
+      case "page.setLocalStorage": {
+        if (typeof localStorage !== "undefined" && params.data) {
+          for (const k of Object.keys(params.data)) {
+            localStorage.setItem(k, params.data[k]);
+          }
+        }
+        return Promise.resolve({ success: true });
+      }
+      case "storage.clearLocalStorage":
+      case "page.clearLocalStorage": {
+        if (typeof localStorage !== "undefined") {
+          localStorage.clear();
+        }
+        return Promise.resolve({ success: true });
+      }
+      case "storage.dumpStorage":
+      case "page.dumpStorage": {
+        const ls = {};
+        const ss = {};
+        if (typeof localStorage !== "undefined") {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k) ls[k] = localStorage.getItem(k) || "";
+          }
+        }
+        if (typeof sessionStorage !== "undefined") {
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k) ss[k] = sessionStorage.getItem(k) || "";
+          }
+        }
+        return Promise.resolve({
+          cookies: [],
+          cookieString: typeof document !== "undefined" ? document.cookie : "",
+          localStorage: ls,
+          sessionStorage: ss,
+          url: typeof window !== "undefined" ? window.location.href : "",
+          profile: params.profile || "default"
+        });
+      }
       case "network.fetch":
         return Promise.resolve({
           status: 200,
@@ -190,18 +269,59 @@ var Page = class {
     return this.client.invoke("page", "sendToBack", { pageId: this.pageId });
   }
   /**
-   * 获取当前页面底层的完整 Cookie (自动精准匹配其独立 Profile 分区)
+   * 获取当前页面底层的完整 Cookie 字符串 (a=b; c=d，包含所有 HttpOnly)
    */
-  async getCookies() {
-    const res = await this.client.invoke("page", "getCookies", { pageId: this.pageId });
+  async getCookies(url) {
+    const res = await this.client.invoke("page", "getCookies", { pageId: this.pageId, url });
     return res.cookies;
   }
   /**
-   * 导入并设置当前页面的 Cookie (精准写入其独立 Profile 分区，不污染其他页面)
+   * 全量提取当前页面底层的全部 Cookie 结构体对象 (包含所有 HttpOnly、Secure、Domain、Path、Expires)
+   */
+  async getAllCookies(url) {
+    const res = await this.client.invoke("page", "getAllCookies", { pageId: this.pageId, url });
+    return res.details || [];
+  }
+  /**
+   * 导入并设置当前页面的 Cookie (精准写入其独立 Profile 分区，支持字符串或 CookieDetail 数组)
    */
   async setCookies(cookies) {
-    const res = await this.client.invoke("page", "setCookies", { pageId: this.pageId, cookies });
+    const payload = { pageId: this.pageId };
+    if (Array.isArray(cookies)) {
+      payload.cookies = cookies;
+    } else {
+      payload.cookies = cookies;
+      payload.input = cookies;
+    }
+    const res = await this.client.invoke("page", "setCookies", payload);
     return res.success;
+  }
+  /**
+   * 读取当前页面加载域名下的完整 LocalStorage 键值字典
+   */
+  async getLocalStorage() {
+    const res = await this.client.invoke("page", "getLocalStorage", { pageId: this.pageId });
+    return res.data || {};
+  }
+  /**
+   * 向当前页面的 LocalStorage 批量写入键值对
+   */
+  async setLocalStorage(data) {
+    const res = await this.client.invoke("page", "setLocalStorage", { pageId: this.pageId, data });
+    return res.success;
+  }
+  /**
+   * 清空当前页面的 LocalStorage
+   */
+  async clearLocalStorage() {
+    const res = await this.client.invoke("page", "clearLocalStorage", { pageId: this.pageId });
+    return res.success;
+  }
+  /**
+   * 一键导出当前页面的全量存储快照 (全部含 HttpOnly 的 Cookie + LocalStorage + SessionStorage)
+   */
+  async dumpStorage() {
+    return this.client.invoke("page", "dumpStorage", { pageId: this.pageId });
   }
   /**
    * 清空当前页面对应 Profile 的所有 Cookie 和本地存储 (LocalStorage / IndexedDB)
@@ -394,8 +514,9 @@ var CookieModule = class {
     this.client = client;
   }
   /**
-   * 读取指定 URL 下的 Cookie 字符串
-   * @param url 目标网站 URL
+   * 读取指定 URL 下的 Cookie 字符串 (标准格式 a=b; c=d)
+   * 无论是否带有 HttpOnly 属性均完整提取
+   * @param url 目标网站 URL（为空则自动使用目标 PageId 的当前页面地址）
    * @param target 可选指定读取哪个 pageId 或 profile 独立分区
    */
   async get(url, target) {
@@ -407,19 +528,57 @@ var CookieModule = class {
     return res.cookies;
   }
   /**
-   * 导入或设置 Cookie
-   * @param url 目标网站 URL
-   * @param rawInput 支持格式: "key=val; key2=val2" 或 JSON 数组形式
-   * @param target 可选指定写入哪个 pageId 或 profile 独立分区
-   * @returns 成功设置的 Cookie 键值对数量
+   * 全量提取指定 WebView 实例或 Profile 分区下的所有 Cookie 结构化对象（包括所有 HttpOnly、Secure、Domain、Path、Expires）
+   * @param options 可选配置过滤条件（pageId / profile / url / domain / all）
    */
-  async set(url, rawInput, target) {
-    const res = await this.client.invoke("cookie", "import", {
+  async getAll(options) {
+    const res = await this.client.invoke(
+      "cookie",
+      "getAll",
+      {
+        pageId: options?.pageId,
+        profile: options?.profile,
+        url: options?.url,
+        domain: options?.domain,
+        all: options?.all ?? true
+      }
+    );
+    return res.details || [];
+  }
+  /**
+   * 提取带完整元数据（HttpOnly、Domain、Path、Secure）的 Cookie 结构体列表
+   * @param url 目标 URL
+   * @param target 目标 pageId 或 profile
+   */
+  async getDetails(url, target) {
+    const res = await this.client.invoke("cookie", "get", {
       url,
-      input: rawInput,
       pageId: target?.pageId,
       profile: target?.profile
     });
+    return res.details || [];
+  }
+  /**
+   * 导入或设置 Cookie（支持标准字符串、Set-Cookie 格式、或 CookieDetail 结构化对象数组）
+   * 支持显式指定 httpOnly: true 属性精准注入
+   * @param url 目标网站 URL
+   * @param cookies 支持格式: "key=val; key2=val2" 或 CookieDetail[] 结构化数组
+   * @param target 可选指定写入哪个 pageId 或 profile 独立分区
+   * @returns 成功设置的 Cookie 键值对数量
+   */
+  async set(url, cookies, target) {
+    const payload = {
+      url,
+      pageId: target?.pageId,
+      profile: target?.profile
+    };
+    if (Array.isArray(cookies)) {
+      payload.cookies = cookies;
+    } else {
+      payload.input = cookies;
+      payload.cookies = cookies;
+    }
+    const res = await this.client.invoke("cookie", "set", payload);
     return res.count;
   }
   /**
@@ -645,15 +804,16 @@ var StorageModule = class {
   constructor(client) {
     this.client = client;
   }
+  // ==================== 1. 原生跨页面持久化存储 (突破 Web 5MB 限制) ====================
   /**
-   * 保存键值数据
+   * 保存键值数据至原生持久化层
    */
   async set(key, value) {
     const res = await this.client.invoke("storage", "set", { key, value });
     return res.success;
   }
   /**
-   * 读取键值数据（未找到返回 null）
+   * 读取原生持久化数据（未找到返回 null）
    */
   async get(key) {
     const res = await this.client.invoke("storage", "get", { key });
@@ -678,25 +838,96 @@ var StorageModule = class {
     }
   }
   /**
-   * 删除指定键
+   * 删除指定原生持久化键
    */
   async remove(key) {
     const res = await this.client.invoke("storage", "remove", { key });
     return res.success;
   }
   /**
-   * 清空全部持久化键值
+   * 清空全部原生持久化数据
    */
   async clear() {
     const res = await this.client.invoke("storage", "clear");
     return res.success;
   }
   /**
-   * 获取所有键名列表
+   * 获取所有原生持久化键名列表
    */
   async keys() {
     const res = await this.client.invoke("storage", "keys");
     return res.keys;
+  }
+  // ==================== 2. WebView 实例 LocalStorage 深度读写 ====================
+  /**
+   * 读取指定 WebView 实例 (或当前前台活跃 WebView) 的完整 LocalStorage 键值字典
+   * @param options 可选指定 target pageId
+   */
+  async getLocalStorage(options) {
+    const res = await this.client.invoke("storage", "getLocalStorage", {
+      pageId: options?.pageId
+    });
+    return res.data || {};
+  }
+  /**
+   * 向指定 WebView 实例批量写入 LocalStorage 键值对
+   * @param data 要写入的键值字典
+   * @param options 可选指定 target pageId
+   */
+  async setLocalStorage(data, options) {
+    const res = await this.client.invoke("storage", "setLocalStorage", {
+      data,
+      pageId: options?.pageId
+    });
+    return res.success;
+  }
+  /**
+   * 清空指定 WebView 实例的 LocalStorage
+   * @param options 可选指定 target pageId
+   */
+  async clearLocalStorage(options) {
+    const res = await this.client.invoke("storage", "clearLocalStorage", {
+      pageId: options?.pageId
+    });
+    return res.success;
+  }
+  // ==================== 3. WebView 实例 SessionStorage 读写 ====================
+  /**
+   * 读取指定 WebView 实例的 SessionStorage
+   */
+  async getSessionStorage(options) {
+    const res = await this.client.invoke("storage", "getSessionStorage", {
+      pageId: options?.pageId
+    });
+    return res.data || {};
+  }
+  /**
+   * 写入 SessionStorage
+   */
+  async setSessionStorage(data, options) {
+    const res = await this.client.invoke("storage", "setSessionStorage", {
+      data,
+      pageId: options?.pageId
+    });
+    return res.success;
+  }
+  /**
+   * 清空 SessionStorage
+   */
+  async clearSessionStorage(options) {
+    const res = await this.client.invoke("storage", "clearSessionStorage", {
+      pageId: options?.pageId
+    });
+    return res.success;
+  }
+  // ==================== 4. 一键导出全量存储 (Cookies含HttpOnly + LocalStorage) ====================
+  /**
+   * 一键导出目标页面的全部存储数据（包含所有带 HttpOnly 的 Cookie、LocalStorage、SessionStorage）
+   */
+  async dumpStorage(options) {
+    return this.client.invoke("storage", "dumpStorage", {
+      pageId: options?.pageId
+    });
   }
 };
 

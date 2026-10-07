@@ -99,6 +99,10 @@ public class WebViewPool {
         this.pageConfigurator = configurator;
     }
 
+    public Context getContext() {
+        return context;
+    }
+
     /**
      * 检测设备底层 Chromium 是否支持 MULTI_PROFILE 多 Profile 物理隔离
      */

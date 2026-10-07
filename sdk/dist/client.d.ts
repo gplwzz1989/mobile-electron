@@ -2,7 +2,7 @@
  * @file client.ts
  * @description Mobile Electron 核心通信客户端与 Page 抽象
  */
-import { Platform, HardwareConfig, CapturedResponse, UnsubscribeFn } from './types';
+import { Platform, HardwareConfig, CapturedResponse, UnsubscribeFn, CookieDetail, StorageDump } from './types';
 export declare class Page {
     readonly pageId: string;
     readonly isHeadless: boolean;
@@ -31,13 +31,33 @@ export declare class Page {
      */
     sendToBack(): Promise<void>;
     /**
-     * 获取当前页面底层的完整 Cookie (自动精准匹配其独立 Profile 分区)
+     * 获取当前页面底层的完整 Cookie 字符串 (a=b; c=d，包含所有 HttpOnly)
      */
-    getCookies(): Promise<string>;
+    getCookies(url?: string): Promise<string>;
     /**
-     * 导入并设置当前页面的 Cookie (精准写入其独立 Profile 分区，不污染其他页面)
+     * 全量提取当前页面底层的全部 Cookie 结构体对象 (包含所有 HttpOnly、Secure、Domain、Path、Expires)
      */
-    setCookies(cookies: string): Promise<boolean>;
+    getAllCookies(url?: string): Promise<CookieDetail[]>;
+    /**
+     * 导入并设置当前页面的 Cookie (精准写入其独立 Profile 分区，支持字符串或 CookieDetail 数组)
+     */
+    setCookies(cookies: string | CookieDetail[]): Promise<boolean>;
+    /**
+     * 读取当前页面加载域名下的完整 LocalStorage 键值字典
+     */
+    getLocalStorage(): Promise<Record<string, string>>;
+    /**
+     * 向当前页面的 LocalStorage 批量写入键值对
+     */
+    setLocalStorage(data: Record<string, string>): Promise<boolean>;
+    /**
+     * 清空当前页面的 LocalStorage
+     */
+    clearLocalStorage(): Promise<boolean>;
+    /**
+     * 一键导出当前页面的全量存储快照 (全部含 HttpOnly 的 Cookie + LocalStorage + SessionStorage)
+     */
+    dumpStorage(): Promise<StorageDump>;
     /**
      * 清空当前页面对应 Profile 的所有 Cookie 和本地存储 (LocalStorage / IndexedDB)
      */

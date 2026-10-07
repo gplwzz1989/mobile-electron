@@ -89,13 +89,25 @@ export interface PageInfo {
     profile: string;
     hardware?: HardwareConfig;
 }
-export interface CookieItem {
+export interface CookieDetail {
     name: string;
     value: string;
-    domain?: string;
-    path?: string;
-    secure?: boolean;
-    httpOnly?: boolean;
+    domain: string;
+    path: string;
+    secure: boolean;
+    httpOnly: boolean;
+    expires?: number;
+    sameSite?: string;
+}
+export type CookieItem = CookieDetail;
+export interface StorageDump {
+    cookies: CookieDetail[];
+    cookieString: string;
+    localStorage: Record<string, string>;
+    sessionStorage: Record<string, string>;
+    url: string;
+    profile: string;
+    pageId?: string;
 }
 export interface NativeRequestOptions {
     url: string;

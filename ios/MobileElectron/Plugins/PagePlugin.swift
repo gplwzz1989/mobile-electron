@@ -149,50 +149,311 @@ public class PagePlugin: IBridgePlugin {
             webViewPool.closePage(pageId: pageId)
             completion(200, ["success": true], "success")
 
-        case "getCookies":
+        case "getCookies", "getAllCookies":
             guard let pageId = params["pageId"] as? String,
                   let page = webViewPool.getPage(pageId: pageId) else {
                 completion(404, nil, "Page not found")
                 return
             }
+
+            let isGetAll = (action == "getAllCookies") || (params["all"] as? Bool ?? false)
+            let host = page.webView.url?.host?.lowercased()
+
             page.dataStore.httpCookieStore.getAllCookies { cookies in
-                let formatted = cookies.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
-                completion(200, ["cookies": formatted, "profile": page.profileName], "success")
+                let matched: [HTTPCookie]
+                if isGetAll || host == nil {
+                    matched = cookies
+                } else {
+                    let h = host!
+                    matched = cookies.filter { c in
+                        var cd = c.domain.lowercased()
+                        if cd.hasPrefix(".") { cd.removeFirst() }
+                        return h == cd || h.hasSuffix("." + cd) || cd.hasSuffix("." + h)
+                    }
+                }
+
+                let details: [[String: Any]] = matched.map { c in
+                    var dict: [String: Any] = [
+                        "name": c.name,
+                        "value": c.value,
+                        "domain": c.domain,
+                        "path": c.path,
+                        "httpOnly": c.isHTTPOnly,
+                        "secure": c.isSecure
+                    ]
+                    if let exp = c.expiresDate {
+                        dict["expires"] = Int64(exp.timeIntervalSince1970)
+                    } else {
+                        dict["expires"] = 0
+                    }
+                    return dict
+                }
+                let formatted = matched.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
+                completion(200, [
+                    "cookies": formatted,
+                    "details": details,
+                    "count": details.count,
+                    "profile": page.profileName,
+                    "pageId": page.pageId
+                ], "success")
             }
 
         case "setCookies":
             guard let pageId = params["pageId"] as? String,
-                  let page = webViewPool.getPage(pageId: pageId),
-                  let rawInput = params["cookies"] as? String else {
-                completion(400, nil, "Missing parameters")
+                  let page = webViewPool.getPage(pageId: pageId) else {
+                completion(404, nil, "Page not found")
                 return
             }
+
             let currentHost = page.webView.url?.host ?? "douyin.com"
             let cookieStore = page.dataStore.httpCookieStore
-            let pairs = rawInput.components(separatedBy: ";")
+            let isHttps = (page.webView.url?.scheme?.lowercased() == "https")
             let group = DispatchGroup()
+            var count = 0
 
-            for pair in pairs {
-                let parts = pair.trimmingCharacters(in: .whitespaces).split(separator: "=", maxSplits: 1).map(String.init)
-                if parts.count == 2 {
-                    let props: [HTTPCookiePropertyKey: Any] = [
-                        .name: parts[0],
-                        .value: parts[1],
-                        .domain: currentHost,
-                        .path: "/"
+            if let arr = (params["cookies"] as? [[String: Any]]) ?? (params["items"] as? [[String: Any]]) {
+                for item in arr {
+                    guard let name = item["name"] as? String, !name.isEmpty,
+                          let val = item["value"] as? String else { continue }
+
+                    let domain = (item["domain"] as? String) ?? currentHost
+                    let path = (item["path"] as? String) ?? "/"
+                    let secure = (item["secure"] as? Bool) ?? isHttps
+                    let httpOnly = (item["httpOnly"] as? Bool) ?? false
+
+                    var props: [HTTPCookiePropertyKey: Any] = [
+                        .name: name,
+                        .value: val,
+                        .domain: domain,
+                        .path: path
                     ]
+                    if let expSec = item["expires"] as? Int64, expSec > 0 {
+                        props[.expires] = Date(timeIntervalSince1970: TimeInterval(expSec))
+                    } else {
+                        props[.expires] = Date().addingTimeInterval(86400 * 365)
+                    }
+                    if secure { props[.secure] = "TRUE" }
+                    if httpOnly { props[HTTPCookiePropertyKey("HttpOnly")] = "TRUE" }
+
                     if let c = HTTPCookie(properties: props) {
                         group.enter()
-                        cookieStore.setCookie(c) { group.leave() }
+                        cookieStore.setCookie(c) {
+                            count += 1
+                            group.leave()
+                        }
+                    }
+                }
+            } else if let rawInput = (params["cookies"] as? String) ?? (params["input"] as? String) {
+                let pairs = rawInput.components(separatedBy: ";")
+                for pair in pairs {
+                    let parts = pair.trimmingCharacters(in: .whitespaces).split(separator: "=", maxSplits: 1).map(String.init)
+                    if parts.count == 2 {
+                        let props: [HTTPCookiePropertyKey: Any] = [
+                            .name: parts[0],
+                            .value: parts[1],
+                            .domain: currentHost,
+                            .path: "/"
+                        ]
+                        if let c = HTTPCookie(properties: props) {
+                            group.enter()
+                            cookieStore.setCookie(c) {
+                                count += 1
+                                group.leave()
+                            }
+                        }
                     }
                 }
             }
+
             group.notify(queue: .main) {
-                completion(200, ["success": true, "profile": page.profileName], "success")
+                completion(200, ["success": true, "count": count, "profile": page.profileName, "pageId": page.pageId], "success")
+            }
+
+        case "getLocalStorage":
+            guard let pageId = params["pageId"] as? String,
+                  let page = webViewPool.getPage(pageId: pageId) else {
+                completion(404, nil, "Page not found")
+                return
+            }
+
+            DispatchQueue.main.async {
+                let script = """
+                (function() {
+                    try {
+                        var res = {};
+                        for (var i = 0; i < localStorage.length; i++) {
+                            var k = localStorage.key(i);
+                            if (k !== null) res[k] = localStorage.getItem(k);
+                        }
+                        return JSON.stringify({ success: true, data: res });
+                    } catch(e) {
+                        return JSON.stringify({ success: false, error: String(e) });
+                    }
+                })();
+                """
+                page.webView.evaluateJavaScript(script) { result, error in
+                    guard error == nil, let jsonStr = result as? String,
+                          let data = jsonStr.data(using: .utf8),
+                          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let success = json["success"] as? Bool, success else {
+                        completion(500, nil, "Failed to read localStorage: \(error?.localizedDescription ?? "unknown")")
+                        return
+                    }
+
+                    let items = json["data"] as? [String: Any] ?? [:]
+                    completion(200, [
+                        "data": items,
+                        "count": items.count,
+                        "pageId": page.pageId,
+                        "url": page.webView.url?.absoluteString ?? ""
+                    ], "success")
+                }
+            }
+
+        case "setLocalStorage":
+            guard let pageId = params["pageId"] as? String,
+                  let page = webViewPool.getPage(pageId: pageId) else {
+                completion(404, nil, "Page not found")
+                return
+            }
+
+            var toSet: [String: Any] = (params["data"] as? [String: Any]) ?? (params["items"] as? [String: Any]) ?? [:]
+            if toSet.isEmpty, let key = params["key"] as? String, let val = params["value"] {
+                toSet[key] = val
+            }
+
+            guard !toSet.isEmpty,
+                  let jsonData = try? JSONSerialization.data(withJSONObject: toSet),
+                  let jsonString = String(data: jsonData, encoding: .utf8) else {
+                completion(400, nil, "Invalid data to set in localStorage")
+                return
+            }
+
+            DispatchQueue.main.async {
+                let escaped = jsonString.replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "`", with: "\\`")
+                    .replacingOccurrences(of: "$", with: "\\$")
+                let script = """
+                (function() {
+                    try {
+                        var items = JSON.parse(`\(escaped)`);
+                        for (var k in items) {
+                            if (Object.prototype.hasOwnProperty.call(items, k)) {
+                                localStorage.setItem(k, items[k]);
+                            }
+                        }
+                        return JSON.stringify({ success: true, count: Object.keys(items).length });
+                    } catch(e) {
+                        return JSON.stringify({ success: false, error: String(e) });
+                    }
+                })();
+                """
+                page.webView.evaluateJavaScript(script) { result, error in
+                    if let err = error {
+                        completion(500, nil, "Failed to set localStorage: \(err.localizedDescription)")
+                    } else {
+                        completion(200, ["success": true, "pageId": page.pageId], "success")
+                    }
+                }
+            }
+
+        case "clearLocalStorage":
+            guard let pageId = params["pageId"] as? String,
+                  let page = webViewPool.getPage(pageId: pageId) else {
+                completion(404, nil, "Page not found")
+                return
+            }
+            DispatchQueue.main.async {
+                page.webView.evaluateJavaScript("localStorage.clear(); 'true';") { _, _ in
+                    completion(200, ["success": true, "pageId": page.pageId], "success")
+                }
+            }
+
+        case "dumpStorage":
+            guard let pageId = params["pageId"] as? String,
+                  let page = webViewPool.getPage(pageId: pageId) else {
+                completion(404, nil, "Page not found")
+                return
+            }
+
+            let profileName = page.profileName
+            let cookieStore = page.dataStore.httpCookieStore
+            let pageUrl = page.webView.url?.absoluteString ?? ""
+            let host = page.webView.url?.host?.lowercased()
+
+            cookieStore.getAllCookies { cookies in
+                let matched: [HTTPCookie]
+                if let h = host {
+                    matched = cookies.filter { c in
+                        var cd = c.domain.lowercased()
+                        if cd.hasPrefix(".") { cd.removeFirst() }
+                        return h == cd || h.hasSuffix("." + cd) || cd.hasSuffix("." + h)
+                    }
+                } else {
+                    matched = cookies
+                }
+
+                let cookieDetails: [[String: Any]] = matched.map { c in
+                    var dict: [String: Any] = [
+                        "name": c.name,
+                        "value": c.value,
+                        "domain": c.domain,
+                        "path": c.path,
+                        "httpOnly": c.isHTTPOnly,
+                        "secure": c.isSecure
+                    ]
+                    if let exp = c.expiresDate {
+                        dict["expires"] = Int64(exp.timeIntervalSince1970)
+                    } else {
+                        dict["expires"] = 0
+                    }
+                    return dict
+                }
+                let cookieString = matched.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
+
+                DispatchQueue.main.async {
+                    let script = """
+                    (function() {
+                        var ls = {}, ss = {};
+                        try {
+                            for (var i = 0; i < localStorage.length; i++) {
+                                var k = localStorage.key(i);
+                                if (k !== null) ls[k] = localStorage.getItem(k);
+                            }
+                        } catch(e) {}
+                        try {
+                            for (var j = 0; j < sessionStorage.length; j++) {
+                                var sk = sessionStorage.key(j);
+                                if (sk !== null) ss[sk] = sessionStorage.getItem(sk);
+                            }
+                        } catch(e) {}
+                        return JSON.stringify({ localStorage: ls, sessionStorage: ss });
+                    })();
+                    """
+                    page.webView.evaluateJavaScript(script) { result, _ in
+                        var lsObj: [String: Any] = [:]
+                        var ssObj: [String: Any] = [:]
+                        if let jsonStr = result as? String,
+                           let data = jsonStr.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                            lsObj = json["localStorage"] as? [String: Any] ?? [:]
+                            ssObj = json["sessionStorage"] as? [String: Any] ?? [:]
+                        }
+
+                        completion(200, [
+                            "pageId": page.pageId,
+                            "profile": profileName,
+                            "url": pageUrl,
+                            "cookies": cookieDetails,
+                            "cookieString": cookieString,
+                            "localStorage": lsObj,
+                            "sessionStorage": ssObj
+                        ], "success")
+                    }
+                }
             }
 
         case "startDouyinQrLogin":
-            // 创建无头页面并加载 creator.douyin.com
             _ = webViewPool.createHeadlessPage(
                 customUA: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
                 profileName: "douyin_session",

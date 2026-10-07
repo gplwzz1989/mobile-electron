@@ -314,25 +314,47 @@
             </div>
         </section>
 
-        <!-- 选项卡 2: Cookie 管理中心 -->
+        <!-- 选项卡 2: Cookie 与 LocalStorage 管理中心 -->
         <section id="tab-cookie" class="tab-pane">
             <div class="card" style="border-left: 4px solid #0284c7;">
                 <div class="card-header">
-                    <span class="card-title">🍪 Cookie 实时读写与分区管理</span>
+                    <span class="card-title">🍪 Cookie 全量提取 (含 HttpOnly) 与注入</span>
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1;">SQLite 级提取</span>
                 </div>
                 <p class="card-desc">
-                    可指定 URL 及 Profile 分区，实现底层 SQLite 数据库级的读取、批量注入与一键清空。
+                    支持底层 SQLite 数据库直读，<strong>100% 完整提取包括 HttpOnly、Secure 在内的全部 Cookie</strong>，亦可跨域名或按具体 Profile 分区隔离提取。
                 </p>
                 <div style="margin-bottom: 10px;">
                     <input type="text" class="url-input" id="cookieQueryUrl" value="https://m.baidu.com" style="width: 100%; margin-bottom: 8px;" placeholder="目标域名 URL">
-                    <input type="text" class="url-input" id="cookieImportInput" value="ME_SESSION_ID=test_123456; USER_TOKEN=token_abc888" style="width: 100%;" placeholder="Cookie 注入内容 (key=val; key2=val2)">
+                    <input type="text" class="url-input" id="cookieImportInput" value="ME_SESSION_ID=test_123456; USER_TOKEN=token_abc888; HttpOnly" style="width: 100%;" placeholder="Cookie 注入内容 (key=val; key2=val2 或 JSON)">
                 </div>
                 <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="queryTargetCookies()">读取目标 Cookie</button>
+                    <button class="btn btn-primary" onclick="queryAllCookiesWithHttpOnly()">⚡ 全量提取 (含 HttpOnly)</button>
+                    <button class="btn btn-outline" onclick="queryTargetCookies()">读取标准格式</button>
                     <button class="btn btn-success" onclick="importTargetCookies()">注入指定 Cookie</button>
                     <button class="btn btn-outline" onclick="copyCurrentCookies()">复制到剪贴板</button>
-                    <button class="btn btn-danger" onclick="clearTargetCookies()">清空该域 Cookie</button>
+                    <button class="btn btn-danger" onclick="clearTargetCookies()">清空 Cookie</button>
                 </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #10b981;">
+                <div class="card-header">
+                    <span class="card-title">💾 WebView LocalStorage 深度读写</span>
+                    <span class="badge" style="background: #dcfce7; color: #15803d;">跨实例操控</span>
+                </div>
+                <p class="card-desc">
+                    突破跨域限制，直接在指定 WebView 实例上下文提取与写入 <code>localStorage</code> 和 <code>sessionStorage</code>。
+                </p>
+                <div style="margin-bottom: 10px;">
+                    <input type="text" class="url-input" id="lsKeyInput" value="ME_USER_PREF" style="width: 48%; margin-right: 2%; display: inline-block;" placeholder="LocalStorage 键名">
+                    <input type="text" class="url-input" id="lsValInput" value="DarkTheme_Active" style="width: 48%; display: inline-block;" placeholder="LocalStorage 键值">
+                </div>
+                <div class="btn-grid">
+                    <button class="btn btn-primary" onclick="testWebViewLocalStorageGet()">读取 LocalStorage</button>
+                    <button class="btn btn-success" onclick="testWebViewLocalStorageSet()">写入 LocalStorage</button>
+                    <button class="btn btn-danger" onclick="testWebViewLocalStorageClear()">清空 LocalStorage</button>
+                </div>
+                <button class="btn btn-warning btn-block" style="margin-top: 10px;" onclick="testDumpStorage()">📦 一键导出当前页面全部存储 (含 HttpOnly Cookie + LocalStorage)</button>
             </div>
         </section>
 
@@ -555,18 +577,34 @@
             log('任务启动结果:', res);
         }
 
-        // Cookie 管理
+        // Cookie 与 LocalStorage 管理
+        async function queryAllCookiesWithHttpOnly() {
+            const url = document.getElementById('cookieQueryUrl').value;
+            log(`正在全量检索底层 SQLite 数据库 Cookie (含 HttpOnly)...`);
+            const details = await sdk.cookie.getAll({ url, all: false });
+            log(`✅ 共检索到 ${details.length} 项 Cookie (含完整 HttpOnly / Secure 元数据):`);
+            details.forEach((c, idx) => {
+                const badges = [
+                    c.httpOnly ? '🔒 [HttpOnly]' : '',
+                    c.secure ? '🛡️ [Secure]' : ''
+                ].filter(Boolean).join(' ');
+                log(`  #${idx + 1} ${c.name}=${c.value} ${badges}\n     (Domain: ${c.domain}, Path: ${c.path}, Expires: ${c.expires ? new Date(c.expires * 1000).toLocaleString() : 'Session'})`);
+            });
+            const httpOnlyCount = details.filter(c => c.httpOnly).length;
+            await sdk.device.toast(`提取到 ${details.length} 项 Cookie (含 ${httpOnlyCount} 个 HttpOnly)`);
+        }
+
         async function queryTargetCookies() {
             const url = document.getElementById('cookieQueryUrl').value;
             const cookies = await sdk.cookie.get(url);
-            log(`[${url}] 的完整 Cookie:`, cookies || '(空)');
+            log(`[${url}] 的标准格式 Cookie:`, cookies || '(空)');
         }
 
         async function importTargetCookies() {
             const url = document.getElementById('cookieQueryUrl').value;
             const raw = document.getElementById('cookieImportInput').value;
             const count = await sdk.cookie.set(url, raw);
-            log(`成功向 [${url}] 注入 ${count} 项 Cookie！`);
+            log(`成功向 [${url}] 注入 ${count} 项 Cookie (已包含 HttpOnly 标志写入)！`);
             await sdk.device.toast(`成功写入 ${count} 项 Cookie`);
         }
 
@@ -587,6 +625,50 @@
             await sdk.device.toast('Cookie 已成功清空');
             log('Cookie 清空完成');
         }
+
+        // WebView 实例 LocalStorage 管理
+        async function testWebViewLocalStorageGet() {
+            log('正在读取当前 WebView 实例的 LocalStorage...');
+            const data = await sdk.storage.getLocalStorage();
+            log('当前 WebView LocalStorage 全部内容:', data);
+            await sdk.device.toast(`已读取 ${Object.keys(data).length} 项 LocalStorage`);
+        }
+
+        async function testWebViewLocalStorageSet() {
+            const key = document.getElementById('lsKeyInput').value.trim();
+            const val = document.getElementById('lsValInput').value.trim();
+            if (!key) {
+                await sdk.device.toast('请输入键名');
+                return;
+            }
+            log(`正在向当前 WebView 写入 LocalStorage [${key} = ${val}]...`);
+            await sdk.storage.setLocalStorage({ [key]: val });
+            log(`✅ LocalStorage 写入成功: ${key} = ${val}`);
+            await sdk.device.toast('写入 LocalStorage 成功');
+        }
+
+        async function testWebViewLocalStorageClear() {
+            log('正在清空当前 WebView 实例的 LocalStorage...');
+            await sdk.storage.clearLocalStorage();
+            log('✅ LocalStorage 已完全清空');
+            await sdk.device.toast('LocalStorage 已清空');
+        }
+
+        async function testDumpStorage() {
+            log('正在生成当前页面全量存储快照 (Cookie含HttpOnly + LocalStorage + SessionStorage)...');
+            const dump = await sdk.storage.dumpStorage();
+            log('🎉 存储快照导出完成:', {
+                pageId: dump.pageId,
+                profile: dump.profile,
+                url: dump.url,
+                cookieCount: dump.cookies ? dump.cookies.length : 0,
+                cookies: dump.cookies,
+                localStorage: dump.localStorage,
+                sessionStorage: dump.sessionStorage
+            });
+            await sdk.device.toast(`已提取 ${dump.cookies.length} 项 Cookie 与全部 LocalStorage`);
+        }
+
 
         // 硬件指纹全维度检测
         async function checkCurrentHardware() {

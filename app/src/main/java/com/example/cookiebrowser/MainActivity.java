@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
             pageEngine.registerPlugin(new WindowPlugin(MainActivity.this, webViewPool));
             pageEngine.registerPlugin(new AppPlugin(MainActivity.this));
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(MainActivity.this));
-            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(MainActivity.this));
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(MainActivity.this, webViewPool));
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(MainActivity.this));
             targetWebView.addJavascriptInterface(pageEngine, "AndroidBridge");
         });
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine.registerPlugin(new WindowPlugin(this, webViewPool));
         bridgeEngine.registerPlugin(new AppPlugin(this));
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(this));
-        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(this));
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(this, webViewPool));
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(this));
 
         webView.addJavascriptInterface(bridgeEngine, "AndroidBridge");
@@ -806,11 +806,11 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
         tvSubtitle.setText("站点: " + (TextUtils.isEmpty(host) ? currentUrl : host) + "  |  Profile: " + currentProfile);
 
-        String standardCookies = CookieHelper.exportCookiesAsStandardString(cm, currentUrl);
-        String jsonCookies = CookieHelper.exportCookiesAsJson(cm, currentUrl);
+        String standardCookies = CookieHelper.exportCookiesAsStandardString(this, cm, currentProfile, currentUrl);
+        String jsonCookies = CookieHelper.exportCookiesAsJson(this, cm, currentProfile, currentUrl);
         etExportCode.setText(standardCookies);
 
-        List<CookieHelper.CookieItem> parsedCookies = CookieHelper.parseCookiesFromInput(standardCookies, currentUrl);
+        List<CookieHelper.CookieItem> parsedCookies = CookieHelper.readCookiesWithDetails(this, cm, currentProfile, currentUrl, false);
         tvSummary.setText("共加载 " + parsedCookies.size() + " 项 Cookie (" + currentProfile + ")");
 
         layoutCookieItems.removeAllViews();
@@ -832,12 +832,51 @@ public class MainActivity extends AppCompatActivity {
                 lp.setMargins(0, 0, 0, 16);
                 card.setLayoutParams(lp);
 
+                LinearLayout rowHeader = new LinearLayout(this);
+                rowHeader.setOrientation(LinearLayout.HORIZONTAL);
+                rowHeader.setGravity(Gravity.CENTER_VERTICAL);
+
                 TextView tvName = new TextView(this);
                 tvName.setText(item.name);
                 tvName.setTextColor(0xFF4F46E5);
                 tvName.setTextSize(14);
                 tvName.setTypeface(null, android.graphics.Typeface.BOLD);
-                card.addView(tvName);
+                rowHeader.addView(tvName);
+
+                if (item.httpOnly) {
+                    TextView tvHttpOnly = new TextView(this);
+                    tvHttpOnly.setText(" HttpOnly ");
+                    tvHttpOnly.setTextSize(10);
+                    tvHttpOnly.setTextColor(0xFFFFFFFF);
+                    tvHttpOnly.setBackgroundColor(0xFF0284C7);
+                    LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    badgeLp.setMargins(16, 0, 0, 0);
+                    tvHttpOnly.setLayoutParams(badgeLp);
+                    rowHeader.addView(tvHttpOnly);
+                }
+
+                if (item.secure) {
+                    TextView tvSecure = new TextView(this);
+                    tvSecure.setText(" Secure ");
+                    tvSecure.setTextSize(10);
+                    tvSecure.setTextColor(0xFFFFFFFF);
+                    tvSecure.setBackgroundColor(0xFF059669);
+                    LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    badgeLp.setMargins(8, 0, 0, 0);
+                    tvSecure.setLayoutParams(badgeLp);
+                    rowHeader.addView(tvSecure);
+                }
+
+                card.addView(rowHeader);
+
+                TextView tvDomain = new TextView(this);
+                tvDomain.setText("Domain: " + item.domain + " | Path: " + item.path);
+                tvDomain.setTextColor(0xFF64748B);
+                tvDomain.setTextSize(11);
+                tvDomain.setPadding(0, 4, 0, 2);
+                card.addView(tvDomain);
 
                 TextView tvVal = new TextView(this);
                 tvVal.setText(item.value);
@@ -845,7 +884,7 @@ public class MainActivity extends AppCompatActivity {
                 tvVal.setTextSize(12);
                 tvVal.setMaxLines(2);
                 tvVal.setEllipsize(TextUtils.TruncateAt.END);
-                tvVal.setPadding(0, 6, 0, 6);
+                tvVal.setPadding(0, 4, 0, 6);
                 card.addView(tvVal);
 
                 card.setOnClickListener(v -> {

@@ -130,20 +130,104 @@ export class MockEngine {
                 return Promise.resolve({ success: true } as unknown as T);
 
             case 'cookie.get':
+            case 'cookie.getAll':
+            case 'page.getCookies':
+            case 'page.getAllCookies': {
+                const rawDoc = typeof document !== 'undefined' ? document.cookie : '';
+                const items = rawDoc.split(';').filter(Boolean).map(p => {
+                    const idx = p.indexOf('=');
+                    const name = idx > -1 ? p.slice(0, idx).trim() : p.trim();
+                    const value = idx > -1 ? p.slice(idx + 1).trim() : '';
+                    return {
+                        name,
+                        value,
+                        domain: typeof window !== 'undefined' ? window.location.hostname : 'localhost',
+                        path: '/',
+                        secure: false,
+                        httpOnly: false
+                    };
+                });
                 return Promise.resolve({
-                    cookies: typeof document !== 'undefined' ? document.cookie : '',
+                    cookies: rawDoc,
+                    details: items,
+                    count: items.length,
                     profile: params.profile || 'default'
                 } as unknown as T);
+            }
 
             case 'cookie.import':
             case 'cookie.set':
-                if (typeof document !== 'undefined' && params.input) {
-                    document.cookie = params.input;
+            case 'page.setCookies':
+                if (typeof document !== 'undefined') {
+                    if (Array.isArray(params.cookies)) {
+                        params.cookies.forEach((c: any) => {
+                            if (c.name) document.cookie = `${c.name}=${c.value}; path=${c.path || '/'}`;
+                        });
+                    } else if (params.input || params.cookies) {
+                        document.cookie = params.input || params.cookies;
+                    }
                 }
-                return Promise.resolve({ count: 1, profile: params.profile || 'default' } as unknown as T);
+                return Promise.resolve({ count: 1, success: true, profile: params.profile || 'default' } as unknown as T);
 
             case 'cookie.clear':
                 return Promise.resolve({ success: true, profile: params.profile || 'default' } as unknown as T);
+
+            case 'storage.getLocalStorage':
+            case 'page.getLocalStorage': {
+                const data: Record<string, string> = {};
+                if (typeof localStorage !== 'undefined') {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && !k.startsWith('me_')) data[k] = localStorage.getItem(k) || '';
+                    }
+                }
+                return Promise.resolve({ data, count: Object.keys(data).length } as unknown as T);
+            }
+
+            case 'storage.setLocalStorage':
+            case 'page.setLocalStorage': {
+                if (typeof localStorage !== 'undefined' && params.data) {
+                    for (const k of Object.keys(params.data)) {
+                        localStorage.setItem(k, params.data[k]);
+                    }
+                }
+                return Promise.resolve({ success: true } as unknown as T);
+            }
+
+            case 'storage.clearLocalStorage':
+            case 'page.clearLocalStorage': {
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.clear();
+                }
+                return Promise.resolve({ success: true } as unknown as T);
+            }
+
+            case 'storage.dumpStorage':
+            case 'page.dumpStorage': {
+                const ls: Record<string, string> = {};
+                const ss: Record<string, string> = {};
+                if (typeof localStorage !== 'undefined') {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k) ls[k] = localStorage.getItem(k) || '';
+                    }
+                }
+                if (typeof sessionStorage !== 'undefined') {
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const k = sessionStorage.key(i);
+                        if (k) ss[k] = sessionStorage.getItem(k) || '';
+                    }
+                }
+                return Promise.resolve({
+                    cookies: [],
+                    cookieString: typeof document !== 'undefined' ? document.cookie : '',
+                    localStorage: ls,
+                    sessionStorage: ss,
+                    url: typeof window !== 'undefined' ? window.location.href : '',
+                    profile: params.profile || 'default'
+                } as unknown as T);
+            }
+
 
             case 'network.fetch':
                 return Promise.resolve({

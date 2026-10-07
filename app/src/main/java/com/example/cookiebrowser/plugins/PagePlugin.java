@@ -223,7 +223,8 @@ public class PagePlugin implements IBridgePlugin {
                 break;
             }
 
-            case "getCookies": {
+            case "getCookies":
+            case "getAllCookies": {
                 String pageId = params.optString("pageId");
                 WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
                 if (page == null) {
@@ -231,14 +232,36 @@ public class PagePlugin implements IBridgePlugin {
                     return;
                 }
 
+                boolean isGetAll = "getAllCookies".equals(action) || params.optBoolean("all", false);
+                String customUrl = params.optString("url");
+
                 mainHandler.post(() -> {
-                    String url = page.webView.getUrl();
+                    String pageUrl = !TextUtils.isEmpty(customUrl) ? customUrl : (page.webView != null ? page.webView.getUrl() : "");
                     CookieManager cm = webViewPool.getCookieManager(page.profileName);
-                    String cookies = CookieHelper.exportCookiesAsStandardString(cm, url);
+
+                    List<CookieHelper.CookieItem> items = CookieHelper.readCookiesWithDetails(
+                            webViewPool.getContext(),
+                            cm,
+                            page.profileName,
+                            pageUrl,
+                            isGetAll || TextUtils.isEmpty(pageUrl)
+                    );
+
+                    JSONArray detailsArray = new JSONArray();
+                    StringBuilder sb = new StringBuilder();
+                    for (CookieHelper.CookieItem item : items) {
+                        detailsArray.put(item.toJson());
+                        if (sb.length() > 0) sb.append("; ");
+                        sb.append(item.name).append("=").append(item.value);
+                    }
+
                     try {
                         JSONObject res = new JSONObject();
-                        res.put("cookies", cookies);
+                        res.put("cookies", sb.toString());
+                        res.put("details", detailsArray);
+                        res.put("count", items.size());
                         res.put("profile", page.profileName);
+                        res.put("pageId", page.pageId);
                         callback.success(res);
                     } catch (Exception e) {
                         callback.error(500, e.getMessage());
@@ -249,7 +272,6 @@ public class PagePlugin implements IBridgePlugin {
 
             case "setCookies": {
                 String pageId = params.optString("pageId");
-                String cookies = params.optString("cookies");
                 WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
                 if (page == null) {
                     callback.error(404, "Page ID '" + pageId + "' not found");
@@ -257,14 +279,34 @@ public class PagePlugin implements IBridgePlugin {
                 }
 
                 mainHandler.post(() -> {
-                    String url = page.webView.getUrl();
+                    String url = page.webView != null ? page.webView.getUrl() : "";
                     CookieManager cm = webViewPool.getCookieManager(page.profileName);
-                    int count = CookieHelper.importCookies(cm, url, cookies);
+
+                    int count = 0;
+                    JSONArray cookiesArr = params.optJSONArray("cookies");
+                    if (cookiesArr == null) cookiesArr = params.optJSONArray("items");
+
+                    if (cookiesArr != null) {
+                        List<CookieHelper.CookieItem> list = new java.util.ArrayList<>();
+                        for (int i = 0; i < cookiesArr.length(); i++) {
+                            JSONObject obj = cookiesArr.optJSONObject(i);
+                            if (obj != null) {
+                                CookieHelper.CookieItem item = CookieHelper.CookieItem.fromJson(obj);
+                                if (item != null) list.add(item);
+                            }
+                        }
+                        count = CookieHelper.importCookies(cm, url, list);
+                    } else {
+                        String cookies = params.optString("cookies", params.optString("input", ""));
+                        count = CookieHelper.importCookies(cm, url, cookies);
+                    }
+
                     try {
                         JSONObject res = new JSONObject();
                         res.put("success", count > 0);
                         res.put("count", count);
                         res.put("profile", page.profileName);
+                        res.put("pageId", page.pageId);
                         callback.success(res);
                     } catch (Exception e) {
                         callback.error(500, e.getMessage());
@@ -272,6 +314,202 @@ public class PagePlugin implements IBridgePlugin {
                 });
                 break;
             }
+
+            case "getLocalStorage": {
+                String pageId = params.optString("pageId");
+                WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
+                if (page == null || page.webView == null) {
+                    callback.error(404, "Page ID '" + pageId + "' not found");
+                    return;
+                }
+
+                mainHandler.post(() -> {
+                    String script = "(function() {" +
+                            "  try {" +
+                            "    var res = {};" +
+                            "    for (var i = 0; i < localStorage.length; i++) {" +
+                            "      var k = localStorage.key(i);" +
+                            "      if (k !== null) res[k] = localStorage.getItem(k);" +
+                            "    }" +
+                            "    return JSON.stringify({ success: true, data: res });" +
+                            "  } catch(e) {" +
+                            "    return JSON.stringify({ success: false, error: e.toString() });" +
+                            "  }" +
+                            "})();";
+
+                    page.webView.evaluateJavascript(script, rawVal -> {
+                        try {
+                            String unquoted = rawVal != null ? parseJsJsonString(rawVal) : "{}";
+                            JSONObject evalRes = new JSONObject(unquoted);
+                            if (evalRes.optBoolean("success", false)) {
+                                JSONObject data = evalRes.optJSONObject("data");
+                                if (data == null) data = new JSONObject();
+                                JSONObject res = new JSONObject();
+                                res.put("data", data);
+                                res.put("count", data.length());
+                                res.put("pageId", page.pageId);
+                                res.put("url", page.webView.getUrl());
+                                callback.success(res);
+                            } else {
+                                callback.error(500, evalRes.optString("error", "Failed to get localStorage"));
+                            }
+                        } catch (Exception e) {
+                            callback.error(500, e.getMessage());
+                        }
+                    });
+                });
+                break;
+            }
+
+            case "setLocalStorage": {
+                String pageId = params.optString("pageId");
+                WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
+                if (page == null || page.webView == null) {
+                    callback.error(404, "Page ID '" + pageId + "' not found");
+                    return;
+                }
+
+                JSONObject items = params.optJSONObject("data");
+                if (items == null) items = params.optJSONObject("items");
+                if (items == null) {
+                    String key = params.optString("key");
+                    String val = params.optString("value");
+                    if (!TextUtils.isEmpty(key)) {
+                        items = new JSONObject();
+                        items.put(key, val);
+                    }
+                }
+
+                if (items == null || items.length() == 0) {
+                    callback.error(400, "No items provided to set in localStorage");
+                    return;
+                }
+
+                final JSONObject toSet = items;
+                mainHandler.post(() -> {
+                    String escapedJson = JSONObject.quote(toSet.toString());
+                    String script = "(function() {" +
+                            "  try {" +
+                            "    var items = JSON.parse(" + escapedJson + ");" +
+                            "    for (var k in items) {" +
+                            "      if (Object.prototype.hasOwnProperty.call(items, k)) {" +
+                            "        localStorage.setItem(k, items[k]);" +
+                            "      }" +
+                            "    }" +
+                            "    return JSON.stringify({ success: true, count: Object.keys(items).length });" +
+                            "  } catch(e) {" +
+                            "    return JSON.stringify({ success: false, error: e.toString() });" +
+                            "  }" +
+                            "})();";
+
+                    page.webView.evaluateJavascript(script, rawVal -> {
+                        try {
+                            String unquoted = rawVal != null ? parseJsJsonString(rawVal) : "{}";
+                            JSONObject evalRes = new JSONObject(unquoted);
+                            if (evalRes.optBoolean("success", false)) {
+                                JSONObject res = new JSONObject();
+                                res.put("success", true);
+                                res.put("count", evalRes.optInt("count", 0));
+                                res.put("pageId", page.pageId);
+                                callback.success(res);
+                            } else {
+                                callback.error(500, evalRes.optString("error", "Failed to set localStorage"));
+                            }
+                        } catch (Exception e) {
+                            callback.error(500, e.getMessage());
+                        }
+                    });
+                });
+                break;
+            }
+
+            case "clearLocalStorage": {
+                String pageId = params.optString("pageId");
+                WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
+                if (page == null || page.webView == null) {
+                    callback.error(404, "Page ID '" + pageId + "' not found");
+                    return;
+                }
+
+                mainHandler.post(() -> {
+                    page.webView.evaluateJavascript("localStorage.clear(); 'true';", rawVal -> {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("success", true);
+                            res.put("pageId", page.pageId);
+                            callback.success(res);
+                        } catch (Exception ignored) {}
+                    });
+                });
+                break;
+            }
+
+            case "dumpStorage": {
+                String pageId = params.optString("pageId");
+                WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
+                if (page == null || page.webView == null) {
+                    callback.error(404, "Page ID '" + pageId + "' not found");
+                    return;
+                }
+
+                mainHandler.post(() -> {
+                    String pageUrl = page.webView.getUrl();
+                    CookieManager cm = webViewPool.getCookieManager(page.profileName);
+
+                    List<CookieHelper.CookieItem> cookieList = CookieHelper.readCookiesWithDetails(
+                            webViewPool.getContext(),
+                            cm,
+                            page.profileName,
+                            pageUrl,
+                            params.optBoolean("allCookies", false)
+                    );
+
+                    JSONArray cookieDetails = new JSONArray();
+                    StringBuilder cookieStr = new StringBuilder();
+                    for (CookieHelper.CookieItem c : cookieList) {
+                        cookieDetails.put(c.toJson());
+                        if (cookieStr.length() > 0) cookieStr.append("; ");
+                        cookieStr.append(c.name).append("=").append(c.value);
+                    }
+
+                    String script = "(function() {" +
+                            "  var ls = {}, ss = {};" +
+                            "  try {" +
+                            "    for (var i = 0; i < localStorage.length; i++) {" +
+                            "      var k = localStorage.key(i);" +
+                            "      if (k !== null) ls[k] = localStorage.getItem(k);" +
+                            "    }" +
+                            "  } catch(e) {}" +
+                            "  try {" +
+                            "    for (var j = 0; j < sessionStorage.length; j++) {" +
+                            "      var sk = sessionStorage.key(j);" +
+                            "      if (sk !== null) ss[sk] = sessionStorage.getItem(sk);" +
+                            "    }" +
+                            "  } catch(e) {}" +
+                            "  return JSON.stringify({ localStorage: ls, sessionStorage: ss });" +
+                            "})();";
+
+                    page.webView.evaluateJavascript(script, rawVal -> {
+                        try {
+                            String unquoted = rawVal != null ? parseJsJsonString(rawVal) : "{}";
+                            JSONObject storageObj = new JSONObject(unquoted);
+                            JSONObject result = new JSONObject();
+                            result.put("pageId", page.pageId);
+                            result.put("profile", page.profileName);
+                            result.put("url", pageUrl);
+                            result.put("cookies", cookieDetails);
+                            result.put("cookieString", cookieStr.toString());
+                            result.put("localStorage", storageObj.optJSONObject("localStorage"));
+                            result.put("sessionStorage", storageObj.optJSONObject("sessionStorage"));
+                            callback.success(result);
+                        } catch (Exception e) {
+                            callback.error(500, e.getMessage());
+                        }
+                    });
+                });
+                break;
+            }
+
 
             case "clearData": {
                 String pageId = params.optString("pageId");
@@ -434,4 +672,20 @@ public class PagePlugin implements IBridgePlugin {
                 break;
         }
     }
+
+    private static String parseJsJsonString(String rawVal) {
+        if (rawVal == null) return "{}";
+        String s = rawVal.trim();
+        if (s.startsWith("\"") && s.endsWith("\"")) {
+            try {
+                org.json.JSONTokener tokener = new org.json.JSONTokener(s);
+                Object val = tokener.nextValue();
+                return val != null ? val.toString() : "{}";
+            } catch (Exception ignored) {
+                if (s.length() >= 2) return s.substring(1, s.length() - 1).replace("\\\"", "\"").replace("\\\\", "\\");
+            }
+        }
+        return s;
+    }
 }
+

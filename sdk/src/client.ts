@@ -10,7 +10,9 @@ import {
     RpcEventEnvelope,
     HardwareConfig,
     CapturedResponse,
-    UnsubscribeFn
+    UnsubscribeFn,
+    CookieDetail,
+    StorageDump
 } from './types';
 import { MockEngine } from './mock';
 
@@ -67,19 +69,65 @@ export class Page {
     }
 
     /**
-     * 获取当前页面底层的完整 Cookie (自动精准匹配其独立 Profile 分区)
+     * 获取当前页面底层的完整 Cookie 字符串 (a=b; c=d，包含所有 HttpOnly)
      */
-    public async getCookies(): Promise<string> {
-        const res = await this.client.invoke<{ cookies: string; profile: string }>('page', 'getCookies', { pageId: this.pageId });
+    public async getCookies(url?: string): Promise<string> {
+        const res = await this.client.invoke<{ cookies: string; profile: string }>('page', 'getCookies', { pageId: this.pageId, url });
         return res.cookies;
     }
 
     /**
-     * 导入并设置当前页面的 Cookie (精准写入其独立 Profile 分区，不污染其他页面)
+     * 全量提取当前页面底层的全部 Cookie 结构体对象 (包含所有 HttpOnly、Secure、Domain、Path、Expires)
      */
-    public async setCookies(cookies: string): Promise<boolean> {
-        const res = await this.client.invoke<{ success: boolean; profile: string }>('page', 'setCookies', { pageId: this.pageId, cookies });
+    public async getAllCookies(url?: string): Promise<CookieDetail[]> {
+        const res = await this.client.invoke<{ details: CookieDetail[]; count: number }>('page', 'getAllCookies', { pageId: this.pageId, url });
+        return res.details || [];
+    }
+
+    /**
+     * 导入并设置当前页面的 Cookie (精准写入其独立 Profile 分区，支持字符串或 CookieDetail 数组)
+     */
+    public async setCookies(cookies: string | CookieDetail[]): Promise<boolean> {
+        const payload: Record<string, any> = { pageId: this.pageId };
+        if (Array.isArray(cookies)) {
+            payload.cookies = cookies;
+        } else {
+            payload.cookies = cookies;
+            payload.input = cookies;
+        }
+        const res = await this.client.invoke<{ success: boolean; profile: string }>('page', 'setCookies', payload);
         return res.success;
+    }
+
+    /**
+     * 读取当前页面加载域名下的完整 LocalStorage 键值字典
+     */
+    public async getLocalStorage(): Promise<Record<string, string>> {
+        const res = await this.client.invoke<{ data: Record<string, string> }>('page', 'getLocalStorage', { pageId: this.pageId });
+        return res.data || {};
+    }
+
+    /**
+     * 向当前页面的 LocalStorage 批量写入键值对
+     */
+    public async setLocalStorage(data: Record<string, string>): Promise<boolean> {
+        const res = await this.client.invoke<{ success: boolean }>('page', 'setLocalStorage', { pageId: this.pageId, data });
+        return res.success;
+    }
+
+    /**
+     * 清空当前页面的 LocalStorage
+     */
+    public async clearLocalStorage(): Promise<boolean> {
+        const res = await this.client.invoke<{ success: boolean }>('page', 'clearLocalStorage', { pageId: this.pageId });
+        return res.success;
+    }
+
+    /**
+     * 一键导出当前页面的全量存储快照 (全部含 HttpOnly 的 Cookie + LocalStorage + SessionStorage)
+     */
+    public async dumpStorage(): Promise<StorageDump> {
+        return this.client.invoke<StorageDump>('page', 'dumpStorage', { pageId: this.pageId });
     }
 
     /**
