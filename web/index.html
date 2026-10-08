@@ -1,475 +1,459 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mobile Electron 控制中心</title>
-    <link rel="stylesheet" href="./src/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mobile Electron</title>
+  <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
-    <div id="app">
-        <!-- 顶部导航与状态栏 -->
-        <header class="header">
-            <div class="header-main">
-                <div class="brand">
-                    <span class="logo-icon">⚡</span>
-                    <div>
-                        <h1 class="brand-title">Mobile Electron</h1>
-                        <p class="brand-sub">Native Web 控制中心</p>
-                    </div>
-                </div>
-                <div class="env-badges">
-                    <span id="badge-container" class="badge badge-detecting">检测中...</span>
-                    <span id="badge-platform" class="badge badge-gray">-</span>
-                </div>
+  <div id="app">
+    <!-- 顶部导航 -->
+    <header class="top-nav">
+      <div class="nav-header">
+        <div class="brand">
+          <div class="brand-icon">⚡</div>
+          <span class="brand-title">Mobile Electron</span>
+        </div>
+        <div id="status-tag" class="status-tag">
+          <span class="status-dot"></span>
+          <span id="status-text">检测中...</span>
+        </div>
+      </div>
+      <!-- 快捷操作 -->
+      <div class="quick-controls">
+        <button id="btn-quick-reload" class="btn-chip">刷新</button>
+        <button id="btn-quick-back" class="btn-chip">后退</button>
+        <button id="btn-toggle-fullscreen" class="btn-chip">全屏切换</button>
+        <button id="btn-toggle-toolbar" class="btn-chip">原生底栏</button>
+        <button id="btn-quick-toast" class="btn-chip">Toast测试</button>
+      </div>
+    </header>
+
+    <!-- 分段标签栏 -->
+    <nav class="segmented-tabs">
+      <button class="tab-pill active" data-tab="tab-app">窗口与应用</button>
+      <button class="tab-pill" data-tab="tab-cookie">Cookie</button>
+      <button class="tab-pill" data-tab="tab-storage">本地存储</button>
+      <button class="tab-pill" data-tab="tab-file">文件系统</button>
+      <button class="tab-pill" data-tab="tab-network">网络请求</button>
+      <button class="tab-pill" data-tab="tab-dialog">系统弹窗</button>
+      <button class="tab-pill" data-tab="tab-browser">多页面</button>
+    </nav>
+
+    <!-- 主操作区 -->
+    <main class="main-body">
+
+      <!-- 1. 窗口与应用 -->
+      <section id="tab-app" class="tab-panel active">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">应用信息 (electron.app)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-app-info" class="btn btn-default">获取信息 (getInfo)</button>
+            <button id="btn-app-config" class="btn btn-outline">查看配置 (getConfig)</button>
+            <button id="btn-app-exit" class="btn btn-danger">退出应用</button>
+          </div>
+          <div id="app-info-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">状态栏与视窗 (electron.window)</span>
+          </div>
+          <div class="field">
+            <label>状态栏颜色快捷设定：</label>
+            <div class="palette">
+              <div class="color-dot" data-color="#FFFFFF" data-dark="true" style="background:#FFF;"></div>
+              <div class="color-dot" data-color="#0F172A" data-dark="false" style="background:#0F172A;"></div>
+              <div class="color-dot" data-color="#2563EB" data-dark="false" style="background:#2563EB;"></div>
+              <div class="color-dot" data-color="#10B981" data-dark="false" style="background:#10B981;"></div>
+              <div class="color-dot" data-color="#F59E0B" data-dark="false" style="background:#F59E0B;"></div>
+              <input type="text" id="input-status-color" class="input" style="width:100px; padding:4px 8px; font-size:11px;" value="#FFFFFF">
+              <button id="btn-set-status-bar" class="btn btn-outline" style="padding:4px 8px; font-size:11px;">设置</button>
             </div>
-
-            <!-- 快捷全局控制栏 -->
-            <div class="quick-bar">
-                <button id="btn-quick-reload" class="btn btn-sm btn-outline">🔄 刷新网页</button>
-                <button id="btn-quick-back" class="btn btn-sm btn-outline">⬅️ 后退</button>
-                <button id="btn-toggle-fullscreen" class="btn btn-sm btn-outline">🔲 切换全屏</button>
-                <button id="btn-toggle-toolbar" class="btn btn-sm btn-outline">🛠️ 原生底栏</button>
-                <button id="btn-quick-toast" class="btn btn-sm btn-primary">🔔 Toast 测试</button>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-fullscreen-on" class="btn btn-subtle">进入全屏</button>
+            <button id="btn-fullscreen-off" class="btn btn-subtle">退出全屏</button>
+            <button id="btn-toolbar-show" class="btn btn-subtle">显示底栏</button>
+            <button id="btn-toolbar-hide" class="btn btn-subtle">隐藏底栏</button>
+          </div>
+          <div class="field mt-2">
+            <label>加载新 URL：</label>
+            <div class="input-group">
+              <input type="text" id="input-window-url" class="input" value="https://m.baidu.com">
+              <button id="btn-window-load-url" class="btn btn-default">加载</button>
             </div>
-        </header>
+          </div>
+        </div>
+      </section>
 
-        <!-- 选项卡导航 -->
-        <nav class="tabs-nav">
-            <button class="tab-btn active" data-tab="tab-app">📱 应用/窗口</button>
-            <button class="tab-btn" data-tab="tab-cookie">🍪 Cookie中枢</button>
-            <button class="tab-btn" data-tab="tab-storage">🗄️ 存储/快照</button>
-            <button class="tab-btn" data-tab="tab-file">📁 沙箱文件</button>
-            <button class="tab-btn" data-tab="tab-network">🌐 原生网络</button>
-            <button class="tab-btn" data-tab="tab-dialog">💬 设备/弹窗</button>
-            <button class="tab-btn" data-tab="tab-browser">🔀 多页面/Profile</button>
-        </nav>
-
-        <!-- 主内容区 -->
-        <main class="main-content">
-            <!-- TAB 1: 应用与窗口管理 -->
-            <section id="tab-app" class="tab-panel active">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📱 宿主应用系统信息 (electron.app)</span>
-                    </div>
-                    <div class="btn-group">
-                        <button id="btn-app-info" class="btn btn-primary">获取应用信息 (getInfo)</button>
-                        <button id="btn-app-config" class="btn btn-secondary">获取打包配置 (getConfig)</button>
-                        <button id="btn-app-exit" class="btn btn-danger">退出应用 (exit)</button>
-                    </div>
-                    <div id="app-info-display" class="result-box"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">🪟 视窗与状态栏控制 (electron.window)</span>
-                    </div>
-                    <div class="form-group">
-                        <label>状态栏颜色与沉浸式风格：</label>
-                        <div class="color-palette">
-                            <button class="btn-color" data-color="#FFFFFF" data-dark="true" style="background:#FFFFFF; color:#000;">纯白</button>
-                            <button class="btn-color" data-color="#0F172A" data-dark="false" style="background:#0F172A; color:#FFF;">深夜黑</button>
-                            <button class="btn-color" data-color="#4F46E5" data-dark="false" style="background:#4F46E5; color:#FFF;">靛蓝</button>
-                            <button class="btn-color" data-color="#10B981" data-dark="false" style="background:#10B981; color:#FFF;">薄荷绿</button>
-                            <button class="btn-color" data-color="#F59E0B" data-dark="false" style="background:#F59E0B; color:#000;">活力橙</button>
-                        </div>
-                        <div class="grid-2 mt-2">
-                            <input type="text" id="input-status-color" class="input" placeholder="输入 Hex 颜色 (#4F46E5)" value="#FFFFFF">
-                            <button id="btn-set-status-bar" class="btn btn-primary">应用状态栏配置</button>
-                        </div>
-                    </div>
-                    <div class="btn-group mt-2">
-                        <button id="btn-fullscreen-on" class="btn btn-outline">进入全屏 (setFullscreen)</button>
-                        <button id="btn-fullscreen-off" class="btn btn-outline">退出全屏</button>
-                        <button id="btn-toolbar-show" class="btn btn-outline">显示原生工具条</button>
-                        <button id="btn-toolbar-hide" class="btn btn-outline">隐藏原生工具条</button>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>容器加载新 URL：</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="input-window-url" class="input" placeholder="https://m.baidu.com" value="https://m.baidu.com">
-                            <button id="btn-window-load-url" class="btn btn-primary">加载 URL</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 2: Cookie 核心中枢 -->
-            <section id="tab-cookie" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">🍪 底座 Cookie 突破沙箱提取 (electron.cookie)</span>
-                        <span id="cookie-counter" class="pill-badge">0 项</span>
-                    </div>
-                    <p class="card-desc">直接读取底层 Chromium SQLite 数据库，全量提取包含 <strong>HttpOnly、Secure</strong> 在内的全部 Cookie！</p>
-                    <div class="btn-group">
-                        <button id="btn-cookie-get-all" class="btn btn-primary">🔥 全量提取所有 Cookie (getAll)</button>
-                        <button id="btn-cookie-get-current" class="btn btn-secondary">提取当前页面 Cookie (getDetails)</button>
-                        <button id="btn-cookie-clear" class="btn btn-danger">清空 Cookie (clear)</button>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>按指定 URL 读取标准 Cookie：</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="input-cookie-read-url" class="input" placeholder="https://m.baidu.com" value="https://m.baidu.com">
-                            <button id="btn-cookie-read-url" class="btn btn-outline">读取 Cookie 字符串</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">✍️ 写入与显式注入 HttpOnly Cookie</span>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>目标 URL：</label>
-                            <input type="text" id="input-cookie-target-url" class="input" value="https://creator.douyin.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Cookie 键名：</label>
-                            <input type="text" id="input-cookie-name" class="input" value="session_token">
-                        </div>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Cookie 键值：</label>
-                            <input type="text" id="input-cookie-value" class="input" value="sec_tok_888999abc">
-                        </div>
-                        <div class="form-group">
-                            <label>作用域名 (Domain)：</label>
-                            <input type="text" id="input-cookie-domain" class="input" value=".douyin.com">
-                        </div>
-                    </div>
-                    <div class="checkbox-group mt-1">
-                        <label><input type="checkbox" id="chk-cookie-httponly" checked> HttpOnly (突破常规JS限制)</label>
-                        <label><input type="checkbox" id="chk-cookie-secure" checked> Secure (HTTPS)</label>
-                    </div>
-                    <div class="btn-group mt-2">
-                        <button id="btn-cookie-inject" class="btn btn-primary">注入结构化 Cookie (set)</button>
-                        <button id="btn-cookie-inject-preset" class="btn btn-secondary">⚡ 注入测试 Cookie 预设包</button>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📋 Cookie 列表详情</span>
-                        <input type="text" id="input-filter-cookie" class="input input-sm" placeholder="过滤键名或域名...">
-                    </div>
-                    <div class="table-wrap">
-                        <table class="data-table" id="table-cookies">
-                            <thead>
-                                <tr>
-                                    <th>键名 (Name)</th>
-                                    <th>键值 (Value)</th>
-                                    <th>域名 (Domain)</th>
-                                    <th>HttpOnly</th>
-                                    <th>Secure</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="5" class="text-center text-muted">点击上方按钮提取 Cookie</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 3: 存储与快照 -->
-            <section id="tab-storage" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📦 原生持久化存储 (突破 Web 5MB 限制)</span>
-                    </div>
-                    <p class="card-desc">原生底层键值数据库，跨页面共享，无限容量持久化。</p>
-                    <div class="grid-2">
-                        <input type="text" id="input-kv-key" class="input" placeholder="存储键名 (Key)" value="user_settings">
-                        <input type="text" id="input-kv-value" class="input" placeholder="存储键值 (Value / JSON)" value='{"theme":"dark","autoLogin":true}'>
-                    </div>
-                    <div class="btn-group mt-2">
-                        <button id="btn-kv-set" class="btn btn-primary">保存键值 (set / setObject)</button>
-                        <button id="btn-kv-get" class="btn btn-secondary">读取键值 (get / getObject)</button>
-                        <button id="btn-kv-keys" class="btn btn-outline">获取所有键 (keys)</button>
-                        <button id="btn-kv-remove" class="btn btn-outline">删除该键 (remove)</button>
-                        <button id="btn-kv-clear" class="btn btn-danger">清空所有 (clear)</button>
-                    </div>
-                    <div id="kv-result-box" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">🌐 WebView LocalStorage 深度操控</span>
-                    </div>
-                    <p class="card-desc">直接注入到目标 WebView 实例上下文读取或写入 LocalStorage！</p>
-                    <div class="btn-group">
-                        <button id="btn-ls-read" class="btn btn-primary">读取当前页面 LocalStorage</button>
-                        <button id="btn-ls-write" class="btn btn-secondary">批量写入 LocalStorage 键值</button>
-                        <button id="btn-ls-clear" class="btn btn-danger">清空当前 LocalStorage</button>
-                    </div>
-                    <div class="btn-group mt-2">
-                        <button id="btn-ss-read" class="btn btn-outline">读取 SessionStorage</button>
-                        <button id="btn-ss-write" class="btn btn-outline">写入 SessionStorage</button>
-                        <button id="btn-ss-clear" class="btn btn-danger">清空 SessionStorage</button>
-                    </div>
-                    <div id="ls-result-box" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📸 一键导出全量存储快照 (dumpStorage)</span>
-                    </div>
-                    <p class="card-desc">一次性打包导出当前页面的：<strong>全部 HttpOnly Cookie + LocalStorage + SessionStorage</strong>！</p>
-                    <button id="btn-dump-storage" class="btn btn-primary btn-block">⚡ 导出全量存储快照 (dumpStorage)</button>
-                    <div id="dump-result-box" class="result-box mt-2"></div>
-                </div>
-            </section>
-
-            <!-- TAB 4: 沙箱文件系统 -->
-            <section id="tab-file" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📁 本地沙箱文件系统 (electron.file / fs)</span>
-                    </div>
-                    <div class="btn-group">
-                        <button id="btn-fs-paths" class="btn btn-primary">获取沙箱核心物理路径 (getPaths)</button>
-                        <button id="btn-fs-list" class="btn btn-secondary">遍历目录文件 (list)</button>
-                    </div>
-                    <div id="fs-paths-display" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">✏️ 沙箱文件读写与测试</span>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>相对文件名：</label>
-                            <input type="text" id="input-fs-filename" class="input" value="config/app_meta.json">
-                        </div>
-                        <div class="form-group">
-                            <label>目标沙箱目录：</label>
-                            <select id="select-fs-dir" class="select">
-                                <option value="documents">documents (持久文档)</option>
-                                <option value="cache">cache (缓存)</option>
-                                <option value="temp">temp (临时)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group mt-2">
-                        <label>文件内容：</label>
-                        <textarea id="input-fs-content" class="textarea" rows="3">{"appName":"MobileElectron","created":"2026-10-08","author":"DeepMind Agent"}</textarea>
-                    </div>
-                    <div class="btn-group mt-2">
-                        <button id="btn-fs-write" class="btn btn-primary">写入文本文件 (writeText)</button>
-                        <button id="btn-fs-read" class="btn btn-secondary">读取文本文件 (readText)</button>
-                        <button id="btn-fs-exists" class="btn btn-outline">检查是否存在 (exists)</button>
-                        <button id="btn-fs-mkdir" class="btn btn-outline">创建目录 (mkdir)</button>
-                        <button id="btn-fs-delete" class="btn btn-danger">删除文件 (delete)</button>
-                    </div>
-                    <div id="fs-file-result" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">⬇️ 原生大文件后台下载 (download)</span>
-                    </div>
-                    <div class="form-group">
-                        <label>下载 URL：</label>
-                        <input type="text" id="input-fs-download-url" class="input" value="https://raw.githubusercontent.com/octocat/Hello-World/master/README">
-                    </div>
-                    <div class="input-with-btn mt-2">
-                        <input type="text" id="input-fs-download-name" class="input" value="octocat_readme.txt">
-                        <button id="btn-fs-download" class="btn btn-primary">原生下载至沙箱</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 5: 原生网络请求 -->
-            <section id="tab-network" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">🌐 绕过 CORS 原生网络请求 (fetchNative)</span>
-                    </div>
-                    <p class="card-desc">利用原生 HTTP 引擎发起请求，彻底突破浏览器同源策略（CORS）与 Cookie 限制！</p>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>请求方法：</label>
-                            <select id="select-net-method" class="select">
-                                <option value="GET">GET</option>
-                                <option value="POST">POST</option>
-                                <option value="PUT">PUT</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>快速预设：</label>
-                            <select id="select-net-preset" class="select">
-                                <option value="https://api.github.com/zen">GitHub Zen API</option>
-                                <option value="https://httpbin.org/get">HttpBin GET 测试</option>
-                                <option value="https://httpbin.org/post">HttpBin POST 测试</option>
-                                <option value="https://m.baidu.com">百度移动端主页</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group mt-2">
-                        <label>请求 URL：</label>
-                        <input type="text" id="input-net-url" class="input" value="https://api.github.com/zen">
-                    </div>
-                    <div class="form-group mt-2">
-                        <label>POST / PUT Body (JSON 或字符串)：</label>
-                        <textarea id="input-net-body" class="textarea" rows="2">{"testKey":"Hello Mobile Electron"}</textarea>
-                    </div>
-                    <button id="btn-net-send" class="btn btn-primary btn-block mt-2">🚀 发起原生底层请求 (fetchNative)</button>
-                    <div id="net-result-box" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📡 网络响应拦截监听 (onResponse)</span>
-                    </div>
-                    <div class="input-with-btn">
-                        <input type="text" id="input-net-pattern" class="input" placeholder="监听URL关键词，如 api/ 或 douyin" value="api/">
-                        <button id="btn-net-listen" class="btn btn-secondary">开始监听</button>
-                    </div>
-                    <div id="net-listen-box" class="result-box mt-2">尚未捕获到匹配网络流量</div>
-                </div>
-            </section>
-
-            <!-- TAB 6: 设备与弹窗 -->
-            <section id="tab-dialog" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">📱 系统交互与剪贴板 (electron.device)</span>
-                    </div>
-                    <div class="form-group">
-                        <label>Toast 消息内容：</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="input-toast-text" class="input" value="⚡ Mobile Electron 原生 Toast 提示！">
-                            <button id="btn-device-toast" class="btn btn-primary">弹出 Toast</button>
-                        </div>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>剪贴板读写测试：</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="input-clipboard-text" class="input" value="Mobile Electron 剪贴板测试数据 2026">
-                            <button id="btn-clipboard-set" class="btn btn-secondary">写入剪贴板</button>
-                        </div>
-                        <div class="btn-group mt-2">
-                            <button id="btn-clipboard-get" class="btn btn-outline">读取系统剪贴板 (getClipboard)</button>
-                        </div>
-                    </div>
-                    <div id="device-result-box" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">💬 原生系统弹窗交互 (electron.dialog)</span>
-                    </div>
-                    <p class="card-desc">非阻塞 Material / Cupertino 风格原生对话框，返回 Promise 异步结果。</p>
-                    <div class="btn-group">
-                        <button id="btn-dialog-alert" class="btn btn-primary">提示弹窗 (alert)</button>
-                        <button id="btn-dialog-confirm" class="btn btn-secondary">确认弹窗 (confirm)</button>
-                        <button id="btn-dialog-prompt" class="btn btn-outline">输入弹窗 (prompt)</button>
-                    </div>
-                    <div id="dialog-result-box" class="result-box mt-2"></div>
-                </div>
-            </section>
-
-            <!-- TAB 7: 多页面与 Profile 调度 -->
-            <section id="tab-browser" class="tab-panel">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">🔀 活跃页面与独立 Profile 沙箱 (electron.browser)</span>
-                        <button id="btn-browser-refresh" class="btn btn-sm btn-outline">刷新列表</button>
-                    </div>
-                    <div class="btn-group">
-                        <button id="btn-browser-pages" class="btn btn-primary">获取所有活跃页面 (getAllPages)</button>
-                        <button id="btn-browser-profiles" class="btn btn-secondary">列出所有 Profile 分区 (listProfiles)</button>
-                        <button id="btn-browser-douyin-login" class="btn btn-outline">抖音扫码登录自动化 (startDouyinQrLogin)</button>
-                    </div>
-                    <div id="browser-pages-display" class="result-box mt-2"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">➕ 创建新 WebView 页面 (newPage)</span>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>访问 URL：</label>
-                            <input type="text" id="input-new-page-url" class="input" value="https://m.baidu.com">
-                        </div>
-                        <div class="form-group">
-                            <label>独立 Profile 分区名：</label>
-                            <input type="text" id="input-new-page-profile" class="input" value="account_sandbox_01">
-                        </div>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>硬件指纹预设：</label>
-                            <select id="select-new-page-preset" class="select">
-                                <option value="flagship">flagship (旗舰机型 - 骁龙8 Gen3 / 16GB / 120Hz)</option>
-                                <option value="midrange">midrange (中端机型 - 8GB / 60Hz)</option>
-                                <option value="budget">budget (入门机型 - 4GB)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>运行模式：</label>
-                            <select id="select-new-page-headless" class="select">
-                                <option value="true">后台无头隐形运行 (Headless)</option>
-                                <option value="false">前台直接展示</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button id="btn-new-page-create" class="btn btn-primary btn-block mt-2">🚀 创建独立沙箱页面 (newPage)</button>
-                </div>
-
-                <div id="active-page-ops-card" class="card hidden">
-                    <div class="card-header">
-                        <span class="card-title">⚙️ 已创建页面控制器 (<span id="current-op-page-id">-</span>)</span>
-                    </div>
-                    <div class="btn-group">
-                        <button id="btn-page-front" class="btn btn-primary">切到前台展示 (bringToFront)</button>
-                        <button id="btn-page-back" class="btn btn-outline">退回后台 (sendToBack)</button>
-                        <button id="btn-page-get-cookies" class="btn btn-secondary">提取该页面 Cookie</button>
-                        <button id="btn-page-get-ls" class="btn btn-secondary">提取该页面 LocalStorage</button>
-                        <button id="btn-page-dump" class="btn btn-outline">导出该页面快照 (dumpStorage)</button>
-                        <button id="btn-page-hw" class="btn btn-outline">查看硬件指纹 (getHardware)</button>
-                        <button id="btn-page-close" class="btn btn-danger">销毁该页面 (close)</button>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>在目标页面上下文动态执行 JS 脚本 (evaluate)：</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="input-page-eval" class="input" value="document.title">
-                            <button id="btn-page-eval" class="btn btn-primary">执行脚本</button>
-                        </div>
-                    </div>
-                    <div id="page-op-result" class="result-box mt-2"></div>
-                </div>
-            </section>
-        </main>
-
-        <!-- 底部实时调用日志终端 -->
-        <footer class="console-drawer">
-            <div class="console-header">
-                <div class="console-title">
-                    <span class="terminal-dot"></span>
-                    <span>调用日志终端 (Live RPC Inspector)</span>
-                </div>
-                <div class="console-actions">
-                    <button id="btn-clear-logs" class="btn-text">清空</button>
-                    <button id="btn-copy-logs" class="btn-text">复制日志</button>
-                    <button id="btn-toggle-console" class="btn-text">收起/展开</button>
-                </div>
+      <!-- 2. Cookie 管理 -->
+      <section id="tab-cookie" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">Cookie 提取 (electron.cookie)</span>
+            <span id="cookie-counter" class="badge-count">0 项</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-cookie-get-all" class="btn btn-default">全量提取 (getAll)</button>
+            <button id="btn-cookie-get-current" class="btn btn-outline">当前页面 (getDetails)</button>
+            <button id="btn-cookie-inject-preset" class="btn btn-subtle">快速注入测试 Cookie</button>
+            <button id="btn-cookie-clear" class="btn btn-danger">清空 Cookie</button>
+          </div>
+          <div class="field mt-2">
+            <label>按指定 URL 读取字符串：</label>
+            <div class="input-group">
+              <input type="text" id="input-cookie-read-url" class="input" value="https://creator.douyin.com">
+              <button id="btn-cookie-read-url" class="btn btn-outline">读取</button>
             </div>
-            <div id="console-logs" class="console-body">
-                <div class="log-entry log-info">
-                    <span class="log-time">[Init]</span>
-                    <span class="log-msg">Mobile Electron 控制台就绪，正在连接 SDK...</span>
-                </div>
-            </div>
-        </footer>
-    </div>
+          </div>
+        </div>
 
-    <script type="module" src="./src/main.ts"></script>
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">写入 Cookie (支持 HttpOnly)</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>目标 URL：</label>
+              <input type="text" id="input-cookie-target-url" class="input" value="https://creator.douyin.com">
+            </div>
+            <div class="field">
+              <label>键名：</label>
+              <input type="text" id="input-cookie-name" class="input" value="sessionid">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>键值：</label>
+              <input type="text" id="input-cookie-value" class="input" value="sec_tok_test_9988">
+            </div>
+            <div class="field">
+              <label>作用域 (Domain)：</label>
+              <input type="text" id="input-cookie-domain" class="input" value=".douyin.com">
+            </div>
+          </div>
+          <div class="check-line">
+            <label class="check-item"><input type="checkbox" id="chk-cookie-httponly" checked> HttpOnly</label>
+            <label class="check-item"><input type="checkbox" id="chk-cookie-secure" checked> Secure</label>
+          </div>
+          <button id="btn-cookie-inject" class="btn btn-default btn-block mt-2">写入 Cookie (set)</button>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">Cookie 列表</span>
+            <input type="text" id="input-filter-cookie" class="input" style="width:140px; padding:3px 6px; font-size:11px;" placeholder="筛选...">
+          </div>
+          <div class="table-box">
+            <table class="table-mini" id="table-cookies">
+              <thead>
+                <tr>
+                  <th>键名</th>
+                  <th>键值</th>
+                  <th>域名</th>
+                  <th>HttpOnly</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" style="text-align:center; color:#94a3b8;">点击上方按钮提取 Cookie</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 本地存储 -->
+      <section id="tab-storage" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生键值存储 (electron.storage)</span>
+          </div>
+          <div class="grid-2">
+            <input type="text" id="input-kv-key" class="input" placeholder="Key" value="app_settings">
+            <input type="text" id="input-kv-value" class="input" placeholder="Value (字符串或JSON)" value='{"theme":"dark","v":2}'>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-kv-set" class="btn btn-default">保存 (set)</button>
+            <button id="btn-kv-get" class="btn btn-outline">读取 (get)</button>
+            <button id="btn-kv-keys" class="btn btn-subtle">全部键名</button>
+            <button id="btn-kv-remove" class="btn btn-subtle">删除该键</button>
+            <button id="btn-kv-clear" class="btn btn-danger">清空</button>
+          </div>
+          <div id="kv-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">WebView LocalStorage / SessionStorage</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-ls-read" class="btn btn-default">读取 LocalStorage</button>
+            <button id="btn-ls-write" class="btn btn-outline">写入测试数据</button>
+            <button id="btn-ls-clear" class="btn btn-danger">清空 LocalStorage</button>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-ss-read" class="btn btn-subtle">读取 SessionStorage</button>
+            <button id="btn-ss-write" class="btn btn-subtle">写入 SessionStorage</button>
+            <button id="btn-ss-clear" class="btn btn-danger">清空 SessionStorage</button>
+          </div>
+          <div id="ls-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">一键快照导出 (dumpStorage)</span>
+          </div>
+          <button id="btn-dump-storage" class="btn btn-primary btn-block">导出全量快照 (Cookie + LocalStorage)</button>
+          <div id="dump-result-box" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 4. 文件系统 -->
+      <section id="tab-file" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">沙箱路径 (electron.file)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-fs-paths" class="btn btn-default">获取沙箱路径 (getPaths)</button>
+            <button id="btn-fs-list" class="btn btn-outline">目录列表 (list)</button>
+          </div>
+          <div id="fs-paths-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">文件读写测试</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>相对路径：</label>
+              <input type="text" id="input-fs-filename" class="input" value="test/data.json">
+            </div>
+            <div class="field">
+              <label>目标沙箱目录：</label>
+              <select id="select-fs-dir" class="select">
+                <option value="documents">documents (持久文档)</option>
+                <option value="cache">cache (缓存)</option>
+                <option value="temp">temp (临时)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>内容：</label>
+            <textarea id="input-fs-content" class="textarea" rows="2">{"hello":"world","time":12345}</textarea>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-fs-write" class="btn btn-default">写入 (writeText)</button>
+            <button id="btn-fs-read" class="btn btn-outline">读取 (readText)</button>
+            <button id="btn-fs-exists" class="btn btn-subtle">是否存在</button>
+            <button id="btn-fs-mkdir" class="btn btn-subtle">创建目录</button>
+            <button id="btn-fs-delete" class="btn btn-danger">删除</button>
+          </div>
+          <div id="fs-file-result" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">大文件下载 (download)</span>
+          </div>
+          <div class="field">
+            <label>下载链接：</label>
+            <input type="text" id="input-fs-download-url" class="input" value="https://raw.githubusercontent.com/octocat/Hello-World/master/README">
+          </div>
+          <div class="input-group">
+            <input type="text" id="input-fs-download-name" class="input" value="readme.txt">
+            <button id="btn-fs-download" class="btn btn-default">下载到沙箱</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 网络请求 -->
+      <section id="tab-network" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生网络请求 (绕过 CORS)</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>方法：</label>
+              <select id="select-net-method" class="select">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>常用预设：</label>
+              <select id="select-net-preset" class="select">
+                <option value="https://httpbin.org/get">HttpBin GET 测试</option>
+                <option value="https://httpbin.org/post">HttpBin POST 测试</option>
+                <option value="https://api.github.com/zen">GitHub Zen API</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>URL：</label>
+            <input type="text" id="input-net-url" class="input" value="https://httpbin.org/get">
+          </div>
+          <div class="field">
+            <label>POST / PUT Body (JSON)：</label>
+            <textarea id="input-net-body" class="textarea" rows="2">{"key":"value"}</textarea>
+          </div>
+          <button id="btn-net-send" class="btn btn-default btn-block mt-2">发起请求 (fetchNative)</button>
+          <div id="net-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">网络响应拦截 (onResponse)</span>
+          </div>
+          <div class="input-group">
+            <input type="text" id="input-net-pattern" class="input" placeholder="监听URL关键词，如 api/ 或 get" value="get">
+            <button id="btn-net-listen" class="btn btn-outline">启动监听</button>
+          </div>
+          <div id="net-listen-box" class="code-box">尚未捕获到请求</div>
+        </div>
+      </section>
+
+      <!-- 6. 系统能力与弹窗 -->
+      <section id="tab-dialog" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">设备交互 (electron.device)</span>
+          </div>
+          <div class="field">
+            <label>Toast 消息：</label>
+            <div class="input-group">
+              <input type="text" id="input-toast-text" class="input" value="Hello Mobile Electron">
+              <button id="btn-device-toast" class="btn btn-default">Toast</button>
+            </div>
+          </div>
+          <div class="field mt-2">
+            <label>系统剪贴板：</label>
+            <div class="input-group">
+              <input type="text" id="input-clipboard-text" class="input" value="测试剪贴板文本内容">
+              <button id="btn-clipboard-set" class="btn btn-outline">写入</button>
+              <button id="btn-clipboard-get" class="btn btn-subtle">读取</button>
+            </div>
+          </div>
+          <div id="device-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生对话框 (electron.dialog)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-dialog-alert" class="btn btn-default">Alert</button>
+            <button id="btn-dialog-confirm" class="btn btn-outline">Confirm</button>
+            <button id="btn-dialog-prompt" class="btn btn-subtle">Prompt</button>
+          </div>
+          <div id="dialog-result-box" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 7. 多页面调度 -->
+      <section id="tab-browser" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">页面与 Profile (electron.browser)</span>
+            <button id="btn-browser-refresh" class="btn btn-subtle" style="padding:2px 8px; font-size:11px;">刷新</button>
+          </div>
+          <div class="btn-row">
+            <button id="btn-browser-pages" class="btn btn-default">页面列表 (getAllPages)</button>
+            <button id="btn-browser-profiles" class="btn btn-outline">Profile列表 (listProfiles)</button>
+            <button id="btn-browser-douyin-login" class="btn btn-subtle">抖音扫码监控</button>
+          </div>
+          <div id="browser-pages-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">新建独立沙箱页面 (newPage)</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>URL：</label>
+              <input type="text" id="input-new-page-url" class="input" value="https://m.baidu.com">
+            </div>
+            <div class="field">
+              <label>Profile 隔离分区：</label>
+              <input type="text" id="input-new-page-profile" class="input" value="sandbox_01">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>硬件指纹：</label>
+              <select id="select-new-page-preset" class="select">
+                <option value="flagship">flagship (旗舰机预设)</option>
+                <option value="midrange">midrange (中端预设)</option>
+                <option value="budget">budget (入门预设)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>模式：</label>
+              <select id="select-new-page-headless" class="select">
+                <option value="true">后台无头 (Headless)</option>
+                <option value="false">前台展示</option>
+              </select>
+            </div>
+          </div>
+          <button id="btn-new-page-create" class="btn btn-default btn-block mt-2">创建新页面</button>
+        </div>
+
+        <div id="active-page-ops-card" class="box hidden">
+          <div class="box-header">
+            <span class="box-title">新页面控制 (<span id="current-op-page-id">-</span>)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-page-front" class="btn btn-primary">切到前台</button>
+            <button id="btn-page-back" class="btn btn-outline">退回后台</button>
+            <button id="btn-page-get-cookies" class="btn btn-subtle">读取Cookie</button>
+            <button id="btn-page-get-ls" class="btn btn-subtle">读取Storage</button>
+            <button id="btn-page-dump" class="btn btn-subtle">导出快照</button>
+            <button id="btn-page-hw" class="btn btn-subtle">硬件指纹</button>
+            <button id="btn-page-close" class="btn btn-danger">销毁</button>
+          </div>
+          <div class="field mt-2">
+            <label>执行 JS (evaluate)：</label>
+            <div class="input-group">
+              <input type="text" id="input-page-eval" class="input" value="document.title">
+              <button id="btn-page-eval" class="btn btn-default">执行</button>
+            </div>
+          </div>
+          <div id="page-op-result" class="code-box"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 底部简洁日志监控 -->
+    <footer class="drawer-footer">
+      <div class="drawer-bar" id="btn-toggle-console">
+        <div class="drawer-bar-title">
+          <span class="pulse-dot"></span>
+          <span>实时日志 (RPC Inspector)</span>
+        </div>
+        <div class="drawer-tools">
+          <button id="btn-clear-logs" class="tool-link">清空</button>
+          <button id="btn-copy-logs" class="tool-link">复制</button>
+          <span class="tool-link">折叠</span>
+        </div>
+      </div>
+      <div id="console-logs" class="drawer-log-list">
+        <div class="log-line">
+          <span class="log-t">[Init]</span>
+          <span class="log-i">连接就绪</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="./src/main.ts"></script>
 </body>
 </html>
