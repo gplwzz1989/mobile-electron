@@ -298,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
             if (active != null) active.reload();
         });
 
-        btnTopConsole.setOnClickListener(v -> loadUrl("file:///android_asset/demo.html"));
+        btnTopConsole.setOnClickListener(v -> loadUrl(AppConfigManager.getInstance().getConfig().getDefaultUrl()));
         ivSecurityLock.setOnClickListener(v -> showSecurityWhitelistDialog());
 
         // 底部导航栏点击事件

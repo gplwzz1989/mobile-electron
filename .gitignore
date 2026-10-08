@@ -59,4 +59,7 @@ Thumbs.db
 # Node.js
 node_modules/
 sdk/node_modules/
+web/node_modules/
+web/dist/
+web/.vite/
 

@@ -36,11 +36,13 @@ public class DomainWhitelistManager {
         addTier1Domain("*.github.com");
         addTier1Domain("localhost");
         addTier1Domain("127.0.0.1");
+        addTier1Domain("10.0.2.2");
 
         addTier2Domain("*.baidu.com");
         addTier2Domain("*.douyin.com");
         addTier2Domain("localhost");
         addTier2Domain("127.0.0.1");
+        addTier2Domain("10.0.2.2");
     }
 
     public static DomainWhitelistManager getInstance() {
@@ -54,20 +56,51 @@ public class DomainWhitelistManager {
         return instance;
     }
 
+    private String normalizePattern(String pattern) {
+        if (pattern == null) return "";
+        String p = pattern.trim().toLowerCase();
+        if (p.startsWith("http://")) p = p.substring(7);
+        if (p.startsWith("https://")) p = p.substring(8);
+        if (p.startsWith("file://")) return "file";
+        int slashIdx = p.indexOf('/');
+        if (slashIdx != -1) p = p.substring(0, slashIdx);
+        int colonIdx = p.indexOf(':');
+        if (colonIdx != -1) p = p.substring(0, colonIdx);
+        return p;
+    }
+
     public void addTier1Domain(String pattern) {
         if (!TextUtils.isEmpty(pattern)) {
             tier1Whitelist.add(pattern.trim().toLowerCase());
+            String norm = normalizePattern(pattern);
+            if (!norm.isEmpty()) {
+                tier1Whitelist.add(norm);
+            }
         }
     }
 
     public void addTier2Domain(String pattern) {
         if (!TextUtils.isEmpty(pattern)) {
             tier2Whitelist.add(pattern.trim().toLowerCase());
+            String norm = normalizePattern(pattern);
+            if (!norm.isEmpty()) {
+                tier2Whitelist.add(norm);
+            }
         }
     }
 
     public void setStrictHttps(boolean strict) {
         this.strictHttps = strict;
+    }
+
+    private boolean isLocalOrLanHost(String host) {
+        if (host == null) return false;
+        return "localhost".equals(host)
+                || "127.0.0.1".equals(host)
+                || "10.0.2.2".equals(host)
+                || host.startsWith("192.168.")
+                || host.startsWith("10.")
+                || host.startsWith("172.");
     }
 
     /**
@@ -102,8 +135,9 @@ public class DomainWhitelistManager {
 
             host = host.toLowerCase();
 
-            // 严格 HTTPS 检查 (localhost 与 127.0.0.1 除外)
-            if (strictHttps && !"localhost".equals(host) && !"127.0.0.1".equals(host)) {
+            // 严格 HTTPS 检查 (非严格模式、内网或本地地址放行 HTTP)
+            boolean isLocalOrLan = isLocalOrLanHost(host);
+            if (strictHttps && !isLocalOrLan) {
                 if (!"https".equalsIgnoreCase(scheme)) {
                     Log.w(TAG, "Access denied: HTTP is blocked in strict mode for " + host);
                     return false;
@@ -127,10 +161,16 @@ public class DomainWhitelistManager {
     }
 
     /**
-     * 支持通配符匹配（例如 *.example.com 匹配 auth.example.com）
+     * 支持通配符匹配（例如 *.example.com 匹配 auth.example.com，* 匹配所有）
      */
     private boolean matchesAny(String host, Set<String> patternSet) {
+        if (patternSet.contains("*") || patternSet.contains("*.*")) {
+            return true;
+        }
         for (String rule : patternSet) {
+            if ("*".equals(rule) || "*.*".equals(rule)) {
+                return true;
+            }
             if (rule.equals(host)) {
                 return true;
             }

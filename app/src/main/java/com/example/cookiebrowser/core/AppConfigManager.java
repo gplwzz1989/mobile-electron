@@ -60,10 +60,13 @@ public class AppConfigManager {
 
     private void applySecurityPolicies() {
         DomainWhitelistManager whitelistManager = DomainWhitelistManager.getInstance();
-        if (currentConfig.getWhitelist() != null) {
-            for (String domain : currentConfig.getWhitelist()) {
-                whitelistManager.addTier1Domain(domain);
-                whitelistManager.addTier2Domain(domain);
+        if (currentConfig != null) {
+            whitelistManager.setStrictHttps(!currentConfig.isAllowInsecureContent());
+            if (currentConfig.getWhitelist() != null) {
+                for (String domain : currentConfig.getWhitelist()) {
+                    whitelistManager.addTier1Domain(domain);
+                    whitelistManager.addTier2Domain(domain);
+                }
             }
         }
     }

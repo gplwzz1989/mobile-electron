@@ -5,7 +5,7 @@
     "version": "2.0.0"
   },
   "window": {
-    "defaultUrl": "file:///android_asset/dist/index.html",
+    "defaultUrl": "http://127.0.0.1:5173",
     "title": "Mobile Electron Application",
     "fullscreen": false,
     "immersiveStatusBar": true,
@@ -15,12 +15,16 @@
   },
   "security": {
     "whitelist": [
+      "*",
       "file://*",
       "https://*.baidu.com",
       "https://*.douyin.com",
       "https://*.amemv.com",
       "https://localhost",
-      "http://localhost"
+      "http://localhost",
+      "http://127.0.0.1:*",
+      "http://10.0.2.2:*",
+      "http://192.168.*"
     ],
     "allowInsecureContent": true
   },

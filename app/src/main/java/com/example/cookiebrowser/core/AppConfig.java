@@ -11,8 +11,8 @@ import java.util.List;
  */
 public class AppConfig {
 
-    // 默认加载的启动网站（支持本地 assets 路径或远程 HTTPS 地址）
-    private String defaultUrl = "file:///android_asset/dist/index.html";
+    // 默认加载的启动网站（支持本地 assets 路径或远程 HTTP/HTTPS 地址）
+    private String defaultUrl = "http://127.0.0.1:5173";
     private String appName = "Mobile Electron";
     private String appId = "com.example.cookiebrowser";
     private String version = "2.0.0";
