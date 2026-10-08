@@ -1,3 +1,11 @@
+/* ==========================================================================
+   Mobile Electron - Responsive & Cross-Platform Design System
+   Compatible with: Android (all versions), iOS (Safari / WKWebView), Tablets, Foldables
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Theme Variables & Color Tokens (Light & Dark Mode)
+   -------------------------------------------------------------------------- */
 :root {
   --bg: #f8fafc;
   --surface: #ffffff;
@@ -12,14 +20,88 @@
   --primary-soft: #eff6ff;
   --dark: #0f172a;
   --dark-hover: #1e293b;
+  --dark-text: #ffffff;
   --danger: #ef4444;
   --danger-soft: #fef2f2;
   --success: #10b981;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --code-bg: #f8fafc;
+  --code-text: #334155;
+  --table-th-bg: #f8fafc;
+  --drawer-bg: rgba(15, 23, 42, 0.96);
+  --drawer-border: #334155;
+  --drawer-text: #94a3b8;
+  --drawer-title: #e2e8f0;
+
+  /* Safe Area Tokens with Android / iOS fallbacks */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
+/* 深色模式适配 (系统跟随或手动切换) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090d16;
+    --surface: #111827;
+    --surface-hover: #1f2937;
+    --border: #1f2937;
+    --border-light: #162032;
+    --text: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-soft: rgba(59, 130, 246, 0.15);
+    --dark: #f9fafb;
+    --dark-hover: #e5e7eb;
+    --dark-text: #0f172a;
+    --danger: #f87171;
+    --danger-soft: rgba(239, 68, 68, 0.15);
+    --success: #34d399;
+    --code-bg: #0b1120;
+    --code-text: #cbd5e1;
+    --table-th-bg: #162032;
+    --drawer-bg: rgba(3, 7, 18, 0.96);
+    --drawer-border: #1f2937;
+    --drawer-text: #9ca3af;
+    --drawer-title: #f3f4f6;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #090d16;
+  --surface: #111827;
+  --surface-hover: #1f2937;
+  --border: #1f2937;
+  --border-light: #162032;
+  --text: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-soft: rgba(59, 130, 246, 0.15);
+  --dark: #f9fafb;
+  --dark-hover: #e5e7eb;
+  --dark-text: #0f172a;
+  --danger: #f87171;
+  --danger-soft: rgba(239, 68, 68, 0.15);
+  --success: #34d399;
+  --code-bg: #0b1120;
+  --code-text: #cbd5e1;
+  --table-th-bg: #162032;
+  --drawer-bg: rgba(3, 7, 18, 0.96);
+  --drawer-border: #1f2937;
+  --drawer-text: #9ca3af;
+  --drawer-title: #f3f4f6;
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset & Cross-Platform Typography
+   -------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -27,64 +109,89 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* 兼容 iOS (San Francisco), Android (Roboto / Noto Sans), 通用回退 */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", "PingFang SC", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   background-color: var(--bg);
   color: var(--text);
   font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none; /* 防止 iOS 整个页面橡皮筋滚动导致体验变差 */
 }
 
 #app {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
 }
 
-/* 顶部极简导航栏 */
+/* --------------------------------------------------------------------------
+   3. 顶部导航栏 (适配 Android 状态栏与 iOS 灵动岛/刘海安全区)
+   -------------------------------------------------------------------------- */
 .top-nav {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--surface);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .nav-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(26px + env(safe-area-inset-top, 0px)) 14px 10px;
+  /* 动态安全区适配：
+     - Android 沉浸式状态栏通常高度 26~32px
+     - iOS 刘海/灵动岛通常高度 44~59px
+     - max(26px, env(safe-area-inset-top, 0px)) 自动取两者最合理值 */
+  padding-top: calc(max(26px, var(--sat)) + 8px);
+  padding-bottom: 8px;
+  padding-left: max(14px, var(--sal));
+  padding-right: max(14px, var(--sar));
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .brand-icon {
   width: 24px;
   height: 24px;
   background: var(--dark);
-  color: #fff;
+  color: var(--dark-text);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .brand-title {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.2px;
+  white-space: nowrap;
 }
 
+/* 状态药丸标签 (Android / iOS / Web 区分) */
 .status-tag {
   display: inline-flex;
   align-items: center;
@@ -95,11 +202,9 @@ body {
   border-radius: 20px;
   background: var(--surface-hover);
   color: var(--text-secondary);
-}
-
-.status-tag.online {
-  background: #ecfdf5;
-  color: #065f46;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
 }
 
 .status-dot {
@@ -107,19 +212,50 @@ body {
   height: 6px;
   border-radius: 50%;
   background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.status-tag.online {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+:root[data-theme="dark"] .status-tag.online {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .status-tag.online {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+  }
 }
 
 .status-tag.online .status-dot {
   background: #10b981;
 }
 
-/* 快捷控制小按钮组 */
+.status-tag.ios {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.status-tag.ios .status-dot {
+  background: #3b82f6;
+}
+
+/* 快捷控制操作条 (支持横向滑动与左右安全区) */
 .quick-controls {
   display: flex;
   gap: 6px;
-  padding: 0 14px 8px;
+  padding-top: 2px;
+  padding-bottom: 8px;
+  padding-left: max(14px, var(--sal));
+  padding-right: max(14px, var(--sar));
   overflow-x: auto;
   white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .quick-controls::-webkit-scrollbar {
@@ -136,21 +272,33 @@ body {
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .btn-chip:active {
   background: var(--surface-hover);
+  opacity: 0.8;
   transform: scale(0.97);
 }
 
-/* 选项卡分段控制器 */
+/* --------------------------------------------------------------------------
+   4. 分段标签控制器 (Segmented Tabs)
+   -------------------------------------------------------------------------- */
 .segmented-tabs {
   display: flex;
-  padding: 6px 14px 8px;
+  padding-top: 6px;
+  padding-bottom: 8px;
+  padding-left: max(14px, var(--sal));
+  padding-right: max(14px, var(--sar));
   gap: 6px;
   overflow-x: auto;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .segmented-tabs::-webkit-scrollbar {
@@ -168,6 +316,13 @@ body {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tab-pill:active {
+  opacity: 0.75;
 }
 
 .tab-pill.active {
@@ -178,11 +333,17 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* 内容主区域 */
+/* --------------------------------------------------------------------------
+   5. 主内容面板区
+   -------------------------------------------------------------------------- */
 .main-body {
   flex: 1;
-  padding: 14px 14px 140px;
-  max-width: 680px;
+  padding-top: 14px;
+  /* 底部预留：日志抽屉展开高度 + 底部手势安全区，保证内容绝不被底部遮挡 */
+  padding-bottom: calc(180px + var(--sab));
+  padding-left: max(14px, var(--sal));
+  padding-right: max(14px, var(--sar));
+  max-width: 760px;
   margin: 0 auto;
   width: 100%;
 }
@@ -201,20 +362,25 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 卡片容器 */
+/* --------------------------------------------------------------------------
+   6. 卡片容器与模块
+   -------------------------------------------------------------------------- */
 .box {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px;
   margin-bottom: 12px;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .box-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .box-title {
@@ -224,6 +390,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .badge-count {
@@ -233,20 +400,25 @@ body {
   border-radius: 10px;
   background: var(--primary-soft);
   color: var(--primary);
+  flex-shrink: 0;
 }
 
-/* 按钮风格 */
+/* --------------------------------------------------------------------------
+   7. 按钮控件体系 (适应触屏尺寸与跨系统反馈)
+   -------------------------------------------------------------------------- */
 .btn-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  align-items: center;
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 12px;
+  min-height: 32px;
+  padding: 6px 12px;
   font-size: 12px;
   font-weight: 500;
   border-radius: var(--radius-sm);
@@ -254,15 +426,19 @@ body {
   border: 1px solid transparent;
   transition: all 0.15s;
   white-space: nowrap;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .btn:active {
+  opacity: 0.8;
   transform: scale(0.98);
 }
 
 .btn-default {
   background: var(--dark);
-  color: #fff;
+  color: var(--dark-text);
 }
 
 .btn-default:hover {
@@ -296,14 +472,16 @@ body {
 .btn-danger {
   background: var(--danger-soft);
   color: var(--danger);
-  border-color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .btn-block {
   width: 100%;
 }
 
-/* 表单输入控件 */
+/* --------------------------------------------------------------------------
+   8. 表单输入与控件 (消除 iOS 原生输入框样式偏好，防误放大)
+   -------------------------------------------------------------------------- */
 .field {
   display: flex;
   flex-direction: column;
@@ -315,33 +493,45 @@ body {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-secondary);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .input, .select, .textarea {
   width: 100%;
   padding: 7px 10px;
-  font-size: 12px;
+  /* 移动端 14px，防止 iOS Safari 在聚焦小于 16px 输入框时意外自动缩放视图 */
+  font-size: 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   outline: none;
   font-family: inherit;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .input:focus, .select:focus, .textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 2px var(--primary-soft);
 }
 
 .input-group {
   display: flex;
   gap: 6px;
+  align-items: center;
 }
 
 .input-group .input {
   flex: 1;
+}
+
+.input-group .btn {
+  flex-shrink: 0;
 }
 
 .grid-2 {
@@ -350,14 +540,9 @@ body {
   gap: 8px;
 }
 
-@media (max-width: 480px) {
-  .grid-2 {
-    grid-template-columns: 1fr;
-  }
-}
-
 .check-line {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   font-size: 12px;
   margin: 6px 0;
@@ -366,9 +551,19 @@ body {
 .check-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
   color: var(--text-secondary);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.check-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
 }
 
 /* 色板小圆点 */
@@ -376,49 +571,58 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .color-dot {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   cursor: pointer;
+  flex-shrink: 0;
   transition: transform 0.15s;
+  touch-action: manipulation;
 }
 
 .color-dot:active {
   transform: scale(0.9);
 }
 
-/* 结果面板展示 */
+/* --------------------------------------------------------------------------
+   9. 代码块、调试输出与数据表格
+   -------------------------------------------------------------------------- */
 .code-box {
-  background: #f8fafc;
+  background: var(--code-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
-  color: #334155;
+  color: var(--code-text);
   max-height: 180px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
   display: none;
   margin-top: 8px;
+  -webkit-overflow-scrolling: touch;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .code-box.show {
   display: block;
 }
 
-/* 简洁数据表格 */
 .table-box {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow-x: auto;
   max-height: 240px;
   margin-top: 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .table-mini {
@@ -429,54 +633,67 @@ body {
 }
 
 .table-mini th {
-  background: #f8fafc;
+  background: var(--table-th-bg);
   padding: 6px 8px;
   font-weight: 600;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
+  z-index: 2;
+  white-space: nowrap;
 }
 
 .table-mini td {
   padding: 6px 8px;
   border-bottom: 1px solid var(--border-light);
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
+  word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .table-mini tr:last-child td {
   border-bottom: none;
 }
 
-/* 底部极简实时监控抽屉 */
+/* --------------------------------------------------------------------------
+   10. 底部实时日志抽屉 (安全吸附于 iOS Home 键与 Android 导航栏之上)
+   -------------------------------------------------------------------------- */
 .drawer-footer {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 40;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #94a3b8;
-  border-top: 1px solid #334155;
+  background: var(--drawer-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--drawer-text);
+  border-top: 1px solid var(--drawer-border);
   display: flex;
   flex-direction: column;
-  max-height: 180px;
-  transition: max-height 0.2s ease;
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+  padding-bottom: var(--sab);
+  max-height: calc(180px + var(--sab));
+  transition: max-height 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .drawer-footer.collapsed {
-  max-height: 32px;
+  max-height: calc(34px + var(--sab));
 }
 
 .drawer-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
+  padding: 7px 14px;
   cursor: pointer;
   user-select: none;
+  -webkit-user-select: none;
+  min-height: 34px;
+  touch-action: manipulation;
 }
 
 .drawer-bar-title {
@@ -485,7 +702,7 @@ body {
   gap: 6px;
   font-size: 11px;
   font-weight: 500;
-  color: #e2e8f0;
+  color: var(--drawer-title);
 }
 
 .pulse-dot {
@@ -493,32 +710,39 @@ body {
   height: 6px;
   border-radius: 50%;
   background: #10b981;
+  flex-shrink: 0;
 }
 
 .drawer-tools {
   display: flex;
   gap: 12px;
+  align-items: center;
 }
 
 .tool-link {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--drawer-text);
   background: transparent;
   border: none;
   cursor: pointer;
+  padding: 2px 4px;
+  touch-action: manipulation;
 }
 
-.tool-link:hover {
+.tool-link:hover, .tool-link:active {
   color: #fff;
 }
 
 .drawer-log-list {
   flex: 1;
-  padding: 6px 12px 10px;
+  padding: 6px 14px 10px;
   overflow-y: auto;
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
   font-size: 11px;
   line-height: 1.4;
+  -webkit-overflow-scrolling: touch;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .log-line {
@@ -531,5 +755,114 @@ body {
 .log-e { color: #f87171; }
 .log-i { color: #38bdf8; }
 
+/* --------------------------------------------------------------------------
+   11. 跨平台悬浮 Toast HUD (特别针对 iOS 和移动端设计)
+   -------------------------------------------------------------------------- */
+.toast-hud {
+  position: fixed;
+  bottom: calc(52px + var(--sab));
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  max-width: 88vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast-hud.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   12. 响应式屏幕断点 (Responsive Breakpoints)
+   -------------------------------------------------------------------------- */
+
+/* 1. 小屏手机 (屏幕宽度 <= 380px，如 iPhone SE、小屏 Android、折叠屏外屏) */
+@media (max-width: 380px) {
+  .box {
+    padding: 10px;
+  }
+  .box-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .btn {
+    padding: 5px 9px;
+    font-size: 11px;
+    min-height: 28px;
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .palette {
+    gap: 4px;
+  }
+  .palette .color-dot {
+    width: 20px;
+    height: 20px;
+  }
+  .segmented-tabs {
+    gap: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .tab-pill {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+}
+
+/* 2. 中小屏手机通用响应 (屏幕宽度 <= 520px) */
+@media (max-width: 520px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 3. 平板 / 宽屏设备 (屏幕宽度 >= 680px) */
+@media (min-width: 680px) {
+  .main-body {
+    padding-top: 20px;
+  }
+  .box {
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+}
+
+/* 4. 手机横屏模式 (高度 <= 500px 且横屏) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .nav-header {
+    padding-top: calc(max(8px, var(--sat)) + 4px);
+    padding-bottom: 4px;
+  }
+  .quick-controls {
+    padding-bottom: 4px;
+  }
+  .drawer-footer {
+    max-height: calc(110px + var(--sab));
+  }
+  .main-body {
+    padding-bottom: calc(120px + var(--sab));
+  }
+}
+
+/* 工具类 */
 .mt-2 { margin-top: 8px; }
 .hidden { display: none !important; }

@@ -22,6 +22,25 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+let toastTimer: any = null;
+function showToast(msg: string) {
+  const hud = document.getElementById('toast-hud');
+  if (!hud) return;
+  hud.textContent = msg;
+  hud.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    hud.classList.remove('show');
+  }, 2200);
+}
+
+async function appToast(msg: string) {
+  showToast(msg);
+  try {
+    await electron.device.toast(msg);
+  } catch {}
+}
+
 function showResult(boxId: string, data: any) {
   const box = document.getElementById(boxId);
   if (!box) return;
@@ -34,25 +53,49 @@ function initEnvironment() {
   const statusText = document.getElementById('status-text');
 
   const isNative = electron.isNativeContainer;
-  const platform = electron.platform;
+  const platform = (electron.platform || 'web').toLowerCase();
 
   if (statusTag && statusText) {
     if (isNative) {
-      statusTag.className = 'status-tag online';
-      statusText.textContent = `在线 (${platform})`;
+      if (platform === 'android') {
+        statusTag.className = 'status-tag online android';
+        statusText.textContent = 'Android 原生';
+      } else if (platform === 'ios') {
+        statusTag.className = 'status-tag online ios';
+        statusText.textContent = 'iOS 原生';
+      } else {
+        statusTag.className = 'status-tag online';
+        statusText.textContent = `在线 (${platform})`;
+      }
     } else {
       statusTag.className = 'status-tag';
-      statusText.textContent = `Web Mock 仿真`;
+      statusText.textContent = 'Web 仿真';
     }
   }
 
-  log(`环境就绪 | 平台: ${platform} | 原生容器: ${isNative}`, isNative ? 's' : 'i');
+  log(`运行环境就绪 | 平台: ${platform} | 原生容器: ${isNative}`, isNative ? 's' : 'i');
 
   try {
     electron.on('network:responseCaptured', (evt: any) => {
       log(`响应捕获 [${evt.url}]: ${evt.status}`, 'i');
     });
   } catch (e) {}
+}
+
+function setupTheme() {
+  const toggleBtn = document.getElementById('btn-toggle-theme');
+  const savedTheme = localStorage.getItem('app-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+
+  toggleBtn?.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('app-theme', next);
+    appToast(`已切换至${next === 'dark' ? '深色' : '浅色'}主题`);
+  });
 }
 
 function setupTabs() {
@@ -95,7 +138,7 @@ function setupQuickBar() {
         log('已后退', 's');
       } else {
         log('无上一页可退', 'i');
-        await electron.device.toast('已是第一页');
+        await appToast('已是第一页');
       }
     } catch (err: any) {
       log(`后退异常: ${err.message}`, 'e');
@@ -126,7 +169,7 @@ function setupQuickBar() {
 
   document.getElementById('btn-quick-toast')?.addEventListener('click', async () => {
     try {
-      await electron.device.toast('Mobile Electron 极简控制台');
+      await appToast('Mobile Electron 极简控制台');
       log('Toast 弹出成功', 's');
     } catch (err: any) {
       log(`Toast 失败: ${err.message}`, 'e');
@@ -283,7 +326,7 @@ function setupCookie() {
       await electron.cookie.clear();
       renderCookieTable([]);
       log('Cookie 已清空', 's');
-      await electron.device.toast('Cookie 已清空');
+      await appToast('Cookie 已清空');
     } catch (err: any) {
       log(`清空失败: ${err.message}`, 'e');
     }
@@ -311,7 +354,7 @@ function setupCookie() {
     const secure = (document.getElementById('chk-cookie-secure') as HTMLInputElement)?.checked;
 
     if (!targetUrl || !name || !value) {
-      await electron.device.toast('请填写 URL、键名与键值');
+      await appToast('请填写 URL、键名与键值');
       return;
     }
 
@@ -328,7 +371,7 @@ function setupCookie() {
     try {
       await electron.cookie.set(targetUrl, [item]);
       log(`Cookie [${name}] 写入成功`, 's');
-      await electron.device.toast(`Cookie ${name} 注入成功`);
+      await appToast(`Cookie ${name} 注入成功`);
       const list = await electron.cookie.getAll();
       renderCookieTable(list);
     } catch (err: any) {
@@ -346,7 +389,7 @@ function setupCookie() {
     try {
       await electron.cookie.set('https://creator.douyin.com', presetCookies);
       log('预设注入成功', 's');
-      await electron.device.toast('测试 Cookie 写入成功');
+      await appToast('测试 Cookie 写入成功');
       const list = await electron.cookie.getAll();
       renderCookieTable(list);
     } catch (err: any) {
@@ -380,7 +423,7 @@ function setupStorage() {
         await electron.storage.set(key, val);
       }
       log(`保存 KV 成功: [${key}]`, 's');
-      await electron.device.toast(`保存成功: ${key}`);
+      await appToast(`保存成功: ${key}`);
     } catch (err: any) {
       log(`保存失败: ${err.message}`, 'e');
     }
@@ -414,7 +457,7 @@ function setupStorage() {
     try {
       await electron.storage.remove(key);
       log(`已删除键: [${key}]`, 's');
-      await electron.device.toast(`已删除: ${key}`);
+      await appToast(`已删除: ${key}`);
     } catch (err: any) {
       log(`删除失败: ${err.message}`, 'e');
     }
@@ -446,7 +489,7 @@ function setupStorage() {
       await electron.storage.setLocalStorage(testData);
       showResult('ls-result-box', testData);
       log('写入 LocalStorage 成功', 's');
-      await electron.device.toast('LocalStorage 写入成功');
+      await appToast('LocalStorage 写入成功');
     } catch (err: any) {
       log(`写入失败: ${err.message}`, 'e');
     }
@@ -534,7 +577,7 @@ function setupFileSystem() {
       const fullPath = await electron.file.writeText(fileName, content, dir);
       showResult('fs-file-result', `写入成功:\n${fullPath}`);
       log(`文件写入: ${fullPath}`, 's');
-      await electron.device.toast('写入成功');
+      await appToast('写入成功');
     } catch (err: any) {
       log(`写入失败: ${err.message}`, 'e');
     }
@@ -576,7 +619,7 @@ function setupFileSystem() {
     try {
       await electron.file.mkdir(fileName, dir);
       log('目录创建成功', 's');
-      await electron.device.toast('目录创建完成');
+      await appToast('目录创建完成');
     } catch (err: any) {
       log(`失败: ${err.message}`, 'e');
     }
@@ -680,7 +723,7 @@ function setupDeviceAndDialog() {
   document.getElementById('btn-device-toast')?.addEventListener('click', async () => {
     const text = (document.getElementById('input-toast-text') as HTMLInputElement)?.value?.trim() || 'Toast';
     try {
-      await electron.device.toast(text);
+      await appToast(text);
       log(`Toast: "${text}"`, 's');
     } catch (err: any) {
       log(`Toast 失败: ${err.message}`, 'e');
@@ -692,7 +735,7 @@ function setupDeviceAndDialog() {
     try {
       await electron.device.setClipboard(text);
       log(`写入剪贴板: "${text}"`, 's');
-      await electron.device.toast('已写入剪贴板');
+      await appToast('已写入剪贴板');
     } catch (err: any) {
       log(`剪贴板失败: ${err.message}`, 'e');
     }
@@ -779,7 +822,7 @@ function setupBrowser() {
       createdPages.set(page.pageId, page);
 
       log(`页面创建成功: ${page.pageId}`, 's');
-      await electron.device.toast(`页面已创建: ${page.pageId}`);
+      await appToast(`页面已创建: ${page.pageId}`);
 
       const opsCard = document.getElementById('active-page-ops-card');
       const pageIdSpan = document.getElementById('current-op-page-id');
@@ -910,7 +953,7 @@ function setupConsoleDrawer() {
       const text = consoleLogs.innerText;
       try {
         await electron.device.setClipboard(text);
-        await electron.device.toast('已复制日志');
+        await appToast('已复制日志');
       } catch {
         navigator.clipboard?.writeText(text);
       }
@@ -919,7 +962,9 @@ function setupConsoleDrawer() {
 }
 
 function initApp() {
+  document.addEventListener('touchstart', () => {}, { passive: true });
   initEnvironment();
+  setupTheme();
   setupTabs();
   setupQuickBar();
   setupAppAndWindow();
