@@ -63,3 +63,15 @@ web/node_modules/
 web/dist/
 web/.vite/
 
+# iOS & Xcode build artifacts
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+DerivedData/
+Payload/
+ios/build/
+ios/*.xcodeproj
+ios/*.xcworkspace
+
+
