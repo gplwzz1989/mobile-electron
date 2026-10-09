@@ -184,7 +184,37 @@ async function run() {
     const profiles = await evaluate(`window.MobileElectron.browser.listProfiles()`);
     console.log('browser.listProfiles():', profiles);
 
-    console.log('\n--- 10. 触发 UI 渲染更新 (刷新各界面显示) ---');
+    console.log('\n--- 10. 测试 electron.tabBar 模块 (动态原生 TabBar 与事件监听) ---');
+    const tabSetRes = await evaluate(`window.MobileElectron.tabBar.setItems([
+        { id: 'home', title: '首页', icon: 'home' },
+        { id: 'cart', title: '购物车', icon: 'cart', badge: '10' },
+        { id: 'my', title: '我的', icon: 'user' }
+    ], {
+        selectedId: 'home',
+        visible: true
+    })`);
+    console.log('tabBar.setItems():', tabSetRes);
+
+    const tabState = await evaluate(`window.MobileElectron.tabBar.getState()`);
+    console.log('tabBar.getState():', { visible: tabState.visible, itemsCount: tabState.items?.length, selectedId: tabState.selectedId });
+
+    const badgeRes = await evaluate(`window.MobileElectron.tabBar.setBadge('cart', '99+')`);
+    console.log("tabBar.setBadge('cart', '99+'):", badgeRes);
+
+    const selRes = await evaluate(`window.MobileElectron.tabBar.setSelected('cart')`);
+    console.log("tabBar.setSelected('cart'):", selRes);
+
+    console.log('\n--- 11. 测试 electron.debug 模块 (框架调试中心与 WebView DevTools) ---');
+    const debugInfo = await evaluate(`window.MobileElectron.debug.getInfo()`);
+    console.log('debug.getInfo():', debugInfo);
+
+    const openDtRes = await evaluate(`window.MobileElectron.debug.openDevTools()`);
+    console.log('debug.openDevTools():', openDtRes);
+
+    const closeDtRes = await evaluate(`window.MobileElectron.debug.closeDevTools()`);
+    console.log('debug.closeDevTools():', closeDtRes);
+
+    console.log('\n--- 12. 触发 UI 渲染更新 (刷新各界面显示) ---');
     await evaluate(`
         document.getElementById('btn-cookie-get-all')?.click();
         document.getElementById('btn-fs-paths')?.click();

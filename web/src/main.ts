@@ -156,14 +156,22 @@ function setupQuickBar() {
     }
   });
 
-  let isToolbarShown = false;
-  document.getElementById('btn-toggle-toolbar')?.addEventListener('click', async () => {
-    isToolbarShown = !isToolbarShown;
+  document.getElementById('btn-quick-debug')?.addEventListener('click', async () => {
     try {
-      await electron.window.setDebugToolbarVisible(isToolbarShown);
-      log(`底栏: ${isToolbarShown}`, 's');
+      await electron.debug.show();
+      log('已调出框架调试中心', 's');
     } catch (err: any) {
-      log(`底栏切换失败: ${err.message}`, 'e');
+      log(`调出调试中心失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-quick-devtools')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.debug.openDevTools();
+      log(`DevTools 开启结果: ${JSON.stringify(res)}`, 's');
+      await appToast('已开启 DevTools');
+    } catch (err: any) {
+      log(`开启 DevTools 失败: ${err.message}`, 'e');
     }
   });
 
@@ -927,6 +935,238 @@ function setupBrowser() {
   });
 }
 
+function setupTabBar() {
+  // 注册全局 TabBar 点击监听 (核心要求 1)
+  electron.tabBar.onTabClick((tab) => {
+    log(`[原生 TabBar 点击] ID: ${tab.id} | Index: ${tab.index} | 标题: ${tab.title}`, 's');
+    const display = document.getElementById('tabbar-click-event-display');
+    if (display) {
+      display.innerHTML = `<strong>⚡ 捕获到原生 TabBar 点击:</strong><br>` +
+        `ID: <span style="color:#FBBF24;">${tab.id}</span> | 索引: ${tab.index} | 标题: ${tab.title}<br>` +
+        `触发时间: ${new Date().toLocaleTimeString()}`;
+    }
+    appToast(`点击了底栏: ${tab.title}`);
+  });
+
+  // 预设 4 项配置
+  document.getElementById('btn-tabbar-preset-4')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.tabBar.setItems([
+        { id: 'app', title: '工作台', icon: 'home' },
+        { id: 'explore', title: '探索', icon: 'search' },
+        { id: 'manage', title: '管理', icon: 'grid', badge: '3' },
+        { id: 'my', title: '我的', icon: 'user' }
+      ], {
+        selectedId: 'app',
+        backgroundColor: '#FFFFFF',
+        color: '#64748B',
+        selectedColor: '#4F46E5',
+        visible: true
+      });
+      log(`注入预设 4项 TabBar 成功: count=${res.count}`, 's');
+      await appToast('已显示 4 项原生 TabBar');
+    } catch (err: any) {
+      log(`注入 TabBar 失败: ${err.message}`, 'e');
+    }
+  });
+
+  // 预设 5 项电商配置
+  document.getElementById('btn-tabbar-preset-5')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.tabBar.setItems([
+        { id: 'mall_home', title: '首页', icon: 'home' },
+        { id: 'category', title: '分类', icon: 'grid' },
+        { id: 'discover', title: '发现', icon: 'search' },
+        { id: 'cart', title: '购物车', icon: 'cart', badge: '99+' },
+        { id: 'mine', title: '我的', icon: 'user' }
+      ], {
+        selectedId: 'mall_home',
+        backgroundColor: '#F8FAFC',
+        color: '#94A3B8',
+        selectedColor: '#EC4899',
+        visible: true
+      });
+      log(`注入预设 5项 TabBar 成功: count=${res.count}`, 's');
+      await appToast('已显示 5 项原生 TabBar (含99+角标)');
+    } catch (err: any) {
+      log(`注入 TabBar 失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-show')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.show();
+      log('原生 TabBar: 显示', 's');
+    } catch (err: any) {
+      log(`显示 TabBar 失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-hide')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.hide();
+      log('原生 TabBar: 隐藏', 's');
+    } catch (err: any) {
+      log(`隐藏 TabBar 失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-toggle')?.addEventListener('click', async () => {
+    try {
+      const vis = await electron.tabBar.toggle();
+      log(`原生 TabBar 显隐切换: ${vis}`, 's');
+    } catch (err: any) {
+      log(`切换 TabBar 失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-select-home')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.setSelected(0);
+      log('选中 TabBar 首页 (index=0)', 's');
+    } catch (err: any) {
+      log(`选中失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-select-cart')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.setSelected('cart');
+      log('选中 TabBar 购物车 (id=cart)', 's');
+    } catch (err: any) {
+      log(`选中失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-select-my')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.setSelected('my');
+      log('选中 TabBar 我的 (id=my)', 's');
+    } catch (err: any) {
+      log(`选中失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-badge-update')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.setBadge('cart', '88');
+      log("设置购物车角标为 '88'", 's');
+    } catch (err: any) {
+      log(`设置角标失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-badge-clear')?.addEventListener('click', async () => {
+    try {
+      await electron.tabBar.setBadge('cart', '');
+      await electron.tabBar.setBadge('manage', '');
+      log('已清空所有角标', 's');
+    } catch (err: any) {
+      log(`清空角标失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-tabbar-get-state')?.addEventListener('click', async () => {
+    try {
+      const state = await electron.tabBar.getState();
+      showResult('tabbar-state-display', state);
+      log(`获取 TabBar 状态: visible=${state.visible}, items=${state.items?.length}`, 's');
+    } catch (err: any) {
+      log(`获取状态失败: ${err.message}`, 'e');
+    }
+  });
+}
+
+function setupDebug() {
+  document.getElementById('btn-debug-show')?.addEventListener('click', async () => {
+    try {
+      await electron.debug.show();
+      log('调出框架调试中心成功', 's');
+    } catch (err: any) {
+      log(`调出失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-debug-hide')?.addEventListener('click', async () => {
+    try {
+      await electron.debug.hide();
+      log('已关闭框架调试中心', 's');
+    } catch (err: any) {
+      log(`关闭失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-debug-toggle')?.addEventListener('click', async () => {
+    try {
+      const visible = await electron.debug.toggle();
+      log(`切换框架调试中心: ${visible}`, 's');
+    } catch (err: any) {
+      log(`切换失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-debug-float-on')?.addEventListener('click', async () => {
+    try {
+      await electron.debug.setFloatingButtonVisible(true);
+      log('已显示悬浮调试球', 's');
+    } catch (err: any) {
+      log(`显示悬浮球失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-debug-float-off')?.addEventListener('click', async () => {
+    try {
+      await electron.debug.setFloatingButtonVisible(false);
+      log('已隐藏悬浮调试球', 's');
+    } catch (err: any) {
+      log(`隐藏悬浮球失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-debug-get-info')?.addEventListener('click', async () => {
+    try {
+      const info = await electron.debug.getInfo();
+      showResult('debug-info-display', info);
+      log(`框架调试信息: ${JSON.stringify(info)}`, 's');
+    } catch (err: any) {
+      log(`获取调试信息失败: ${err.message}`, 'e');
+    }
+  });
+
+  // WebView DevTools 控制 (核心要求 2)
+  document.getElementById('btn-devtools-open')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.debug.openDevTools();
+      showResult('devtools-result-display', res);
+      log(`打开当前 WebView DevTools 成功: ${JSON.stringify(res)}`, 's');
+      await appToast('已在当前 WebView 开启 DevTools');
+    } catch (err: any) {
+      log(`打开 DevTools 失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-devtools-close')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.debug.closeDevTools();
+      showResult('devtools-result-display', res);
+      log(`已关闭 DevTools: ${JSON.stringify(res)}`, 's');
+      await appToast('已关闭 DevTools');
+    } catch (err: any) {
+      log(`关闭 DevTools 失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-devtools-toggle')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.debug.toggleDevTools();
+      showResult('devtools-result-display', res);
+      log(`切换 DevTools 结果: ${JSON.stringify(res)}`, 's');
+    } catch (err: any) {
+      log(`切换 DevTools 失败: ${err.message}`, 'e');
+    }
+  });
+}
+
 function setupConsoleDrawer() {
   const drawer = document.querySelector('.drawer-footer');
   const toggleBtn = document.getElementById('btn-toggle-console');
@@ -968,6 +1208,8 @@ function initApp() {
   setupTabs();
   setupQuickBar();
   setupAppAndWindow();
+  setupTabBar();
+  setupDebug();
   setupCookie();
   setupStorage();
   setupFileSystem();

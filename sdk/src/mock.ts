@@ -272,6 +272,50 @@ export class MockEngine {
             case 'page.evaluate':
                 return Promise.resolve({ result: null } as unknown as T);
 
+            case 'tabbar.setItems':
+                return Promise.resolve({ success: true, count: (params?.items || []).length } as unknown as T);
+
+            case 'tabbar.show':
+            case 'tabbar.setVisible':
+                return Promise.resolve({ success: true, visible: true } as unknown as T);
+
+            case 'tabbar.hide':
+                return Promise.resolve({ success: true, visible: false } as unknown as T);
+
+            case 'tabbar.toggle':
+                return Promise.resolve({ success: true, visible: true } as unknown as T);
+
+            case 'tabbar.setSelected':
+            case 'tabbar.setBadge':
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'tabbar.getState':
+                return Promise.resolve({ visible: true, selectedId: 'tab_0', selectedIndex: 0, items: [] } as unknown as T);
+
+            case 'debug.show':
+            case 'debug.hide':
+            case 'debug.toggle':
+            case 'debug.setFloatingButtonVisible':
+                return Promise.resolve({ success: true, visible: true } as unknown as T);
+
+            case 'debug.openDevTools':
+                if (typeof window !== 'undefined' && (window as any).eruda) {
+                    (window as any).eruda.show();
+                }
+                return Promise.resolve({ success: true, devtoolsSupported: true, opened: true } as unknown as T);
+
+            case 'debug.closeDevTools':
+                if (typeof window !== 'undefined' && (window as any).eruda) {
+                    (window as any).eruda.hide();
+                }
+                return Promise.resolve({ success: true, opened: false } as unknown as T);
+
+            case 'debug.toggleDevTools':
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'debug.getInfo':
+                return Promise.resolve({ platform: 'web-mock', pid: 0 } as unknown as T);
+
             default:
                 return Promise.resolve({ success: true, mock: true } as unknown as T);
         }

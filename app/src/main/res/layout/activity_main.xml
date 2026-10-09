@@ -114,6 +114,22 @@
             android:id="@+id/web_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <!-- 悬浮调试球快捷入口 (默认隐藏，可由接口开启) -->
+        <ImageView
+            android:id="@+id/btn_floating_debug"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_floating_debug"
+            android:padding="10dp"
+            android:src="@drawable/ic_bug"
+            android:tint="#FFFFFF"
+            android:elevation="10dp"
+            android:visibility="gone"
+            android:contentDescription="Debug Console" />
     </FrameLayout>
 
     <!-- 离线/后台无头 WebView 容器 (1dp 隐形挂载，保持运行时不被休眠) -->
@@ -302,5 +318,16 @@
                 android:layout_marginTop="2dp" />
         </LinearLayout>
     </LinearLayout>
+
+    <!-- 动态定制原生 TabBar (默认隐藏，支持动态设置标题与图标) -->
+    <LinearLayout
+        android:id="@+id/layout_native_tab_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        android:visibility="gone" />
 
 </LinearLayout>

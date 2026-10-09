@@ -433,6 +433,14 @@ public class WebViewPool {
         return pages.size();
     }
 
+    public int getHeadlessPageCount() {
+        int count = 0;
+        for (ManagedPage page : pages.values()) {
+            if (page.isHeadless) count++;
+        }
+        return count;
+    }
+
     /**
      * 安全销毁指定页面实例，防止内存泄漏
      */

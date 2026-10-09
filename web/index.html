@@ -32,9 +32,10 @@
       <div class="quick-controls">
         <button id="btn-quick-reload" class="btn-chip">刷新</button>
         <button id="btn-quick-back" class="btn-chip">后退</button>
-        <button id="btn-toggle-fullscreen" class="btn-chip">全屏切换</button>
-        <button id="btn-toggle-toolbar" class="btn-chip">原生底栏</button>
-        <button id="btn-quick-toast" class="btn-chip">Toast测试</button>
+        <button id="btn-toggle-fullscreen" class="btn-chip">全屏</button>
+        <button id="btn-quick-debug" class="btn-chip" style="color:#16A34A; font-weight:bold;">⚡ 调试中心</button>
+        <button id="btn-quick-devtools" class="btn-chip" style="color:#2563EB; font-weight:bold;">🚀 DevTools</button>
+        <button id="btn-quick-toast" class="btn-chip">Toast</button>
         <button id="btn-toggle-theme" class="btn-chip">🌓 主题</button>
       </div>
     </header>
@@ -42,6 +43,8 @@
     <!-- 分段标签栏 -->
     <nav class="segmented-tabs">
       <button class="tab-pill active" data-tab="tab-app">窗口与应用</button>
+      <button class="tab-pill" data-tab="tab-tabbar">原生TabBar</button>
+      <button class="tab-pill" data-tab="tab-debug">调试与DevTools</button>
       <button class="tab-pill" data-tab="tab-cookie">Cookie</button>
       <button class="tab-pill" data-tab="tab-storage">本地存储</button>
       <button class="tab-pill" data-tab="tab-file">文件系统</button>
@@ -436,6 +439,88 @@
             </div>
           </div>
           <div id="page-op-result" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 原生 TabBar (动态配置与点击监听) (核心要求 1) -->
+      <section id="tab-tabbar" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生 TabBar 动态配置 (electron.tabBar)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            封装的原生底层 TabBar 默认隐藏，支持在 Web 端动态注入选项卡列表（标题、矢量图标、角标徽标、背景色等），并可在 Web 监听原生点击事件。
+          </p>
+          <div class="btn-row mt-2">
+            <button id="btn-tabbar-preset-4" class="btn btn-default">注入预设 4项 (应用/发现/管理/我的)</button>
+            <button id="btn-tabbar-preset-5" class="btn btn-outline">注入电商 5项 (含购物车 99+ 角标)</button>
+            <button id="btn-tabbar-show" class="btn btn-subtle">显示 TabBar</button>
+            <button id="btn-tabbar-hide" class="btn btn-subtle">隐藏 TabBar</button>
+            <button id="btn-tabbar-toggle" class="btn btn-subtle">切换显隐</button>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">TabBar 动态交互与高亮控制</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-tabbar-select-home" class="btn btn-outline">选中第一个 Tab (home)</button>
+            <button id="btn-tabbar-select-cart" class="btn btn-outline">选中购物车 Tab (cart)</button>
+            <button id="btn-tabbar-select-my" class="btn btn-outline">选中我的 Tab (my)</button>
+            <button id="btn-tabbar-badge-update" class="btn btn-subtle">更新购物车角标为 '88'</button>
+            <button id="btn-tabbar-badge-clear" class="btn btn-subtle">清空角标</button>
+            <button id="btn-tabbar-get-state" class="btn btn-default">获取当前状态 (getState)</button>
+          </div>
+          <div id="tabbar-state-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生 TabBar 点击监听事件卡片</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            已注册 <code>electron.tabBar.onTabClick(...)</code> 监听。请在屏幕底部直接点击原生 TabBar 项：
+          </p>
+          <div id="tabbar-click-event-display" class="code-box" style="display:block; min-height:50px; background:#0F172A; color:#38BDF8;">
+            等待原生 TabBar 点击事件触发...
+          </div>
+        </div>
+      </section>
+
+      <!-- 框架调试中心与 WebView DevTools (核心要求 2) -->
+      <section id="tab-debug" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">App 框架调试中心 (electron.debug)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            框架级原生调试控制中心，默认隐藏不显示。支持通过 JSBridge 接口唤出，集中控制 CookieHub、页面管理、白名单与 DevTools。
+          </p>
+          <div class="btn-row mt-2">
+            <button id="btn-debug-show" class="btn btn-default">唤出框架调试中心 (show)</button>
+            <button id="btn-debug-hide" class="btn btn-outline">关闭调试中心 (hide)</button>
+            <button id="btn-debug-toggle" class="btn btn-subtle">切换调试中心显隐 (toggle)</button>
+            <button id="btn-debug-float-on" class="btn btn-subtle">显示右下角悬浮调试球</button>
+            <button id="btn-debug-float-off" class="btn btn-subtle">隐藏悬浮调试球</button>
+            <button id="btn-debug-get-info" class="btn btn-outline">获取框架调试信息 (getInfo)</button>
+          </div>
+          <div id="debug-info-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">当前 WebView DevTools 控制 (支持手机直接审查 DOM/Console/Network)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            如果当前 WebView 支持 DevTools，直接在移动端激活全功能 DevTools (Eruda) 控制台，并确认开启底层 Chromium 远程调试端口 (9222 / chrome://inspect)。
+          </p>
+          <div class="btn-row mt-2">
+            <button id="btn-devtools-open" class="btn btn-default" style="background:#16A34A; border-color:#16A34A;">🚀 打开当前 WebView DevTools (openDevTools)</button>
+            <button id="btn-devtools-close" class="btn btn-danger">❌ 关闭 DevTools (closeDevTools)</button>
+            <button id="btn-devtools-toggle" class="btn btn-subtle">🔄 切换 DevTools 显隐 (toggleDevTools)</button>
+          </div>
+          <div id="devtools-result-display" class="code-box"></div>
         </div>
       </section>
 

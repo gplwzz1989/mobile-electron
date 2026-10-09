@@ -1,858 +1,553 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mobile Electron 控制台</title>
-    <!-- 引入刚刚构建的 Mobile Electron 统一 SDK -->
-    <script src="./mobile-electron-sdk.js"></script>
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg-page: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-sub: #64748b;
-            --border-color: #e2e8f0;
-            --safe-top: env(safe-area-inset-top, 24px);
-            --safe-bottom: env(safe-area-inset-bottom, 16px);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-page);
-            color: var(--text-main);
-            padding-top: var(--safe-top);
-            padding-bottom: calc(var(--safe-bottom) + 60px);
-            overflow-x: hidden;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* 顶部 Web 驱动的状态栏与导航 */
-        .app-header {
-            background: #ffffff;
-            padding: 12px 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .app-title {
-            font-size: 17px;
-            font-weight: 700;
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-pill {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 12px;
-            background: #e0e7ff;
-            color: #4338ca;
-        }
-        .status-pill.online {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        /* 地址导航栏 */
-        .url-bar-wrap {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .url-input {
-            flex: 1;
-            height: 38px;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 0 10px;
-            font-size: 13px;
-            color: #0f172a;
-            outline: none;
-        }
-        .url-input:focus {
-            border-color: var(--primary);
-            background: #ffffff;
-        }
-
-        .btn-icon {
-            height: 38px;
-            padding: 0 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--primary);
-            color: #ffffff;
-            white-space: nowrap;
-        }
-        .btn-icon:active { opacity: 0.85; }
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #334155;
-        }
-
-        /* 主体内容区 */
-        .container {
-            padding: 14px 16px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* 标签导航栏 */
-        .tab-bar {
-            display: flex;
-            background: #e2e8f0;
-            padding: 3px;
-            border-radius: 10px;
-            margin-bottom: 14px;
-            overflow-x: auto;
-        }
-        .tab-item {
-            flex: 1;
-            text-align: center;
-            padding: 8px 6px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 8px;
-            color: #64748b;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-        .tab-item.active {
-            background: #ffffff;
-            color: var(--primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        /* 功能卡片 */
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 14px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-        .card-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .card-desc {
-            font-size: 12px;
-            color: var(--text-sub);
-            margin-bottom: 12px;
-            line-height: 1.5;
-        }
-
-        /* 按钮与表单 */
-        .btn-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-        .btn-block {
-            width: 100%;
-            margin-top: 8px;
-        }
-        .btn {
-            height: 38px;
-            border-radius: 8px;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: opacity 0.15s;
-        }
-        .btn:active { opacity: 0.8; }
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-success { background: var(--success); color: #fff; }
-        .btn-warning { background: var(--warning); color: #000; }
-        .btn-danger { background: var(--danger); color: #fff; }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #cbd5e1;
-            color: #334155;
-        }
-
-        /* 控制台输出框 */
-        .log-box {
-            background: #0f172a;
-            color: #38bdf8;
-            font-family: Consolas, Monaco, "Courier New", monospace;
-            font-size: 11px;
-            padding: 12px;
-            border-radius: 8px;
-            max-height: 180px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-            margin-top: 10px;
-        }
-
-        .badge {
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no, email=no, address=no">
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)">
+  <title>Mobile Electron</title>
+  <script type="module" crossorigin src="/assets/index-HEIN0dpN.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DUYz1dLy.css">
 </head>
 <body>
+  <div id="app">
+    <!-- 跨平台悬浮 Toast HUD (特别针对 iOS/Web 仿真) -->
+    <div id="toast-hud" class="toast-hud"></div>
 
-    <!-- 顶部 Web 驱动导航栏 -->
-    <header class="app-header">
-        <div class="header-top">
-            <div class="app-title">
-                <span>🚀 Mobile Electron</span>
-                <span class="status-pill" id="platformBadge">加载中...</span>
-            </div>
-            <div style="display: flex; gap: 6px;">
-                <button class="btn btn-outline" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="toggleFullscreen()">全屏</button>
-                <button class="btn btn-outline" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="toggleDebugBar()">调试工具条</button>
-            </div>
+    <!-- 顶部导航 -->
+    <header class="top-nav">
+      <div class="nav-header">
+        <div class="brand">
+          <div class="brand-icon">⚡</div>
+          <span class="brand-title">Mobile Electron</span>
         </div>
-        <div class="url-bar-wrap">
-            <input type="text" class="url-input" id="targetUrlInput" value="https://m.baidu.com" placeholder="输入网址跳转...">
-            <button class="btn-icon" onclick="navigateTargetUrl()">前往</button>
-            <button class="btn-icon btn-secondary" onclick="reloadApp()">刷新</button>
+        <div id="status-tag" class="status-tag">
+          <span class="status-dot"></span>
+          <span id="status-text">检测中...</span>
         </div>
+      </div>
+      <!-- 快捷操作 -->
+      <div class="quick-controls">
+        <button id="btn-quick-reload" class="btn-chip">刷新</button>
+        <button id="btn-quick-back" class="btn-chip">后退</button>
+        <button id="btn-toggle-fullscreen" class="btn-chip">全屏</button>
+        <button id="btn-quick-debug" class="btn-chip" style="color:#16A34A; font-weight:bold;">⚡ 调试中心</button>
+        <button id="btn-quick-devtools" class="btn-chip" style="color:#2563EB; font-weight:bold;">🚀 DevTools</button>
+        <button id="btn-quick-toast" class="btn-chip">Toast</button>
+        <button id="btn-toggle-theme" class="btn-chip">🌓 主题</button>
+      </div>
     </header>
 
-    <!-- 主体容器 -->
-    <main class="container">
+    <!-- 分段标签栏 -->
+    <nav class="segmented-tabs">
+      <button class="tab-pill active" data-tab="tab-app">窗口与应用</button>
+      <button class="tab-pill" data-tab="tab-tabbar">原生TabBar</button>
+      <button class="tab-pill" data-tab="tab-debug">调试与DevTools</button>
+      <button class="tab-pill" data-tab="tab-cookie">Cookie</button>
+      <button class="tab-pill" data-tab="tab-storage">本地存储</button>
+      <button class="tab-pill" data-tab="tab-file">文件系统</button>
+      <button class="tab-pill" data-tab="tab-network">网络请求</button>
+      <button class="tab-pill" data-tab="tab-dialog">系统弹窗</button>
+      <button class="tab-pill" data-tab="tab-browser">多页面</button>
+    </nav>
 
-        <!-- 选项卡切换 -->
-        <nav class="tab-bar">
-            <div class="tab-item active" onclick="switchTab('tab-profile')">多Profile隔离</div>
-            <div class="tab-item" onclick="switchTab('tab-cookie')">Cookie中心</div>
-            <div class="tab-item" onclick="switchTab('tab-stealth')">硬件指纹</div>
-            <div class="tab-item" onclick="switchTab('tab-fs')">本地文件/存储</div>
-            <div class="tab-item" onclick="switchTab('tab-native')">原生系统能力</div>
-        </nav>
+    <!-- 主操作区 -->
+    <main class="main-body">
 
-        <!-- 选项卡 1: 多 Profile 独立沙箱隔离 -->
-        <section id="tab-profile" class="tab-pane active">
-            <div class="card" style="border-left: 4px solid #8b5cf6;">
-                <div class="card-header">
-                    <span class="card-title">🛡️ 多 Profile 物理数据目录隔离</span>
-                    <span class="badge" id="profileEngineBadge">检测中</span>
-                </div>
-                <p class="card-desc">
-                    通过 Chromium <code>ProfileStore</code> 机制，不同任务拥有独立 Cookie SQLite 库与 LocalStorage，实现多账号物理隔离防串号。
-                </p>
-                <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="testCreateIsolatedPage('alpha')">+ 创建 Profile Alpha</button>
-                    <button class="btn btn-primary" onclick="testCreateIsolatedPage('beta')">+ 创建 Profile Beta</button>
-                    <button class="btn btn-outline" onclick="testBringPageFront('alpha')">切到 Alpha 前台</button>
-                    <button class="btn btn-outline" onclick="testBringPageFront('beta')">切到 Beta 前台</button>
-                </div>
-                <button class="btn btn-success btn-block" onclick="testRunFullIsolationVerify()">⚡ 一键执行双账号隔离比对验证</button>
-                <button class="btn btn-outline btn-block" onclick="refreshPagesList()">刷新活跃页面列表</button>
-            </div>
-
-            <!-- 抖音创作者中心隐形扫码专区 -->
-            <div class="card" style="border-left: 4px solid #f43f5e;">
-                <div class="card-header">
-                    <span class="card-title" style="color: #e11d48;">🎬 抖音创作者中心隐形扫码登录</span>
-                    <span class="badge">自动化登录</span>
-                </div>
-                <p class="card-desc">
-                    后台无界面静默拉取 <code>creator.douyin.com</code>，通过原生 Material 弹窗实时同步二维码、监控扫码并抓取登录态 Cookie。
-                </p>
-                <button class="btn btn-danger btn-block" onclick="startDouyinQrLogin()">唤起抖音扫码登录监控任务</button>
-            </div>
-        </section>
-
-        <!-- 选项卡 2: Cookie 与 LocalStorage 管理中心 -->
-        <section id="tab-cookie" class="tab-pane">
-            <div class="card" style="border-left: 4px solid #0284c7;">
-                <div class="card-header">
-                    <span class="card-title">🍪 Cookie 全量提取 (含 HttpOnly) 与注入</span>
-                    <span class="badge" style="background: #e0f2fe; color: #0369a1;">SQLite 级提取</span>
-                </div>
-                <p class="card-desc">
-                    支持底层 SQLite 数据库直读，<strong>100% 完整提取包括 HttpOnly、Secure 在内的全部 Cookie</strong>，亦可跨域名或按具体 Profile 分区隔离提取。
-                </p>
-                <div style="margin-bottom: 10px;">
-                    <input type="text" class="url-input" id="cookieQueryUrl" value="https://m.baidu.com" style="width: 100%; margin-bottom: 8px;" placeholder="目标域名 URL">
-                    <input type="text" class="url-input" id="cookieImportInput" value="ME_SESSION_ID=test_123456; USER_TOKEN=token_abc888; HttpOnly" style="width: 100%;" placeholder="Cookie 注入内容 (key=val; key2=val2 或 JSON)">
-                </div>
-                <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="queryAllCookiesWithHttpOnly()">⚡ 全量提取 (含 HttpOnly)</button>
-                    <button class="btn btn-outline" onclick="queryTargetCookies()">读取标准格式</button>
-                    <button class="btn btn-success" onclick="importTargetCookies()">注入指定 Cookie</button>
-                    <button class="btn btn-outline" onclick="copyCurrentCookies()">复制到剪贴板</button>
-                    <button class="btn btn-danger" onclick="clearTargetCookies()">清空 Cookie</button>
-                </div>
-            </div>
-
-            <div class="card" style="border-left: 4px solid #10b981;">
-                <div class="card-header">
-                    <span class="card-title">💾 WebView LocalStorage 深度读写</span>
-                    <span class="badge" style="background: #dcfce7; color: #15803d;">跨实例操控</span>
-                </div>
-                <p class="card-desc">
-                    突破跨域限制，直接在指定 WebView 实例上下文提取与写入 <code>localStorage</code> 和 <code>sessionStorage</code>。
-                </p>
-                <div style="margin-bottom: 10px;">
-                    <input type="text" class="url-input" id="lsKeyInput" value="ME_USER_PREF" style="width: 48%; margin-right: 2%; display: inline-block;" placeholder="LocalStorage 键名">
-                    <input type="text" class="url-input" id="lsValInput" value="DarkTheme_Active" style="width: 48%; display: inline-block;" placeholder="LocalStorage 键值">
-                </div>
-                <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="testWebViewLocalStorageGet()">读取 LocalStorage</button>
-                    <button class="btn btn-success" onclick="testWebViewLocalStorageSet()">写入 LocalStorage</button>
-                    <button class="btn btn-danger" onclick="testWebViewLocalStorageClear()">清空 LocalStorage</button>
-                </div>
-                <button class="btn btn-warning btn-block" style="margin-top: 10px;" onclick="testDumpStorage()">📦 一键导出当前页面全部存储 (含 HttpOnly Cookie + LocalStorage)</button>
-            </div>
-        </section>
-
-        <!-- 选项卡 3: 硬件指纹防检测伪装 -->
-        <section id="tab-stealth" class="tab-pane">
-            <div class="card" style="border-left: 4px solid #10b981;">
-                <div class="card-header">
-                    <span class="card-title">🎭 硬件参数注入与设备指纹虚拟化</span>
-                </div>
-                <p class="card-desc">
-                    在 Chromium DOM 树构建前 (DocumentStart) 动态注入并伪装 CPU 核心、设备内存、WebGL 显卡供应商与渲染器，支持 Function.toString 防 Hook 检测。
-                </p>
-                <div class="btn-grid">
-                    <button class="btn btn-outline" onclick="checkCurrentHardware()">检测当前指纹</button>
-                    <button class="btn btn-primary" onclick="applyPresetHardware('flagship')">骁龙8旗舰机 (16核/32G)</button>
-                    <button class="btn btn-primary" onclick="applyPresetHardware('desktop')">桌面工作站 (32核/64G)</button>
-                    <button class="btn btn-outline" onclick="applyPresetHardware('budget')">入门千元机 (4核/4G)</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 选项卡 4: 原生系统能力 -->
-        <section id="tab-native" class="tab-pane">
-            <div class="card" style="border-left: 4px solid #f59e0b;">
-                <div class="card-header">
-                    <span class="card-title">⚡ 原生系统与硬件底层交互</span>
-                </div>
-                <p class="card-desc">
-                    绕过浏览器 CORS 跨域限制发起底层请求、沉浸式状态栏微调、系统级剪贴板、原生 Toast 与退出应用。
-                </p>
-                <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="testCorsBypassFetch()">CORS 穿透请求</button>
-                    <button class="btn btn-outline" onclick="testNativeToast()">原生 Toast 提示</button>
-                    <button class="btn btn-outline" onclick="testClipboardSync()">剪贴板双向同步</button>
-                    <button class="btn btn-outline" onclick="setStatusBarLight()">沉浸式亮色状态栏</button>
-                    <button class="btn btn-outline" onclick="setStatusBarDark()">深色全黑状态栏</button>
-                    <button class="btn btn-danger" onclick="exitAppContainer()">安全退出应用</button>
-        </section>
-
-        <!-- 选项卡 5: 本地文件与持久化存储 -->
-        <section id="tab-fs" class="tab-pane">
-            <div class="card" style="border-left: 4px solid #06b6d4;">
-                <div class="card-header">
-                    <span class="card-title">📂 本地安全沙箱文件系统 (electron.fs / file)</span>
-                </div>
-                <p class="card-desc">
-                    突破 Web 无法操控本地文件的限制。支持沙箱目录读写、UTF-8/Base64 编码、目录遍历与网络大文件原生后台下载。
-                </p>
-                <div style="margin-bottom: 8px;">
-                    <input type="text" class="url-input" id="fsFileName" value="test_log.txt" style="width: 100%; margin-bottom: 6px;" placeholder="文件名或相对路径">
-                    <input type="text" class="url-input" id="fsFileContent" value="Hello Mobile Electron! Local File System Works!" style="width: 100%;" placeholder="写入的内容">
-                </div>
-                <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="testFsWriteText()">写入文本文件</button>
-                    <button class="btn btn-outline" onclick="testFsReadText()">读取文件内容</button>
-                    <button class="btn btn-outline" onclick="testFsListDir()">遍历当前沙箱文件</button>
-                    <button class="btn btn-danger" onclick="testFsDelete()">删除该文件</button>
-                </div>
-                <button class="btn btn-success btn-block" onclick="testFsDownload()">原生后台下载网络文件 (1MB 图片)</button>
-            </div>
-
-            <div class="card" style="border-left: 4px solid #3b82f6;">
-                <div class="card-header">
-                    <span class="card-title">💾 原生持久化存储与弹窗 (storage & dialog)</span>
-                </div>
-                <p class="card-desc">
-                    突破 LocalStorage 5MB 上限，支持跨 Profile 共享企业级配置。提供无阻塞 Material/Cupertino 原生弹窗。
-                </p>
-                <div class="btn-grid">
-                    <button class="btn btn-primary" onclick="testStorageSet()">写入 KV 存储</button>
-                    <button class="btn btn-outline" onclick="testStorageGet()">读取 KV 存储</button>
-                    <button class="btn btn-outline" onclick="testNativeAlert()">原生 Alert 弹窗</button>
-                    <button class="btn btn-outline" onclick="testNativeConfirm()">原生 Confirm 确认</button>
-                </div>
-                <button class="btn btn-warning btn-block" onclick="testNativePrompt()">原生 Prompt 文本输入弹窗</button>
-            </div>
-        </section>
-
-        <!-- 统一执行日志视窗 -->
-        <div class="card">
-            <div class="card-header" style="margin-bottom: 6px;">
-                <span class="card-title" style="font-size: 13px;">📟 容器调用日志</span>
-                <button class="btn btn-outline" style="height: 24px; padding: 0 6px; font-size: 11px;" onclick="clearLogs()">清空日志</button>
-            </div>
-            <pre class="log-box" id="logBox">容器初始化就绪，等待指令...</pre>
+      <!-- 1. 窗口与应用 -->
+      <section id="tab-app" class="tab-panel active">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">应用信息 (electron.app)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-app-info" class="btn btn-default">获取信息 (getInfo)</button>
+            <button id="btn-app-config" class="btn btn-outline">查看配置 (getConfig)</button>
+            <button id="btn-app-exit" class="btn btn-danger">退出应用</button>
+          </div>
+          <div id="app-info-display" class="code-box"></div>
         </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">状态栏与视窗 (electron.window)</span>
+          </div>
+          <div class="field">
+            <label>状态栏颜色快捷设定：</label>
+            <div class="palette">
+              <div class="color-dot" data-color="#FFFFFF" data-dark="true" style="background:#FFF;"></div>
+              <div class="color-dot" data-color="#0F172A" data-dark="false" style="background:#0F172A;"></div>
+              <div class="color-dot" data-color="#2563EB" data-dark="false" style="background:#2563EB;"></div>
+              <div class="color-dot" data-color="#10B981" data-dark="false" style="background:#10B981;"></div>
+              <div class="color-dot" data-color="#F59E0B" data-dark="false" style="background:#F59E0B;"></div>
+              <input type="text" id="input-status-color" class="input" style="width:100px; padding:4px 8px; font-size:11px;" value="#FFFFFF">
+              <button id="btn-set-status-bar" class="btn btn-outline" style="padding:4px 8px; font-size:11px;">设置</button>
+            </div>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-fullscreen-on" class="btn btn-subtle">进入全屏</button>
+            <button id="btn-fullscreen-off" class="btn btn-subtle">退出全屏</button>
+            <button id="btn-toolbar-show" class="btn btn-subtle">显示底栏</button>
+            <button id="btn-toolbar-hide" class="btn btn-subtle">隐藏底栏</button>
+          </div>
+          <div class="field mt-2">
+            <label>加载新 URL：</label>
+            <div class="input-group">
+              <input type="text" id="input-window-url" class="input" value="https://m.baidu.com">
+              <button id="btn-window-load-url" class="btn btn-default">加载</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Cookie 管理 -->
+      <section id="tab-cookie" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">Cookie 提取 (electron.cookie)</span>
+            <span id="cookie-counter" class="badge-count">0 项</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-cookie-get-all" class="btn btn-default">全量提取 (getAll)</button>
+            <button id="btn-cookie-get-current" class="btn btn-outline">当前页面 (getDetails)</button>
+            <button id="btn-cookie-inject-preset" class="btn btn-subtle">快速注入测试 Cookie</button>
+            <button id="btn-cookie-clear" class="btn btn-danger">清空 Cookie</button>
+          </div>
+          <div class="field mt-2">
+            <label>按指定 URL 读取字符串：</label>
+            <div class="input-group">
+              <input type="text" id="input-cookie-read-url" class="input" value="https://creator.douyin.com">
+              <button id="btn-cookie-read-url" class="btn btn-outline">读取</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">写入 Cookie (支持 HttpOnly)</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>目标 URL：</label>
+              <input type="text" id="input-cookie-target-url" class="input" value="https://creator.douyin.com">
+            </div>
+            <div class="field">
+              <label>键名：</label>
+              <input type="text" id="input-cookie-name" class="input" value="sessionid">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>键值：</label>
+              <input type="text" id="input-cookie-value" class="input" value="sec_tok_test_9988">
+            </div>
+            <div class="field">
+              <label>作用域 (Domain)：</label>
+              <input type="text" id="input-cookie-domain" class="input" value=".douyin.com">
+            </div>
+          </div>
+          <div class="check-line">
+            <label class="check-item"><input type="checkbox" id="chk-cookie-httponly" checked> HttpOnly</label>
+            <label class="check-item"><input type="checkbox" id="chk-cookie-secure" checked> Secure</label>
+          </div>
+          <button id="btn-cookie-inject" class="btn btn-default btn-block mt-2">写入 Cookie (set)</button>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">Cookie 列表</span>
+            <input type="text" id="input-filter-cookie" class="input" style="width:140px; padding:3px 6px; font-size:11px;" placeholder="筛选...">
+          </div>
+          <div class="table-box">
+            <table class="table-mini" id="table-cookies">
+              <thead>
+                <tr>
+                  <th>键名</th>
+                  <th>键值</th>
+                  <th>域名</th>
+                  <th>HttpOnly</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" style="text-align:center; color:#94a3b8;">点击上方按钮提取 Cookie</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 本地存储 -->
+      <section id="tab-storage" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生键值存储 (electron.storage)</span>
+          </div>
+          <div class="grid-2">
+            <input type="text" id="input-kv-key" class="input" placeholder="Key" value="app_settings">
+            <input type="text" id="input-kv-value" class="input" placeholder="Value (字符串或JSON)" value='{"theme":"dark","v":2}'>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-kv-set" class="btn btn-default">保存 (set)</button>
+            <button id="btn-kv-get" class="btn btn-outline">读取 (get)</button>
+            <button id="btn-kv-keys" class="btn btn-subtle">全部键名</button>
+            <button id="btn-kv-remove" class="btn btn-subtle">删除该键</button>
+            <button id="btn-kv-clear" class="btn btn-danger">清空</button>
+          </div>
+          <div id="kv-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">WebView LocalStorage / SessionStorage</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-ls-read" class="btn btn-default">读取 LocalStorage</button>
+            <button id="btn-ls-write" class="btn btn-outline">写入测试数据</button>
+            <button id="btn-ls-clear" class="btn btn-danger">清空 LocalStorage</button>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-ss-read" class="btn btn-subtle">读取 SessionStorage</button>
+            <button id="btn-ss-write" class="btn btn-subtle">写入 SessionStorage</button>
+            <button id="btn-ss-clear" class="btn btn-danger">清空 SessionStorage</button>
+          </div>
+          <div id="ls-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">一键快照导出 (dumpStorage)</span>
+          </div>
+          <button id="btn-dump-storage" class="btn btn-primary btn-block">导出全量快照 (Cookie + LocalStorage)</button>
+          <div id="dump-result-box" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 4. 文件系统 -->
+      <section id="tab-file" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">沙箱路径 (electron.file)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-fs-paths" class="btn btn-default">获取沙箱路径 (getPaths)</button>
+            <button id="btn-fs-list" class="btn btn-outline">目录列表 (list)</button>
+          </div>
+          <div id="fs-paths-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">文件读写测试</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>相对路径：</label>
+              <input type="text" id="input-fs-filename" class="input" value="test/data.json">
+            </div>
+            <div class="field">
+              <label>目标沙箱目录：</label>
+              <select id="select-fs-dir" class="select">
+                <option value="documents">documents (持久文档)</option>
+                <option value="cache">cache (缓存)</option>
+                <option value="temp">temp (临时)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>内容：</label>
+            <textarea id="input-fs-content" class="textarea" rows="2">{"hello":"world","time":12345}</textarea>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-fs-write" class="btn btn-default">写入 (writeText)</button>
+            <button id="btn-fs-read" class="btn btn-outline">读取 (readText)</button>
+            <button id="btn-fs-exists" class="btn btn-subtle">是否存在</button>
+            <button id="btn-fs-mkdir" class="btn btn-subtle">创建目录</button>
+            <button id="btn-fs-delete" class="btn btn-danger">删除</button>
+          </div>
+          <div id="fs-file-result" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">大文件下载 (download)</span>
+          </div>
+          <div class="field">
+            <label>下载链接：</label>
+            <input type="text" id="input-fs-download-url" class="input" value="https://raw.githubusercontent.com/octocat/Hello-World/master/README">
+          </div>
+          <div class="input-group">
+            <input type="text" id="input-fs-download-name" class="input" value="readme.txt">
+            <button id="btn-fs-download" class="btn btn-default">下载到沙箱</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 网络请求 -->
+      <section id="tab-network" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生网络请求 (绕过 CORS)</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>方法：</label>
+              <select id="select-net-method" class="select">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>常用预设：</label>
+              <select id="select-net-preset" class="select">
+                <option value="https://httpbin.org/get">HttpBin GET 测试</option>
+                <option value="https://httpbin.org/post">HttpBin POST 测试</option>
+                <option value="https://api.github.com/zen">GitHub Zen API</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>URL：</label>
+            <input type="text" id="input-net-url" class="input" value="https://httpbin.org/get">
+          </div>
+          <div class="field">
+            <label>POST / PUT Body (JSON)：</label>
+            <textarea id="input-net-body" class="textarea" rows="2">{"key":"value"}</textarea>
+          </div>
+          <button id="btn-net-send" class="btn btn-default btn-block mt-2">发起请求 (fetchNative)</button>
+          <div id="net-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">网络响应拦截 (onResponse)</span>
+          </div>
+          <div class="input-group">
+            <input type="text" id="input-net-pattern" class="input" placeholder="监听URL关键词，如 api/ 或 get" value="get">
+            <button id="btn-net-listen" class="btn btn-outline">启动监听</button>
+          </div>
+          <div id="net-listen-box" class="code-box">尚未捕获到请求</div>
+        </div>
+      </section>
+
+      <!-- 6. 系统能力与弹窗 -->
+      <section id="tab-dialog" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">设备交互 (electron.device)</span>
+          </div>
+          <div class="field">
+            <label>Toast 消息：</label>
+            <div class="input-group">
+              <input type="text" id="input-toast-text" class="input" value="Hello Mobile Electron">
+              <button id="btn-device-toast" class="btn btn-default">Toast</button>
+            </div>
+          </div>
+          <div class="field mt-2">
+            <label>系统剪贴板：</label>
+            <div class="input-group">
+              <input type="text" id="input-clipboard-text" class="input" value="测试剪贴板文本内容">
+              <button id="btn-clipboard-set" class="btn btn-outline">写入</button>
+              <button id="btn-clipboard-get" class="btn btn-subtle">读取</button>
+            </div>
+          </div>
+          <div id="device-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生对话框 (electron.dialog)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-dialog-alert" class="btn btn-default">Alert</button>
+            <button id="btn-dialog-confirm" class="btn btn-outline">Confirm</button>
+            <button id="btn-dialog-prompt" class="btn btn-subtle">Prompt</button>
+          </div>
+          <div id="dialog-result-box" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 7. 多页面调度 -->
+      <section id="tab-browser" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">页面与 Profile (electron.browser)</span>
+            <button id="btn-browser-refresh" class="btn btn-subtle" style="padding:2px 8px; font-size:11px;">刷新</button>
+          </div>
+          <div class="btn-row">
+            <button id="btn-browser-pages" class="btn btn-default">页面列表 (getAllPages)</button>
+            <button id="btn-browser-profiles" class="btn btn-outline">Profile列表 (listProfiles)</button>
+            <button id="btn-browser-douyin-login" class="btn btn-subtle">抖音扫码监控</button>
+          </div>
+          <div id="browser-pages-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">新建独立沙箱页面 (newPage)</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>URL：</label>
+              <input type="text" id="input-new-page-url" class="input" value="https://m.baidu.com">
+            </div>
+            <div class="field">
+              <label>Profile 隔离分区：</label>
+              <input type="text" id="input-new-page-profile" class="input" value="sandbox_01">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>硬件指纹：</label>
+              <select id="select-new-page-preset" class="select">
+                <option value="flagship">flagship (旗舰机预设)</option>
+                <option value="midrange">midrange (中端预设)</option>
+                <option value="budget">budget (入门预设)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>模式：</label>
+              <select id="select-new-page-headless" class="select">
+                <option value="true">后台无头 (Headless)</option>
+                <option value="false">前台展示</option>
+              </select>
+            </div>
+          </div>
+          <button id="btn-new-page-create" class="btn btn-default btn-block mt-2">创建新页面</button>
+        </div>
+
+        <div id="active-page-ops-card" class="box hidden">
+          <div class="box-header">
+            <span class="box-title">新页面控制 (<span id="current-op-page-id">-</span>)</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-page-front" class="btn btn-primary">切到前台</button>
+            <button id="btn-page-back" class="btn btn-outline">退回后台</button>
+            <button id="btn-page-get-cookies" class="btn btn-subtle">读取Cookie</button>
+            <button id="btn-page-get-ls" class="btn btn-subtle">读取Storage</button>
+            <button id="btn-page-dump" class="btn btn-subtle">导出快照</button>
+            <button id="btn-page-hw" class="btn btn-subtle">硬件指纹</button>
+            <button id="btn-page-close" class="btn btn-danger">销毁</button>
+          </div>
+          <div class="field mt-2">
+            <label>执行 JS (evaluate)：</label>
+            <div class="input-group">
+              <input type="text" id="input-page-eval" class="input" value="document.title">
+              <button id="btn-page-eval" class="btn btn-default">执行</button>
+            </div>
+          </div>
+          <div id="page-op-result" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 原生 TabBar (动态配置与点击监听) (核心要求 1) -->
+      <section id="tab-tabbar" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生 TabBar 动态配置 (electron.tabBar)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            封装的原生底层 TabBar 默认隐藏，支持在 Web 端动态注入选项卡列表（标题、矢量图标、角标徽标、背景色等），并可在 Web 监听原生点击事件。
+          </p>
+          <div class="btn-row mt-2">
+            <button id="btn-tabbar-preset-4" class="btn btn-default">注入预设 4项 (应用/发现/管理/我的)</button>
+            <button id="btn-tabbar-preset-5" class="btn btn-outline">注入电商 5项 (含购物车 99+ 角标)</button>
+            <button id="btn-tabbar-show" class="btn btn-subtle">显示 TabBar</button>
+            <button id="btn-tabbar-hide" class="btn btn-subtle">隐藏 TabBar</button>
+            <button id="btn-tabbar-toggle" class="btn btn-subtle">切换显隐</button>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">TabBar 动态交互与高亮控制</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-tabbar-select-home" class="btn btn-outline">选中第一个 Tab (home)</button>
+            <button id="btn-tabbar-select-cart" class="btn btn-outline">选中购物车 Tab (cart)</button>
+            <button id="btn-tabbar-select-my" class="btn btn-outline">选中我的 Tab (my)</button>
+            <button id="btn-tabbar-badge-update" class="btn btn-subtle">更新购物车角标为 '88'</button>
+            <button id="btn-tabbar-badge-clear" class="btn btn-subtle">清空角标</button>
+            <button id="btn-tabbar-get-state" class="btn btn-default">获取当前状态 (getState)</button>
+          </div>
+          <div id="tabbar-state-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生 TabBar 点击监听事件卡片</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            已注册 <code>electron.tabBar.onTabClick(...)</code> 监听。请在屏幕底部直接点击原生 TabBar 项：
+          </p>
+          <div id="tabbar-click-event-display" class="code-box" style="display:block; min-height:50px; background:#0F172A; color:#38BDF8;">
+            等待原生 TabBar 点击事件触发...
+          </div>
+        </div>
+      </section>
+
+      <!-- 框架调试中心与 WebView DevTools (核心要求 2) -->
+      <section id="tab-debug" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">App 框架调试中心 (electron.debug)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            框架级原生调试控制中心，默认隐藏不显示。支持通过 JSBridge 接口唤出，集中控制 CookieHub、页面管理、白名单与 DevTools。
+          </p>
+          <div class="btn-row mt-2">
+            <button id="btn-debug-show" class="btn btn-default">唤出框架调试中心 (show)</button>
+            <button id="btn-debug-hide" class="btn btn-outline">关闭调试中心 (hide)</button>
+            <button id="btn-debug-toggle" class="btn btn-subtle">切换调试中心显隐 (toggle)</button>
+            <button id="btn-debug-float-on" class="btn btn-subtle">显示右下角悬浮调试球</button>
+            <button id="btn-debug-float-off" class="btn btn-subtle">隐藏悬浮调试球</button>
+            <button id="btn-debug-get-info" class="btn btn-outline">获取框架调试信息 (getInfo)</button>
+          </div>
+          <div id="debug-info-display" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">当前 WebView DevTools 控制 (支持手机直接审查 DOM/Console/Network)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            如果当前 WebView 支持 DevTools，直接在移动端激活全功能 DevTools (Eruda) 控制台，并确认开启底层 Chromium 远程调试端口 (9222 / chrome://inspect)。
+          </p>
+          <div class="btn-row mt-2">
+            <button id="btn-devtools-open" class="btn btn-default" style="background:#16A34A; border-color:#16A34A;">🚀 打开当前 WebView DevTools (openDevTools)</button>
+            <button id="btn-devtools-close" class="btn btn-danger">❌ 关闭 DevTools (closeDevTools)</button>
+            <button id="btn-devtools-toggle" class="btn btn-subtle">🔄 切换 DevTools 显隐 (toggleDevTools)</button>
+          </div>
+          <div id="devtools-result-display" class="code-box"></div>
+        </div>
+      </section>
 
     </main>
 
-    <script>
-        const sdk = window.MobileElectron;
-        let isFullscreen = false;
-        let isDebugBarVisible = false;
+    <!-- 底部简洁日志监控 -->
+    <footer class="drawer-footer">
+      <div class="drawer-bar" id="btn-toggle-console">
+        <div class="drawer-bar-title">
+          <span class="pulse-dot"></span>
+          <span>实时日志 (RPC Inspector)</span>
+        </div>
+        <div class="drawer-tools">
+          <button id="btn-clear-logs" class="tool-link">清空</button>
+          <button id="btn-copy-logs" class="tool-link">复制</button>
+          <span class="tool-link">折叠</span>
+        </div>
+      </div>
+      <div id="console-logs" class="drawer-log-list">
+        <div class="log-line">
+          <span class="log-t">[Init]</span>
+          <span class="log-i">连接就绪</span>
+        </div>
+      </div>
+    </footer>
+  </div>
 
-        function log(msg, obj) {
-            const box = document.getElementById('logBox');
-            const time = new Date().toTimeString().split(' ')[0];
-            let line = `[${time}] ${msg}`;
-            if (obj !== undefined) {
-                line += '\n' + (typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2));
-            }
-            box.textContent = line + '\n' + box.textContent;
-        }
-
-        function clearLogs() {
-            document.getElementById('logBox').textContent = '';
-        }
-
-        // 切换选项卡
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // 页面初始化检测
-        window.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const badge = document.getElementById('platformBadge');
-                badge.textContent = `平台: ${sdk.platform}`;
-                if (sdk.isNativeContainer) {
-                    badge.classList.add('online');
-                }
-
-                // 获取 App 运行时信息
-                const appInfo = await sdk.app.getInfo();
-                log('App 容器信息已加载:', appInfo);
-
-                const engineBadge = document.getElementById('profileEngineBadge');
-                if (appInfo.multiProfileSupported) {
-                    engineBadge.textContent = '原生物理隔离 (Chromium Multi-Profile)';
-                    engineBadge.style.color = '#15803d';
-                    engineBadge.style.background = '#dcfce7';
-                } else {
-                    engineBadge.textContent = '沙箱会话隔离模式';
-                }
-            } catch (e) {
-                log('初始化检测异常: ' + e.message);
-            }
-        });
-
-        // 导航与视窗
-        async function navigateTargetUrl() {
-            const url = document.getElementById('targetUrlInput').value.trim();
-            if (!url) return;
-            log(`正在跳转至: ${url}`);
-            await sdk.window.loadUrl(url);
-        }
-
-        async function reloadApp() {
-            await sdk.window.reload();
-        }
-
-        async function toggleFullscreen() {
-            isFullscreen = !isFullscreen;
-            await sdk.window.setFullscreen(isFullscreen);
-            log(`全屏模式已切换为: ${isFullscreen}`);
-        }
-
-        async function toggleDebugBar() {
-            isDebugBarVisible = !isDebugBarVisible;
-            await sdk.window.setDebugToolbarVisible(isDebugBarVisible);
-            log(`原生调试工具栏可见性: ${isDebugBarVisible}`);
-        }
-
-        // 多 Profile 隔离
-        async function testCreateIsolatedPage(profileName) {
-            log(`正在创建独立 Profile [${profileName}] 页面...`);
-            const page = await sdk.browser.newPage({
-                profile: profileName,
-                url: 'https://m.baidu.com',
-                headless: true,
-                hardwarePreset: 'flagship'
-            });
-            log(`页面创建成功! ID: ${page.pageId}, Profile: ${page.profile}`);
-        }
-
-        async function testBringPageFront(profileName) {
-            const pages = await sdk.browser.getAllPages();
-            const target = pages.find(p => p.profile === profileName);
-            if (target) {
-                await sdk.browser.switchToPage(target.pageId);
-                log(`已切换 ${profileName} (${target.pageId}) 到前台展示`);
-            } else {
-                log(`未找到 Profile [${profileName}] 的活跃页面，请先创建`);
-            }
-        }
-
-        async function testRunFullIsolationVerify() {
-            log('开始自动化双 Profile 物理隔离比对...');
-            const alpha = await sdk.browser.newPage({ profile: 'verify_alpha', headless: true, url: 'https://m.baidu.com' });
-            const beta = await sdk.browser.newPage({ profile: 'verify_beta', headless: true, url: 'https://m.baidu.com' });
-
-            await alpha.setCookies('USER=ALICE; TOKEN=AAA111');
-            await beta.setCookies('USER=BOB; TOKEN=BBB222');
-
-            const cAlpha = await alpha.getCookies();
-            const cBeta = await beta.getCookies();
-
-            log('Profile Alpha Cookie: ' + cAlpha);
-            log('Profile Beta Cookie: ' + cBeta);
-
-            if (cAlpha.includes('ALICE') && !cAlpha.includes('BOB') && cBeta.includes('BOB') && !cBeta.includes('ALICE')) {
-                log('🎉 验证成功: 两套 Profile 数据完全独立物理隔离，绝无串号！');
-                await sdk.device.toast('双 Profile 物理隔离验证通过！');
-            } else {
-                log('⚠️ 隔离测试异常，请查看返回内容');
-            }
-        }
-
-        async function refreshPagesList() {
-            const pages = await sdk.browser.getAllPages();
-            log('当前活跃页面列表:', pages);
-        }
-
-        async function startDouyinQrLogin() {
-            log('正在启动抖音创作者中心隐形扫码登录...');
-            const res = await sdk.browser.startDouyinQrLogin();
-            log('任务启动结果:', res);
-        }
-
-        // Cookie 与 LocalStorage 管理
-        async function queryAllCookiesWithHttpOnly() {
-            const url = document.getElementById('cookieQueryUrl').value;
-            log(`正在全量检索底层 SQLite 数据库 Cookie (含 HttpOnly)...`);
-            const details = await sdk.cookie.getAll({ url, all: false });
-            log(`✅ 共检索到 ${details.length} 项 Cookie (含完整 HttpOnly / Secure 元数据):`);
-            details.forEach((c, idx) => {
-                const badges = [
-                    c.httpOnly ? '🔒 [HttpOnly]' : '',
-                    c.secure ? '🛡️ [Secure]' : ''
-                ].filter(Boolean).join(' ');
-                log(`  #${idx + 1} ${c.name}=${c.value} ${badges}\n     (Domain: ${c.domain}, Path: ${c.path}, Expires: ${c.expires ? new Date(c.expires * 1000).toLocaleString() : 'Session'})`);
-            });
-            const httpOnlyCount = details.filter(c => c.httpOnly).length;
-            await sdk.device.toast(`提取到 ${details.length} 项 Cookie (含 ${httpOnlyCount} 个 HttpOnly)`);
-        }
-
-        async function queryTargetCookies() {
-            const url = document.getElementById('cookieQueryUrl').value;
-            const cookies = await sdk.cookie.get(url);
-            log(`[${url}] 的标准格式 Cookie:`, cookies || '(空)');
-        }
-
-        async function importTargetCookies() {
-            const url = document.getElementById('cookieQueryUrl').value;
-            const raw = document.getElementById('cookieImportInput').value;
-            const count = await sdk.cookie.set(url, raw);
-            log(`成功向 [${url}] 注入 ${count} 项 Cookie (已包含 HttpOnly 标志写入)！`);
-            await sdk.device.toast(`成功写入 ${count} 项 Cookie`);
-        }
-
-        async function copyCurrentCookies() {
-            const url = document.getElementById('cookieQueryUrl').value;
-            const cookies = await sdk.cookie.get(url);
-            if (cookies) {
-                await sdk.device.setClipboard(cookies);
-                await sdk.device.toast('已复制到系统剪贴板');
-                log('Cookie 已复制到剪贴板');
-            } else {
-                await sdk.device.toast('当前 Cookie 为空');
-            }
-        }
-
-        async function clearTargetCookies() {
-            await sdk.cookie.clear();
-            await sdk.device.toast('Cookie 已成功清空');
-            log('Cookie 清空完成');
-        }
-
-        // WebView 实例 LocalStorage 管理
-        async function testWebViewLocalStorageGet() {
-            log('正在读取当前 WebView 实例的 LocalStorage...');
-            const data = await sdk.storage.getLocalStorage();
-            log('当前 WebView LocalStorage 全部内容:', data);
-            await sdk.device.toast(`已读取 ${Object.keys(data).length} 项 LocalStorage`);
-        }
-
-        async function testWebViewLocalStorageSet() {
-            const key = document.getElementById('lsKeyInput').value.trim();
-            const val = document.getElementById('lsValInput').value.trim();
-            if (!key) {
-                await sdk.device.toast('请输入键名');
-                return;
-            }
-            log(`正在向当前 WebView 写入 LocalStorage [${key} = ${val}]...`);
-            await sdk.storage.setLocalStorage({ [key]: val });
-            log(`✅ LocalStorage 写入成功: ${key} = ${val}`);
-            await sdk.device.toast('写入 LocalStorage 成功');
-        }
-
-        async function testWebViewLocalStorageClear() {
-            log('正在清空当前 WebView 实例的 LocalStorage...');
-            await sdk.storage.clearLocalStorage();
-            log('✅ LocalStorage 已完全清空');
-            await sdk.device.toast('LocalStorage 已清空');
-        }
-
-        async function testDumpStorage() {
-            log('正在生成当前页面全量存储快照 (Cookie含HttpOnly + LocalStorage + SessionStorage)...');
-            const dump = await sdk.storage.dumpStorage();
-            log('🎉 存储快照导出完成:', {
-                pageId: dump.pageId,
-                profile: dump.profile,
-                url: dump.url,
-                cookieCount: dump.cookies ? dump.cookies.length : 0,
-                cookies: dump.cookies,
-                localStorage: dump.localStorage,
-                sessionStorage: dump.sessionStorage
-            });
-            await sdk.device.toast(`已提取 ${dump.cookies.length} 项 Cookie 与全部 LocalStorage`);
-        }
-
-
-        // 硬件指纹全维度检测
-        async function checkCurrentHardware() {
-            log('正在提取当前环境全部真实/虚拟硬件指标...');
-
-            // WebGL 显卡硬件提取
-            let glVendor = '未获取', glRenderer = '未获取';
-            try {
-                const canvas = document.createElement('canvas');
-                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                if (gl) {
-                    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-                    if (dbg) {
-                        glVendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
-                        glRenderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
-                    }
-                }
-            } catch(e) {}
-
-            // 电池参数提取
-            let batteryInfo = '不支持';
-            try {
-                if (navigator.getBattery) {
-                    const b = await navigator.getBattery();
-                    batteryInfo = `电量: ${Math.round(b.level * 100)}%, 充电中: ${b.charging}`;
-                }
-            } catch(e) {}
-
-            // Client Hints (高熵硬件提示)
-            let highEntropy = {};
-            try {
-                if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-                    highEntropy = await navigator.userAgentData.getHighEntropyValues(['model', 'architecture', 'bitness']);
-                }
-            } catch(e) {}
-
-            // 网络连接
-            const conn = navigator.connection ? {
-                effectiveType: navigator.connection.effectiveType,
-                downlink: navigator.connection.downlink + ' Mbps',
-                rtt: navigator.connection.rtt + ' ms'
-            } : '不支持';
-
-            const summary = {
-                "CPU 核心数 (hardwareConcurrency)": navigator.hardwareConcurrency + ' 核',
-                "设备物理内存 (deviceMemory)": navigator.deviceMemory + ' GB',
-                "系统平台 (platform)": navigator.platform,
-                "触控点数 (maxTouchPoints)": navigator.maxTouchPoints,
-                "机型硬件提示 (ClientHints model)": highEntropy.model || '未声明',
-                "CPU 架构与位数": (highEntropy.architecture || 'arm') + ' (' + (highEntropy.bitness || '64') + '位)',
-                "WebGL 显卡厂商 (Vendor)": glVendor,
-                "WebGL 显卡渲染器 (Renderer)": glRenderer,
-                "屏幕分辨率与颜色深度": `${screen.width}x${screen.height} (DPR: ${window.devicePixelRatio}, 色深: ${screen.colorDepth}bit)`,
-                "电池硬件状态": batteryInfo,
-                "网卡连接状态": conn,
-                "防检测原生代码保护": Function.prototype.toString.call(Object.getOwnPropertyDescriptor(Navigator.prototype, 'hardwareConcurrency')?.get || (()=>{}))
-            };
-
-            log('✅ 全维度硬件指标探测结果:', summary);
-            await sdk.device.toast('全套硬件指纹已检测完毕');
-        }
-
-        async function applyPresetHardware(preset) {
-            log(`正在应用 [${preset}] 硬件指纹预设...`);
-            await sdk.browser.current().setHardware({ preset });
-            log(`预设 [${preset}] 应用成功，下次刷新或新页面生效`);
-            await sdk.device.toast(`已应用 ${preset} 硬件指纹预设`);
-        }
-
-        // 原生系统能力
-        async function testCorsBypassFetch() {
-            log('正在通过原生底座发起跨域请求 (绕过 CORS)...');
-            try {
-                const resp = await sdk.network.fetchNative({
-                    url: 'https://httpbin.org/get',
-                    method: 'GET'
-                });
-                log('原生网络响应状态码: ' + resp.status);
-                log('原生响应内容:', resp.body);
-            } catch (e) {
-                log('网络请求异常: ' + e.message);
-            }
-        }
-
-        async function testNativeToast() {
-            await sdk.device.toast('这是一条通过 SDK 触发的原生 Toast 消息！');
-        }
-
-        async function testClipboardSync() {
-            const testText = 'MobileElectron-' + Date.now();
-            await sdk.device.setClipboard(testText);
-            const readBack = await sdk.device.getClipboard();
-            log(`剪贴板测试: 写入 [${testText}], 读回 [${readBack}]`);
-            await sdk.device.toast('剪贴板同步成功');
-        }
-
-        async function setStatusBarLight() {
-            await sdk.window.setStatusBar({ color: '#FFFFFF', darkIcons: true, immersive: true });
-            log('已应用亮色沉浸式状态栏');
-        }
-
-        async function setStatusBarDark() {
-            await sdk.window.setStatusBar({ color: '#0F172A', darkIcons: false, immersive: true });
-            log('已应用深色状态栏');
-        }
-
-        async function exitAppContainer() {
-            if (confirm('确定要退出应用吗？')) {
-                await sdk.app.exit();
-            }
-        }
-
-        // 文件读写测试
-        async function testFsWriteText() {
-            const path = document.getElementById('fsFileName').value.trim();
-            const text = document.getElementById('fsFileContent').value;
-            const fullPath = await sdk.fs.writeText(path, text);
-            log(`文件成功写入沙箱! 路径: ${fullPath}`);
-            await sdk.device.toast('文件写入成功');
-        }
-
-        async function testFsReadText() {
-            const path = document.getElementById('fsFileName').value.trim();
-            try {
-                const content = await sdk.fs.readText(path);
-                log(`读取文件 [${path}] 内容:\n${content}`);
-            } catch(e) {
-                log('读取失败: ' + e.message);
-            }
-        }
-
-        async function testFsListDir() {
-            const files = await sdk.fs.list('');
-            log('沙箱 documents 目录文件列表:', files);
-        }
-
-        async function testFsDelete() {
-            const path = document.getElementById('fsFileName').value.trim();
-            const ok = await sdk.fs.delete(path);
-            log(`删除文件 [${path}]: ${ok}`);
-            await sdk.device.toast('文件已删除');
-        }
-
-        async function testFsDownload() {
-            log('正在后台原生下载远程测试文件...');
-            try {
-                const res = await sdk.fs.download({
-                    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
-                    destinationPath: 'downloaded_sample.jpg'
-                });
-                log('下载完成! 存入路径:', res);
-                await sdk.device.toast('文件下载完成');
-            } catch(e) {
-                log('下载失败: ' + e.message);
-            }
-        }
-
-        // 持久化存储与弹窗测试
-        async function testStorageSet() {
-            const now = new Date().toISOString();
-            await sdk.storage.setObject('app_session', { loginAt: now, user: 'admin_test' });
-            log('成功存入持久化数据: key=app_session');
-            await sdk.device.toast('KV 写入成功');
-        }
-
-        async function testStorageGet() {
-            const data = await sdk.storage.getObject('app_session');
-            log('读取持久化数据 app_session:', data);
-        }
-
-        async function testNativeAlert() {
-            await sdk.dialog.alert('这是通过 SDK 调用的原生 Material/Cupertino 对话框！', '系统通知');
-            log('原生 Alert 已关闭');
-        }
-
-        async function testNativeConfirm() {
-            const confirmed = await sdk.dialog.confirm('是否立即执行自动化多账号同步任务？', '操作确认');
-            log('原生 Confirm 选择结果: ' + confirmed);
-        }
-
-        async function testNativePrompt() {
-            const val = await sdk.dialog.prompt('请输入自定义 Profile 名称：', 'profile_custom_1');
-            log('原生 Prompt 输入结果: ' + val);
-        }
-    </script>
 </body>
 </html>

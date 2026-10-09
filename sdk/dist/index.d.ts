@@ -12,6 +12,8 @@ import { AppModule } from './modules/app';
 import { FileModule } from './modules/file';
 import { StorageModule } from './modules/storage';
 import { DialogModule } from './modules/dialog';
+import { TabBarModule } from './modules/tabBar';
+import { DebugModule } from './modules/debug';
 export * from './types';
 export { MobileElectronClient, Page } from './client';
 export { BrowserModule } from './modules/browser';
@@ -23,6 +25,8 @@ export { AppModule } from './modules/app';
 export { FileModule } from './modules/file';
 export { StorageModule } from './modules/storage';
 export { DialogModule } from './modules/dialog';
+export { TabBarModule } from './modules/tabBar';
+export { DebugModule } from './modules/debug';
 export { MockEngine } from './mock';
 /**
  * Mobile Electron 综合门面 SDK 对象
@@ -39,6 +43,8 @@ export declare class MobileElectron {
     readonly fs: FileModule;
     readonly storage: StorageModule;
     readonly dialog: DialogModule;
+    readonly tabBar: TabBarModule;
+    readonly debug: DebugModule;
     constructor();
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
     get platform(): import("./types").Platform;

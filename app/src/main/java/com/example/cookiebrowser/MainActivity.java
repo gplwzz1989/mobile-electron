@@ -52,10 +52,20 @@ import com.example.cookiebrowser.plugins.DevicePlugin;
 import com.example.cookiebrowser.plugins.NetworkPlugin;
 import com.example.cookiebrowser.plugins.PagePlugin;
 import com.example.cookiebrowser.plugins.WindowPlugin;
+import com.example.cookiebrowser.plugins.TabBarPlugin;
+import com.example.cookiebrowser.plugins.DebugPlugin;
 import com.example.cookiebrowser.security.DomainWhitelistManager;
 
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.widget.RelativeLayout;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * 商业级 Mobile Electron 容器主界面（支持多 WebView 前后台自由切换与全 Web 界面驱动）
@@ -92,6 +102,30 @@ public class MainActivity extends AppCompatActivity {
     // 原生容器底座
     private WebViewPool webViewPool;
     private JsBridgeEngine bridgeEngine;
+
+    // 动态原生 TabBar 组件与状态 (核心要求 1)
+    private LinearLayout layoutNativeTabBar;
+    private ImageView btnFloatingDebug;
+    private Dialog frameworkDebugDialog;
+
+    public static class TabBarItemModel {
+        public String id;
+        public String title;
+        public String icon;
+        public String selectedIcon;
+        public String badge;
+        public ImageView ivIcon;
+        public TextView tvTitle;
+        public TextView tvBadge;
+        public LinearLayout container;
+    }
+
+    private final List<TabBarItemModel> tabBarItemModels = new ArrayList<>();
+    private String currentSelectedTabId = "";
+    private int currentSelectedTabIndex = 0;
+    private String tabBarBgColor = "#FFFFFF";
+    private String tabBarTextColor = "#64748B";
+    private String tabBarSelectedColor = "#4F46E5";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +175,8 @@ public class MainActivity extends AppCompatActivity {
         btnNavPages = findViewById(R.id.btn_nav_pages);
         tvPagesBadge = findViewById(R.id.tv_pages_badge);
         btnNavSecurity = findViewById(R.id.btn_nav_security);
+        layoutNativeTabBar = findViewById(R.id.layout_native_tab_bar);
+        btnFloatingDebug = findViewById(R.id.btn_floating_debug);
     }
 
     private void initContainerEngine() {
@@ -163,6 +199,8 @@ public class MainActivity extends AppCompatActivity {
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(MainActivity.this));
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(MainActivity.this, webViewPool));
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(MainActivity.this));
+            pageEngine.registerPlugin(new TabBarPlugin(MainActivity.this));
+            pageEngine.registerPlugin(new DebugPlugin(MainActivity.this));
             targetWebView.addJavascriptInterface(pageEngine, "AndroidBridge");
         });
 
@@ -188,6 +226,8 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(this));
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(this, webViewPool));
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(this));
+        bridgeEngine.registerPlugin(new TabBarPlugin(this));
+        bridgeEngine.registerPlugin(new DebugPlugin(this));
 
         webView.addJavascriptInterface(bridgeEngine, "AndroidBridge");
     }
@@ -298,7 +338,10 @@ public class MainActivity extends AppCompatActivity {
             if (active != null) active.reload();
         });
 
-        btnTopConsole.setOnClickListener(v -> loadUrl(AppConfigManager.getInstance().getConfig().getDefaultUrl()));
+        btnTopConsole.setOnClickListener(v -> toggleFrameworkDebugDialog());
+        if (btnFloatingDebug != null) {
+            btnFloatingDebug.setOnClickListener(v -> toggleFrameworkDebugDialog());
+        }
         ivSecurityLock.setOnClickListener(v -> showSecurityWhitelistDialog());
 
         // 底部导航栏点击事件
@@ -381,6 +424,574 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception ignored) {}
+    }
+
+    // ==========================================
+    // 动态原生 TabBar 核心实现 (核心要求 1)
+    // ==========================================
+
+    public void setTabBarItems(JSONArray items, JSONObject options) {
+        if (layoutNativeTabBar == null) return;
+        layoutNativeTabBar.removeAllViews();
+        tabBarItemModels.clear();
+
+        if (options != null) {
+            tabBarBgColor = options.optString("backgroundColor", "#FFFFFF");
+            tabBarTextColor = options.optString("color", "#64748B");
+            tabBarSelectedColor = options.optString("selectedColor", "#4F46E5");
+            currentSelectedTabId = options.optString("selectedId", "");
+            if (options.has("visible")) {
+                setTabBarVisible(options.optBoolean("visible", true));
+            }
+        }
+        try {
+            layoutNativeTabBar.setBackgroundColor(Color.parseColor(tabBarBgColor));
+        } catch (Exception ignored) {}
+
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject obj = items.optJSONObject(i);
+            if (obj == null) continue;
+
+            final int index = i;
+            final TabBarItemModel model = new TabBarItemModel();
+            model.id = obj.optString("id", "tab_" + i);
+            model.title = obj.optString("title", "");
+            model.icon = obj.optString("icon", "");
+            model.selectedIcon = obj.optString("selectedIcon", "");
+            model.badge = obj.optString("badge", "");
+
+            if (TextUtils.isEmpty(currentSelectedTabId) && i == 0) {
+                currentSelectedTabId = model.id;
+            }
+
+            LinearLayout itemLayout = new LinearLayout(this);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
+            itemLayout.setLayoutParams(lp);
+            itemLayout.setOrientation(LinearLayout.VERTICAL);
+            itemLayout.setGravity(Gravity.CENTER);
+            itemLayout.setClickable(true);
+            itemLayout.setFocusable(true);
+
+            int[] attrs = new int[]{android.R.attr.selectableItemBackground};
+            android.content.res.TypedArray ta = obtainStyledAttributes(attrs);
+            itemLayout.setBackground(ta.getDrawable(0));
+            ta.recycle();
+
+            RelativeLayout iconArea = new RelativeLayout(this);
+            RelativeLayout.LayoutParams areaLp = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            iconArea.setLayoutParams(areaLp);
+
+            ImageView iv = new ImageView(this);
+            int iconPx = (int) (22 * getResources().getDisplayMetrics().density);
+            RelativeLayout.LayoutParams ivLp = new RelativeLayout.LayoutParams(iconPx, iconPx);
+            iv.setId(View.generateViewId());
+            iv.setLayoutParams(ivLp);
+            iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            model.ivIcon = iv;
+
+            bindTabIcon(model, model.id.equals(currentSelectedTabId));
+            iconArea.addView(iv);
+
+            TextView badgeTv = new TextView(this);
+            RelativeLayout.LayoutParams badgeLp = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            badgeLp.addRule(RelativeLayout.ALIGN_TOP, iv.getId());
+            badgeLp.addRule(RelativeLayout.ALIGN_RIGHT, iv.getId());
+            badgeLp.setMargins((int) (10 * getResources().getDisplayMetrics().density), 0, 0, 0);
+            badgeTv.setLayoutParams(badgeLp);
+            badgeTv.setBackgroundResource(R.drawable.bg_tab_badge);
+            badgeTv.setTextColor(Color.WHITE);
+            badgeTv.setTextSize(9);
+            badgeTv.setText(model.badge);
+            badgeTv.setVisibility(!TextUtils.isEmpty(model.badge) ? View.VISIBLE : View.GONE);
+            model.tvBadge = badgeTv;
+            iconArea.addView(badgeTv);
+
+            itemLayout.addView(iconArea);
+
+            TextView tv = new TextView(this);
+            LinearLayout.LayoutParams tvLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            tvLp.topMargin = (int) (2 * getResources().getDisplayMetrics().density);
+            tv.setLayoutParams(tvLp);
+            tv.setText(model.title);
+            tv.setTextSize(10);
+            model.tvTitle = tv;
+            itemLayout.addView(tv);
+
+            model.container = itemLayout;
+            tabBarItemModels.add(model);
+
+            itemLayout.setOnClickListener(v -> {
+                currentSelectedTabId = model.id;
+                currentSelectedTabIndex = index;
+                updateTabBarSelection();
+
+                try {
+                    JSONObject evtData = new JSONObject();
+                    evtData.put("id", model.id);
+                    evtData.put("index", index);
+                    evtData.put("title", model.title);
+                    sendEventToActiveWebView("tabBar:click", evtData);
+                } catch (Exception ignored) {}
+            });
+
+            layoutNativeTabBar.addView(itemLayout);
+        }
+
+        updateTabBarSelection();
+    }
+
+    private void bindTabIcon(TabBarItemModel model, boolean isSelected) {
+        if (model.ivIcon == null) return;
+        String iconName = isSelected && !TextUtils.isEmpty(model.selectedIcon) ? model.selectedIcon : model.icon;
+        int tintColor;
+        try {
+            tintColor = Color.parseColor(isSelected ? tabBarSelectedColor : tabBarTextColor);
+        } catch (Exception e) {
+            tintColor = isSelected ? Color.parseColor("#4F46E5") : Color.parseColor("#64748B");
+        }
+
+        if (TextUtils.isEmpty(iconName)) {
+            model.ivIcon.setImageResource(R.drawable.ic_tab_home);
+            model.ivIcon.setColorFilter(tintColor);
+            return;
+        }
+
+        if (iconName.startsWith("data:image/")) {
+            try {
+                int commaIdx = iconName.indexOf(",");
+                String base64Str = commaIdx >= 0 ? iconName.substring(commaIdx + 1) : iconName;
+                byte[] bytes = Base64.decode(base64Str, Base64.DEFAULT);
+                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                model.ivIcon.setImageBitmap(bmp);
+                model.ivIcon.clearColorFilter();
+                return;
+            } catch (Exception ignored) {}
+        }
+
+        if (iconName.startsWith("http://") || iconName.startsWith("https://")) {
+            loadRemoteTabIcon(model.ivIcon, iconName);
+            return;
+        }
+
+        int resId = getBuiltinTabIconRes(iconName.toLowerCase());
+        model.ivIcon.setImageResource(resId);
+        model.ivIcon.setColorFilter(tintColor);
+    }
+
+    private void loadRemoteTabIcon(ImageView iv, String urlStr) {
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                java.net.URL url = new java.net.URL(urlStr);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                Bitmap bmp = BitmapFactory.decodeStream(is);
+                is.close();
+                conn.disconnect();
+                if (bmp != null) {
+                    runOnUiThread(() -> {
+                        iv.setImageBitmap(bmp);
+                        iv.clearColorFilter();
+                    });
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private int getBuiltinTabIconRes(String name) {
+        switch (name) {
+            case "home": return R.drawable.ic_tab_home;
+            case "search": return R.drawable.ic_tab_search;
+            case "grid":
+            case "category": return R.drawable.ic_tab_grid;
+            case "user":
+            case "profile":
+            case "my": return R.drawable.ic_tab_user;
+            case "settings": return R.drawable.ic_tab_settings;
+            case "cart": return R.drawable.ic_tab_cart;
+            case "bell":
+            case "notice": return R.drawable.ic_tab_bell;
+            case "cookie": return R.drawable.ic_cookie;
+            case "bug":
+            case "debug": return R.drawable.ic_bug;
+            case "terminal":
+            case "console": return R.drawable.ic_terminal;
+            case "refresh": return R.drawable.ic_refresh;
+            case "back": return R.drawable.ic_arrow_back;
+            case "forward": return R.drawable.ic_arrow_forward;
+            case "lock":
+            case "shield": return R.drawable.ic_shield_check;
+            default: return R.drawable.ic_tab_home;
+        }
+    }
+
+    private void updateTabBarSelection() {
+        for (int i = 0; i < tabBarItemModels.size(); i++) {
+            TabBarItemModel m = tabBarItemModels.get(i);
+            boolean isSelected = m.id.equals(currentSelectedTabId) || (currentSelectedTabId.isEmpty() && i == currentSelectedTabIndex);
+            bindTabIcon(m, isSelected);
+            if (m.tvTitle != null) {
+                try {
+                    m.tvTitle.setTextColor(Color.parseColor(isSelected ? tabBarSelectedColor : tabBarTextColor));
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public void setTabBarVisible(boolean visible) {
+        if (layoutNativeTabBar != null) {
+            layoutNativeTabBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    public boolean toggleTabBarVisible() {
+        boolean now = layoutNativeTabBar != null && layoutNativeTabBar.getVisibility() == View.VISIBLE;
+        setTabBarVisible(!now);
+        return !now;
+    }
+
+    public boolean setTabBarSelected(String id, int index) {
+        if (!TextUtils.isEmpty(id)) {
+            currentSelectedTabId = id;
+        } else if (index >= 0 && index < tabBarItemModels.size()) {
+            currentSelectedTabIndex = index;
+            currentSelectedTabId = tabBarItemModels.get(index).id;
+        } else {
+            return false;
+        }
+        updateTabBarSelection();
+        return true;
+    }
+
+    public boolean setTabBarBadge(String id, int index, String badge) {
+        for (int i = 0; i < tabBarItemModels.size(); i++) {
+            TabBarItemModel m = tabBarItemModels.get(i);
+            if ((!TextUtils.isEmpty(id) && id.equals(m.id)) || (i == index)) {
+                m.badge = badge;
+                if (m.tvBadge != null) {
+                    m.tvBadge.setText(badge);
+                    m.tvBadge.setVisibility(!TextUtils.isEmpty(badge) ? View.VISIBLE : View.GONE);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public JSONObject getTabBarState() {
+        JSONObject state = new JSONObject();
+        try {
+            state.put("visible", layoutNativeTabBar != null && layoutNativeTabBar.getVisibility() == View.VISIBLE);
+            state.put("selectedId", currentSelectedTabId);
+            state.put("selectedIndex", currentSelectedTabIndex);
+            JSONArray itemsArr = new JSONArray();
+            for (TabBarItemModel m : tabBarItemModels) {
+                JSONObject itemObj = new JSONObject();
+                itemObj.put("id", m.id);
+                itemObj.put("title", m.title);
+                itemObj.put("icon", m.icon);
+                itemObj.put("selectedIcon", m.selectedIcon);
+                itemObj.put("badge", m.badge);
+                itemsArr.put(itemObj);
+            }
+            state.put("items", itemsArr);
+        } catch (Exception ignored) {}
+        return state;
+    }
+
+    // ==========================================
+    // 框架调试界面与 DevTools 控制 (核心要求 2)
+    // ==========================================
+
+    public void showFrameworkDebugDialog() {
+        if (isFinishing() || isDestroyed()) return;
+        if (frameworkDebugDialog != null && frameworkDebugDialog.isShowing()) {
+            return;
+        }
+
+        frameworkDebugDialog = new Dialog(this);
+        frameworkDebugDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        frameworkDebugDialog.setContentView(R.layout.dialog_framework_debug);
+
+        Window window = frameworkDebugDialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setGravity(Gravity.BOTTOM);
+        }
+
+        WebView active = getActiveWebView();
+        String activeUrl = active != null ? active.getUrl() : "无";
+
+        TextView tvUrl = frameworkDebugDialog.findViewById(R.id.tv_debug_active_url);
+        if (tvUrl != null) {
+            tvUrl.setText("活跃页面: " + (activeUrl != null ? activeUrl : ""));
+        }
+
+        TextView tvRuntime = frameworkDebugDialog.findViewById(R.id.tv_debug_runtime_info);
+        if (tvRuntime != null) {
+            long freeMb = Runtime.getRuntime().freeMemory() / (1024 * 1024);
+            long totalMb = Runtime.getRuntime().totalMemory() / (1024 * 1024);
+            tvRuntime.setText(String.format("平台: Android (API %d) | PID: %d | 堆内存: %dMB / %dMB",
+                    Build.VERSION.SDK_INT, android.os.Process.myPid(), (totalMb - freeMb), totalMb));
+        }
+
+        TextView tvPages = frameworkDebugDialog.findViewById(R.id.tv_debug_pages_info);
+        if (tvPages != null && webViewPool != null) {
+            tvPages.setText(String.format("页面池: %d 个前台页面 | %d 个后台运行页面",
+                    1, webViewPool.getHeadlessPageCount()));
+        }
+
+        ImageView ivClose = frameworkDebugDialog.findViewById(R.id.iv_close_debug_dialog);
+        if (ivClose != null) {
+            ivClose.setOnClickListener(v -> frameworkDebugDialog.dismiss());
+        }
+
+        Button btnOpenDevTools = frameworkDebugDialog.findViewById(R.id.btn_open_webview_devtools);
+        if (btnOpenDevTools != null) {
+            btnOpenDevTools.setOnClickListener(v -> {
+                openDevToolsForActiveWebView();
+                Toast.makeText(MainActivity.this, "已为当前 WebView 打开 DevTools", Toast.LENGTH_SHORT).show();
+                frameworkDebugDialog.dismiss();
+            });
+        }
+
+        Button btnCloseDevTools = frameworkDebugDialog.findViewById(R.id.btn_close_webview_devtools);
+        if (btnCloseDevTools != null) {
+            btnCloseDevTools.setOnClickListener(v -> {
+                closeDevToolsForActiveWebView();
+                Toast.makeText(MainActivity.this, "已关闭 DevTools", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        Button btnCookieHub = frameworkDebugDialog.findViewById(R.id.btn_debug_cookie_hub);
+        if (btnCookieHub != null) {
+            btnCookieHub.setOnClickListener(v -> {
+                frameworkDebugDialog.dismiss();
+                showCookieHubDialog();
+            });
+        }
+
+        Button btnPageManager = frameworkDebugDialog.findViewById(R.id.btn_debug_page_manager);
+        if (btnPageManager != null) {
+            btnPageManager.setOnClickListener(v -> {
+                frameworkDebugDialog.dismiss();
+                showPageManagerDialog();
+            });
+        }
+
+        Button btnWhitelist = frameworkDebugDialog.findViewById(R.id.btn_debug_whitelist);
+        if (btnWhitelist != null) {
+            btnWhitelist.setOnClickListener(v -> {
+                frameworkDebugDialog.dismiss();
+                showSecurityWhitelistDialog();
+            });
+        }
+
+        Button btnToggleTop = frameworkDebugDialog.findViewById(R.id.btn_debug_toggle_topbar);
+        if (btnToggleTop != null) {
+            btnToggleTop.setOnClickListener(v -> {
+                boolean cur = layoutTopBar != null && layoutTopBar.getVisibility() == View.VISIBLE;
+                if (layoutTopBar != null) layoutTopBar.setVisibility(cur ? View.GONE : View.VISIBLE);
+            });
+        }
+
+        Button btnToggleTab = frameworkDebugDialog.findViewById(R.id.btn_debug_toggle_tabbar);
+        if (btnToggleTab != null) {
+            btnToggleTab.setOnClickListener(v -> toggleTabBarVisible());
+        }
+
+        Button btnReload = frameworkDebugDialog.findViewById(R.id.btn_debug_hard_reload);
+        if (btnReload != null) {
+            btnReload.setOnClickListener(v -> {
+                if (active != null) {
+                    active.clearCache(true);
+                    active.reload();
+                }
+                frameworkDebugDialog.dismiss();
+            });
+        }
+
+        frameworkDebugDialog.show();
+    }
+
+    public void dismissFrameworkDebugDialog() {
+        if (frameworkDebugDialog != null && frameworkDebugDialog.isShowing()) {
+            frameworkDebugDialog.dismiss();
+        }
+    }
+
+    public boolean toggleFrameworkDebugDialog() {
+        if (frameworkDebugDialog != null && frameworkDebugDialog.isShowing()) {
+            frameworkDebugDialog.dismiss();
+            return false;
+        } else {
+            showFrameworkDebugDialog();
+            return true;
+        }
+    }
+
+    public void setFloatingDebugButtonVisible(boolean visible) {
+        if (btnFloatingDebug != null) {
+            btnFloatingDebug.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    public JSONObject openDevToolsForActiveWebView() {
+        WebView active = getActiveWebView();
+        JSONObject res = new JSONObject();
+        try {
+            if (active == null) {
+                res.put("success", false);
+                res.put("message", "No active WebView found");
+                return res;
+            }
+
+            // 1. 确保 Chromium 远程调试开启
+            WebView.setWebContentsDebuggingEnabled(true);
+
+            // 2. 注入并呼出 Eruda DevTools 控制台
+            String erudaScript = loadAssetString("eruda.js");
+            if (erudaScript != null && !erudaScript.isEmpty()) {
+                String js = "(function(){\n" +
+                    "  if(window.eruda){\n" +
+                    "    window.eruda.show();\n" +
+                    "  } else {\n" +
+                    "    try {\n" +
+                    "      " + erudaScript + "\n" +
+                    "      if(window.eruda){ window.eruda.init(); window.eruda.show(); }\n" +
+                    "    } catch(e){\n" +
+                    "      console.error('[DevTools] Eruda init failed:', e);\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "})();";
+                active.post(() -> active.evaluateJavascript(js, null));
+            } else {
+                String cdnJs = "(function(){\n" +
+                    "  if(window.eruda){\n" +
+                    "    window.eruda.show();\n" +
+                    "  } else {\n" +
+                    "    var s = document.createElement('script');\n" +
+                    "    s.src = 'https://cdn.jsdelivr.net/npm/eruda';\n" +
+                    "    s.onload = function(){ eruda.init(); eruda.show(); };\n" +
+                    "    document.body.appendChild(s);\n" +
+                    "  }\n" +
+                    "})();";
+                active.post(() -> active.evaluateJavascript(cdnJs, null));
+            }
+
+            res.put("success", true);
+            res.put("devtoolsSupported", true);
+            res.put("opened", true);
+            res.put("activeUrl", active.getUrl());
+            res.put("remoteDebugging", true);
+            res.put("remotePort", 9222);
+        } catch (Exception e) {
+            try {
+                res.put("success", false);
+                res.put("message", e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return res;
+    }
+
+    public JSONObject closeDevToolsForActiveWebView() {
+        WebView active = getActiveWebView();
+        JSONObject res = new JSONObject();
+        try {
+            if (active != null) {
+                String js = "(function(){ if(window.eruda){ window.eruda.hide(); } })();";
+                active.post(() -> active.evaluateJavascript(js, null));
+            }
+            res.put("success", true);
+            res.put("opened", false);
+        } catch (Exception e) {
+            try {
+                res.put("success", false);
+                res.put("message", e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return res;
+    }
+
+    public JSONObject toggleDevToolsForActiveWebView() {
+        WebView active = getActiveWebView();
+        JSONObject res = new JSONObject();
+        try {
+            if (active == null) {
+                res.put("success", false);
+                return res;
+            }
+            String js = "(function(){\n" +
+                "  if(!window.eruda){\n" +
+                "    return false;\n" +
+                "  }\n" +
+                "  var el = document.getElementById('eruda');\n" +
+                "  if(el && el.style.display !== 'none'){\n" +
+                "    window.eruda.hide();\n" +
+                "    return false;\n" +
+                "  } else {\n" +
+                "    window.eruda.show();\n" +
+                "    return true;\n" +
+                "  }\n" +
+                "})();";
+            active.post(() -> active.evaluateJavascript(js, (val) -> {
+                if ("false".equals(val) || "null".equals(val)) {
+                    openDevToolsForActiveWebView();
+                }
+            }));
+            res.put("success", true);
+        } catch (Exception e) {
+            try {
+                res.put("success", false);
+                res.put("message", e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return res;
+    }
+
+    public JSONObject getFrameworkDebugInfo() {
+        JSONObject info = new JSONObject();
+        try {
+            info.put("platform", "android");
+            info.put("sdkVersion", Build.VERSION.SDK_INT);
+            info.put("pid", android.os.Process.myPid());
+            WebView active = getActiveWebView();
+            info.put("activeUrl", active != null ? active.getUrl() : "");
+            info.put("headlessCount", webViewPool != null ? webViewPool.getHeadlessPageCount() : 0);
+            info.put("tabBarVisible", layoutNativeTabBar != null && layoutNativeTabBar.getVisibility() == View.VISIBLE);
+            info.put("devtoolsPort", 9222);
+        } catch (Exception ignored) {}
+        return info;
+    }
+
+    public void sendEventToActiveWebView(String eventName, JSONObject data) {
+        WebView active = getActiveWebView();
+        if (active != null) {
+            String jsonStr = data != null ? data.toString() : "{}";
+            String eventEnvelope = "{\"event\":\"" + eventName + "\",\"data\":" + jsonStr + "}";
+            String js = "window.__onNativeRpcEvent && window.__onNativeRpcEvent(" + eventEnvelope + ");";
+            active.post(() -> active.evaluateJavascript(js, null));
+        }
+    }
+
+    private String loadAssetString(String filename) {
+        try (InputStream is = getAssets().open(filename);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = is.read(buffer)) != -1) {
+                baos.write(buffer, 0, len);
+            }
+            return baos.toString("UTF-8");
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void hideKeyboard(View view) {

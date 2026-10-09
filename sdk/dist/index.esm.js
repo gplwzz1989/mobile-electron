@@ -220,6 +220,39 @@ var MockEngine = class {
         return Promise.resolve({ base64: "" });
       case "page.evaluate":
         return Promise.resolve({ result: null });
+      case "tabbar.setItems":
+        return Promise.resolve({ success: true, count: (params?.items || []).length });
+      case "tabbar.show":
+      case "tabbar.setVisible":
+        return Promise.resolve({ success: true, visible: true });
+      case "tabbar.hide":
+        return Promise.resolve({ success: true, visible: false });
+      case "tabbar.toggle":
+        return Promise.resolve({ success: true, visible: true });
+      case "tabbar.setSelected":
+      case "tabbar.setBadge":
+        return Promise.resolve({ success: true });
+      case "tabbar.getState":
+        return Promise.resolve({ visible: true, selectedId: "tab_0", selectedIndex: 0, items: [] });
+      case "debug.show":
+      case "debug.hide":
+      case "debug.toggle":
+      case "debug.setFloatingButtonVisible":
+        return Promise.resolve({ success: true, visible: true });
+      case "debug.openDevTools":
+        if (typeof window !== "undefined" && window.eruda) {
+          window.eruda.show();
+        }
+        return Promise.resolve({ success: true, devtoolsSupported: true, opened: true });
+      case "debug.closeDevTools":
+        if (typeof window !== "undefined" && window.eruda) {
+          window.eruda.hide();
+        }
+        return Promise.resolve({ success: true, opened: false });
+      case "debug.toggleDevTools":
+        return Promise.resolve({ success: true });
+      case "debug.getInfo":
+        return Promise.resolve({ platform: "web-mock", pid: 0 });
       default:
         return Promise.resolve({ success: true, mock: true });
     }
@@ -953,6 +986,144 @@ var DialogModule = class {
   }
 };
 
+// src/modules/tabBar.ts
+var TabBarModule = class {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * 动态设置原生 TabBar 的列表项与样式配置
+   * @param items TabBar 项数组（每个包含 id, title, icon 等）
+   * @param options 可选配置（selectedId, backgroundColor, color, selectedColor, visible 等）
+   */
+  async setItems(items, options) {
+    return this.client.invoke("tabbar", "setItems", {
+      items,
+      ...options
+    });
+  }
+  /**
+   * 显示原生 TabBar
+   */
+  async show() {
+    const res = await this.client.invoke("tabbar", "show", { visible: true });
+    return res.visible;
+  }
+  /**
+   * 隐藏原生 TabBar
+   */
+  async hide() {
+    const res = await this.client.invoke("tabbar", "hide", { visible: false });
+    return res.visible;
+  }
+  /**
+   * 设置原生 TabBar 是否可见
+   */
+  async setVisible(visible) {
+    const res = await this.client.invoke("tabbar", "setVisible", { visible });
+    return res.visible;
+  }
+  /**
+   * 切换原生 TabBar 的显示/隐藏状态
+   */
+  async toggle() {
+    const res = await this.client.invoke("tabbar", "toggle", {});
+    return res.visible;
+  }
+  /**
+   * 动态设置当前选中的 Tab
+   * @param idOrIndex 选项卡 ID 或数字索引
+   */
+  async setSelected(idOrIndex) {
+    const payload = typeof idOrIndex === "number" ? { index: idOrIndex } : { id: idOrIndex };
+    const res = await this.client.invoke("tabbar", "setSelected", payload);
+    return res.success;
+  }
+  /**
+   * 动态设置某个 Tab 的角标徽标内容
+   * @param idOrIndex 选项卡 ID 或数字索引
+   * @param badge 角标文本（传空字符串隐藏）
+   */
+  async setBadge(idOrIndex, badge) {
+    const payload = typeof idOrIndex === "number" ? { index: idOrIndex, badge } : { id: idOrIndex, badge };
+    const res = await this.client.invoke("tabbar", "setBadge", payload);
+    return res.success;
+  }
+  /**
+   * 获取当前 TabBar 的状态（包含可见性、选项卡列表、当前选中项）
+   */
+  async getState() {
+    return this.client.invoke("tabbar", "getState", {});
+  }
+  /**
+   * 监听原生 TabBar 的点击事件
+   * @param listener 点击回调函数，接收点击的 tab 项信息 { id, index, title }
+   * @returns 取消监听的函数
+   */
+  onTabClick(listener) {
+    return this.client.on("tabBar:click", listener);
+  }
+};
+
+// src/modules/debug.ts
+var DebugModule = class {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * 调出框架调试中心对话框
+   */
+  async show() {
+    const res = await this.client.invoke("debug", "show", {});
+    return res.visible;
+  }
+  /**
+   * 关闭框架调试中心对话框
+   */
+  async hide() {
+    const res = await this.client.invoke("debug", "hide", {});
+    return res.visible;
+  }
+  /**
+   * 切换框架调试中心对话框显隐状态
+   */
+  async toggle() {
+    const res = await this.client.invoke("debug", "toggle", {});
+    return res.visible;
+  }
+  /**
+   * 打开当前活跃 WebView 的 DevTools（在手机端唤出 Eruda 控制台，并确认开启 Chromium 远程调试）
+   */
+  async openDevTools() {
+    return this.client.invoke("debug", "openDevTools", {});
+  }
+  /**
+   * 关闭当前活跃 WebView 的 DevTools
+   */
+  async closeDevTools() {
+    return this.client.invoke("debug", "closeDevTools", {});
+  }
+  /**
+   * 切换当前活跃 WebView 的 DevTools 显隐
+   */
+  async toggleDevTools() {
+    return this.client.invoke("debug", "toggleDevTools", {});
+  }
+  /**
+   * 获取框架运行环境与调试信息
+   */
+  async getInfo() {
+    return this.client.invoke("debug", "getInfo", {});
+  }
+  /**
+   * 设置屏幕右下角悬浮调试球显隐
+   */
+  async setFloatingButtonVisible(visible) {
+    const res = await this.client.invoke("debug", "setFloatingButtonVisible", { visible });
+    return res.visible;
+  }
+};
+
 // src/index.ts
 var MobileElectron = class {
   constructor() {
@@ -967,6 +1138,8 @@ var MobileElectron = class {
     this.fs = this.file;
     this.storage = new StorageModule(this.client);
     this.dialog = new DialogModule(this.client);
+    this.tabBar = new TabBarModule(this.client);
+    this.debug = new DebugModule(this.client);
   }
   /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
   get platform() {
@@ -992,6 +1165,7 @@ export {
   AppModule,
   BrowserModule,
   CookieModule,
+  DebugModule,
   DeviceModule,
   DialogModule,
   FileModule,
@@ -1001,6 +1175,7 @@ export {
   NetworkModule,
   Page,
   StorageModule,
+  TabBarModule,
   WindowModule,
   index_default as default,
   electron,

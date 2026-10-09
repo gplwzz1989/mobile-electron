@@ -224,3 +224,54 @@ export interface PromptOptions {
     confirmText?: string;
     cancelText?: string;
 }
+
+export interface TabBarItem {
+    id: string;
+    title: string;
+    icon?: string;
+    selectedIcon?: string;
+    badge?: string;
+}
+
+export interface TabBarOptions {
+    selectedId?: string;
+    selectedIndex?: number;
+    backgroundColor?: string;
+    color?: string;
+    selectedColor?: string;
+    borderTopColor?: string;
+    visible?: boolean;
+}
+
+export interface TabBarClickEvent {
+    id: string;
+    index: number;
+    title: string;
+}
+
+export interface TabBarState {
+    visible: boolean;
+    selectedId: string;
+    selectedIndex: number;
+    items: TabBarItem[];
+}
+
+export interface FrameworkDebugInfo {
+    platform: string;
+    sdkVersion?: number;
+    pid?: number;
+    activeUrl?: string;
+    headlessCount?: number;
+    tabBarVisible?: boolean;
+    devtoolsPort?: number;
+}
+
+export interface DevToolsResult {
+    success: boolean;
+    devtoolsSupported?: boolean;
+    opened?: boolean;
+    activeUrl?: string;
+    remoteDebugging?: boolean;
+    remotePort?: number;
+    message?: string;
+}

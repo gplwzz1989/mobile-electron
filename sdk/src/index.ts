@@ -13,6 +13,8 @@ import { AppModule } from './modules/app';
 import { FileModule } from './modules/file';
 import { StorageModule } from './modules/storage';
 import { DialogModule } from './modules/dialog';
+import { TabBarModule } from './modules/tabBar';
+import { DebugModule } from './modules/debug';
 
 export * from './types';
 export { MobileElectronClient, Page } from './client';
@@ -25,6 +27,8 @@ export { AppModule } from './modules/app';
 export { FileModule } from './modules/file';
 export { StorageModule } from './modules/storage';
 export { DialogModule } from './modules/dialog';
+export { TabBarModule } from './modules/tabBar';
+export { DebugModule } from './modules/debug';
 export { MockEngine } from './mock';
 
 /**
@@ -42,6 +46,8 @@ export class MobileElectron {
     public readonly fs: FileModule; // 别名 fs 贴合 Electron / Node.js 习惯
     public readonly storage: StorageModule;
     public readonly dialog: DialogModule;
+    public readonly tabBar: TabBarModule;
+    public readonly debug: DebugModule;
 
     constructor() {
         this.client = new MobileElectronClient();
@@ -55,6 +61,8 @@ export class MobileElectron {
         this.fs = this.file;
         this.storage = new StorageModule(this.client);
         this.dialog = new DialogModule(this.client);
+        this.tabBar = new TabBarModule(this.client);
+        this.debug = new DebugModule(this.client);
     }
 
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
