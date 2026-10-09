@@ -23,6 +23,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -248,6 +250,8 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -256,6 +260,24 @@ public class MainActivity extends AppCompatActivity {
         CookieManager.getInstance().setAcceptCookie(true);
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (webViewPool != null && webViewPool.getAssetLoader() != null && request != null) {
+                    WebResourceResponse response = webViewPool.getAssetLoader().shouldInterceptRequest(request.getUrl());
+                    if (response != null) return response;
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                if (webViewPool != null && webViewPool.getAssetLoader() != null && url != null) {
+                    WebResourceResponse response = webViewPool.getAssetLoader().shouldInterceptRequest(Uri.parse(url));
+                    if (response != null) return response;
+                }
+                return super.shouldInterceptRequest(view, url);
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 view.loadUrl(url);
@@ -371,19 +393,21 @@ public class MainActivity extends AppCompatActivity {
 
         hideKeyboard(etUrl);
 
-        if (!input.startsWith("http://") && !input.startsWith("https://") && !input.startsWith("file:///")) {
+        if (!input.startsWith("http://") && !input.startsWith("https://") && !input.startsWith("file://") && !input.startsWith("local://")) {
             input = "https://" + input;
         }
         loadUrl(input);
     }
 
     public void loadUrl(String url) {
+        if (url == null) return;
+        String resolvedUrl = WebViewPool.resolveLocalUrl(url);
         if (etUrl != null) {
             etUrl.setText(url);
         }
         WebView active = getActiveWebView();
         if (active != null) {
-            active.loadUrl(url);
+            active.loadUrl(resolvedUrl);
         }
     }
 

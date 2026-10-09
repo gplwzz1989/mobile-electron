@@ -52,7 +52,8 @@ public final class DomainWhitelistManager {
         guard let urlObj = URL(string: url) else { return false }
 
         // 本地 Bundle / 离线资源包文件协议直接放行
-        if urlObj.scheme?.lowercased() == "file" {
+        let scheme = urlObj.scheme?.lowercased()
+        if scheme == "file" || scheme == "local" {
             return true
         }
 

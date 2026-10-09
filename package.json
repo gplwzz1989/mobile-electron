@@ -1,0 +1,14 @@
+{
+  "name": "mobile-electron-project",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Mobile Electron hybrid application container for Android & iOS",
+  "scripts": {
+    "build:sdk": "npm --prefix sdk run build",
+    "build:web": "npm --prefix web run build",
+    "mode:local": "node scripts/prepare-build.js --mode local",
+    "mode:online": "node scripts/prepare-build.js --mode online",
+    "build:apk:local": "node scripts/prepare-build.js --mode local && gradlew assembleRelease",
+    "build:apk:online": "node scripts/prepare-build.js --mode online && gradlew assembleRelease"
+  }
+}

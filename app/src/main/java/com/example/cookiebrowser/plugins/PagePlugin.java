@@ -3,7 +3,10 @@ package com.example.cookiebrowser.plugins;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.net.Uri;
 import android.webkit.CookieManager;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -181,7 +184,8 @@ public class PagePlugin implements IBridgePlugin {
 
             case "goto": {
                 String pageId = params.optString("pageId");
-                String targetUrl = params.optString("url");
+                String rawUrl = params.optString("url");
+                String targetUrl = WebViewPool.resolveLocalUrl(rawUrl);
                 int timeoutMs = params.optInt("timeoutMs", 15000);
 
                 WebViewPool.ManagedPage page = webViewPool.getPage(pageId);
@@ -201,6 +205,24 @@ public class PagePlugin implements IBridgePlugin {
                     mainHandler.postDelayed(timeoutRunnable, timeoutMs);
 
                     page.webView.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                            if (webViewPool.getAssetLoader() != null && request != null) {
+                                WebResourceResponse response = webViewPool.getAssetLoader().shouldInterceptRequest(request.getUrl());
+                                if (response != null) return response;
+                            }
+                            return super.shouldInterceptRequest(view, request);
+                        }
+
+                        @Override
+                        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                            if (webViewPool.getAssetLoader() != null && url != null) {
+                                WebResourceResponse response = webViewPool.getAssetLoader().shouldInterceptRequest(Uri.parse(url));
+                                if (response != null) return response;
+                            }
+                            return super.shouldInterceptRequest(view, url);
+                        }
+
                         @Override
                         public void onPageFinished(WebView view, String url) {
                             super.onPageFinished(view, url);

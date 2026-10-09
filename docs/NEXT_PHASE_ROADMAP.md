@@ -9,15 +9,13 @@
 
 ```mermaid
 flowchart LR
-    M1["里程碑 1 (当前已完成)<br/>✓ Android微内核容器<br/>✓ app-config配置驱动<br/>✓ @mobile-electron/core SDK<br/>✓ 多Profile物理隔离<br/>✓ 全Web界面化驱动"]
+    M1["里程碑 1 (已完成)<br/>✓ Android微内核容器<br/>✓ app-config配置驱动<br/>✓ @mobile-electron/core SDK<br/>✓ 多Profile物理隔离<br/>✓ 全Web界面化驱动"]
     
-    M2["里程碑 2 (下一阶段 1-2月)<br/>· 离线资源包差分热更新<br/>· 启动加载兜底与骨架屏<br/>· Web调试Console悬浮窗<br/>· 本地SQLite/KV安全存储"]
+    M2["里程碑 2 (已完成)<br/>✓ 在线/离线双模打包支持<br/>✓ 前端Vite相对路径内嵌<br/>✓ AndroidX WebViewAssetLoader<br/>✓ iOS Bundle资源沙盒加载<br/>✓ GitHub Actions自动化CI/CD"]
 
-    M3["里程碑 3 (下一阶段 2-4月)<br/>· iOS原生容器底座深度对齐<br/>· WKWebsiteDataStore物理隔离<br/>· iOS/Android统一打包输出<br/>· Web与原生双向事件流强化"]
+    M3["里程碑 3 (演进中)<br/>· 离线资源包差分增量热更新<br/>· 动态原生插件扩展市场<br/>· CLI脚手架 create-mobile-electron<br/>· 灰度发布与配置云控中心"]
 
-    M4["里程碑 4 (下一阶段 4-6月)<br/>· CLI脚手架 create-mobile-electron<br/>· 动态原生插件扩展市场<br/>· 灰度发布与配置云控中心<br/>· 企业级防篡改与安全加固"]
-
-    M1 --> M2 --> M3 --> M4
+    M1 --> M2 --> M3
 ```
 
 ---

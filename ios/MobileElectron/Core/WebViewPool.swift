@@ -148,13 +148,47 @@ public class WebViewPool: NSObject {
         pages[pageId] = managed
         lock.unlock()
 
-        if let urlStr = initialUrl, let url = URL(string: urlStr) {
+        if let urlStr = initialUrl, !urlStr.isEmpty {
             DispatchQueue.main.async {
-                webView.load(URLRequest(url: url))
+                Self.loadUrl(webView: webView, urlString: urlStr)
             }
         }
 
         return managed
+    }
+
+    public static func loadUrl(webView: WKWebView, urlString: String) {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
+            if let targetUrl = URL(string: trimmed) {
+                webView.load(URLRequest(url: targetUrl))
+            }
+        } else if trimmed.hasPrefix("file://") || trimmed.hasPrefix("local://") {
+            var relPath = trimmed
+            if relPath.hasPrefix("file://") {
+                relPath = String(relPath.dropFirst(7))
+            } else if relPath.hasPrefix("local://") {
+                relPath = String(relPath.dropFirst(8))
+            }
+            while relPath.hasPrefix("/") {
+                relPath = String(relPath.dropFirst(1))
+            }
+
+            let candidateUrl = Bundle.main.bundleURL.appendingPathComponent(relPath)
+            if FileManager.default.fileExists(atPath: candidateUrl.path) {
+                NSLog("[MobileElectron-iOS] Loading local bundle file: %@", candidateUrl.path)
+                webView.loadFileURL(candidateUrl, allowingReadAccessTo: Bundle.main.bundleURL)
+            } else if let resourceUrl = Bundle.main.url(forResource: relPath, withExtension: nil) {
+                NSLog("[MobileElectron-iOS] Loading resource: %@", resourceUrl.path)
+                webView.loadFileURL(resourceUrl, allowingReadAccessTo: Bundle.main.bundleURL)
+            } else {
+                NSLog("[MobileElectron-iOS] Resource not found in bundle: %@", relPath)
+            }
+        } else {
+            if let targetUrl = URL(string: "https://" + trimmed) {
+                webView.load(URLRequest(url: targetUrl))
+            }
+        }
     }
 
     public func switchToForeground(pageId: String) -> Bool {

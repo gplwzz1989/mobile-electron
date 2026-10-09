@@ -7,8 +7,11 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.net.Uri;
 import android.webkit.CookieManager;
 import android.webkit.RenderProcessGoneDetail;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -16,6 +19,7 @@ import android.webkit.WebViewClient;
 
 import androidx.webkit.Profile;
 import androidx.webkit.ProfileStore;
+import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
@@ -81,10 +85,31 @@ public class WebViewPool {
     private String activeForegroundPageId = "main";
     private OnActivePageChangedListener pageChangedListener;
     private PageConfigurator pageConfigurator;
+    private final WebViewAssetLoader assetLoader;
 
     public WebViewPool(Context context, ViewGroup offscreenContainer) {
         this.context = context;
         this.offscreenContainer = offscreenContainer;
+        this.assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(context))
+                .build();
+    }
+
+    public WebViewAssetLoader getAssetLoader() {
+        return assetLoader;
+    }
+
+    public static String resolveLocalUrl(String url) {
+        if (url == null) return null;
+        String trimmed = url.trim();
+        if (trimmed.startsWith("local://")) {
+            return "https://appassets.androidplatform.net/assets/" + trimmed.substring("local://".length());
+        } else if (trimmed.startsWith("file:///dist/")) {
+            return "https://appassets.androidplatform.net/assets/dist/" + trimmed.substring("file:///dist/".length());
+        } else if (trimmed.startsWith("file:///android_asset/")) {
+            return "https://appassets.androidplatform.net/assets/" + trimmed.substring("file:///android_asset/".length());
+        }
+        return trimmed;
     }
 
     public void setForegroundContainer(ViewGroup foregroundContainer) {
@@ -202,8 +227,26 @@ public class WebViewPool {
 
         configureWebSettings(webView, customUserAgent, targetProfile);
 
-        // 3. 渲染与页面监控 (含二次兜底注入)
+        // 3. 渲染与页面监控 (含二次兜底注入与本地资产虚拟域名拦截)
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (assetLoader != null && request != null) {
+                    WebResourceResponse response = assetLoader.shouldInterceptRequest(request.getUrl());
+                    if (response != null) return response;
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                if (assetLoader != null && url != null) {
+                    WebResourceResponse response = assetLoader.shouldInterceptRequest(Uri.parse(url));
+                    if (response != null) return response;
+                }
+                return super.shouldInterceptRequest(view, url);
+            }
+
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
@@ -237,7 +280,7 @@ public class WebViewPool {
 
         // 如果指定了自定义初始地址，立即在后台启动加载
         if (initialUrl != null && !initialUrl.trim().isEmpty()) {
-            String url = initialUrl.trim();
+            String url = resolveLocalUrl(initialUrl.trim());
             if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("file://") && !url.startsWith("about:")) {
                 url = "https://" + url;
             }
@@ -396,6 +439,8 @@ public class WebViewPool {
         settings.setLoadsImagesAutomatically(true);
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
 
         if (customUserAgent != null && !customUserAgent.isEmpty()) {
             settings.setUserAgentString(customUserAgent);

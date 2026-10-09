@@ -150,3 +150,17 @@ App 启动时由 `AppConfigManager` 读取 `assets/app-config.json`：
   - **Tier 0 (公开级)**：`device.toast`, `window.reload`, `window.goBack`, `app.getInfo`（任何页面可调用）；
   - **Tier 1 (业务级)**：`device.get/setClipboard`, `window.setStatusBar`（仅限受信域名调用）；
   - **Tier 2 (核心特权级)**：`cookie.*`, `page.create`, `network.fetchNative`（仅限严格白名单域名调用，杜绝第三方恶意脚本提权）。
+
+### 3.5 双模打包与离线运行体系 (Dual-Mode Packaging & Offline Runtime)
+为了满足不同业务场景（纯离线仪表盘/私有化交付 vs 云端动态发布/远程 SPA），框架原生支持双模构建与启动架构：
+
+1. **在线 URL 模式 (`online`)**：
+   - `window.defaultUrl` 配置远程 `https://...` 地址；
+   - 依赖移动端网络环境，业务更新完全云端化，享受轻量的原生底座包体积。
+2. **本地离线包模式 (`local`)**：
+   - **资源全量内嵌**：构建流程自动化将前端（Vite 相对路径产物 `./assets/...`）及 SDK 脚本完整同步打包进 APK (`assets/dist`) 与 IPA (`Bundle.main/dist`)；
+   - **Android 双轨加载引擎**：采用 Google Jetpack 官方 `androidx.webkit.WebViewAssetLoader` 将本地静态资源拦截映射至虚拟 HTTPS 安全域（`https://appassets.androidplatform.net/assets/dist/index.html`），彻底消除 Chromium 对 `file:///` 加载 ES6 模块时的 CORS 跨域限制；底层同时配置 `setAllowUniversalAccessFromFileURLs(true)` 兜底保障；
+   - **iOS 安全沙箱授权**：利用 `WKWebView.loadFileURL(_:allowingReadAccessTo: Bundle.main.bundleURL)`，向 WKWebView 授予 App Bundle 根目录的完整只读沙盒权限；
+   - **白名单核心特权放行**：`DomainWhitelistManager` 对 `file://`、`local://` 及 `appassets.androidplatform.net` 统一预置为 Tier 2 核心特权级别，本地页面享有调用全部原生特权插件接口的合法权限；
+   - **工程化双模自动化**：根目录通过 `scripts/prepare-build.js` 与 GitHub Actions CI 流水线联动，支持命令行与 CI 一键切换打包形态。
+

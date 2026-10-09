@@ -37,12 +37,14 @@ public class DomainWhitelistManager {
         addTier1Domain("localhost");
         addTier1Domain("127.0.0.1");
         addTier1Domain("10.0.2.2");
+        addTier1Domain("appassets.androidplatform.net");
 
         addTier2Domain("*.baidu.com");
         addTier2Domain("*.douyin.com");
         addTier2Domain("localhost");
         addTier2Domain("127.0.0.1");
         addTier2Domain("10.0.2.2");
+        addTier2Domain("appassets.androidplatform.net");
     }
 
     public static DomainWhitelistManager getInstance() {
@@ -131,6 +133,11 @@ public class DomainWhitelistManager {
                     return true;
                 }
                 return false;
+            }
+
+            // 支持 AndroidX WebViewAssetLoader 虚拟域名
+            if ("appassets.androidplatform.net".equalsIgnoreCase(host)) {
+                return true;
             }
 
             host = host.toLowerCase();

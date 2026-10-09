@@ -84,8 +84,7 @@ public class PagePlugin: IBridgePlugin {
 
         case "goto":
             guard let pageId = params["pageId"] as? String,
-                  let urlStr = params["url"] as? String,
-                  let url = URL(string: urlStr) else {
+                  let urlStr = params["url"] as? String, !urlStr.isEmpty else {
                 completion(400, nil, "Missing pageId or valid url")
                 return
             }
@@ -94,7 +93,7 @@ public class PagePlugin: IBridgePlugin {
                 return
             }
             DispatchQueue.main.async {
-                page.webView.load(URLRequest(url: url))
+                WebViewPool.loadUrl(webView: page.webView, urlString: urlStr)
                 completion(200, ["success": true], "success")
             }
 

@@ -5,7 +5,7 @@
     "version": "2.0.0"
   },
   "window": {
-    "defaultUrl": "https://m.baidu.com",
+    "defaultUrl": "file:///dist/index.html",
     "title": "Mobile Electron Application",
     "fullscreen": false,
     "immersiveStatusBar": true,
@@ -19,7 +19,8 @@
       "https://*.baidu.com",
       "https://*.douyin.com",
       "https://*.amemv.com",
-      "http://localhost"
+      "http://localhost",
+      "m.baidu.com"
     ],
     "allowInsecureContent": true
   },

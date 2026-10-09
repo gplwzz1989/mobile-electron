@@ -92,17 +92,7 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
     }
 
     public func loadTargetUrl(url: String) {
-        if url.hasPrefix("http://") || url.hasPrefix("https://") {
-            if let targetUrl = URL(string: url) {
-                mainWebView.load(URLRequest(url: targetUrl))
-            }
-        } else if url.hasPrefix("file://") {
-            // 支持本地 Bundle 内置 H5 资源
-            let cleanPath = url.replacingOccurrences(of: "file://", with: "")
-            if let bundleUrl = Bundle.main.url(forResource: cleanPath, withExtension: nil) {
-                mainWebView.loadFileURL(bundleUrl, allowingReadAccessTo: bundleUrl.deletingLastPathComponent())
-            }
-        }
+        WebViewPool.loadUrl(webView: mainWebView, urlString: url)
     }
 
     // MARK: - WindowControllable
