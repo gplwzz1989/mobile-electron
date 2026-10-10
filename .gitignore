@@ -74,4 +74,8 @@ ios/build/
 ios/*.xcodeproj
 ios/*.xcworkspace
 
+# Release Bundles
+release/
+*.mep
+
 

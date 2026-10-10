@@ -9,6 +9,11 @@
     "mode:local": "node scripts/prepare-build.js --mode local",
     "mode:online": "node scripts/prepare-build.js --mode online",
     "build:apk:local": "node scripts/prepare-build.js --mode local && gradlew assembleRelease",
-    "build:apk:online": "node scripts/prepare-build.js --mode online && gradlew assembleRelease"
+    "build:apk:online": "node scripts/prepare-build.js --mode online && gradlew assembleRelease",
+    "bundle:build": "node scripts/build-bundle.js",
+    "bundle:serve": "node scripts/serve-update.js"
+  },
+  "devDependencies": {
+    "adm-zip": "^0.6.1"
   }
 }

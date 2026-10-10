@@ -51,6 +51,7 @@
       <button class="tab-pill" data-tab="tab-network">网络请求</button>
       <button class="tab-pill" data-tab="tab-dialog">系统弹窗</button>
       <button class="tab-pill" data-tab="tab-browser">多页面</button>
+      <button class="tab-pill" data-tab="tab-hotupdate">离线包热更</button>
     </nav>
 
     <!-- 主操作区 -->
@@ -521,6 +522,58 @@
             <button id="btn-devtools-toggle" class="btn btn-subtle">🔄 切换 DevTools 显隐 (toggleDevTools)</button>
           </div>
           <div id="devtools-result-display" class="code-box"></div>
+        </div>
+      </section>
+
+      <!-- 10. 离线包与增量热更新 -->
+      <section id="tab-hotupdate" class="tab-panel">
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">离线包当前运行状态 (electron.hotUpdate)</span>
+            <span id="hotupdate-status-badge" class="badge">检测中</span>
+          </div>
+          <div class="btn-row">
+            <button id="btn-hotupdate-current" class="btn btn-default">刷新当前版本</button>
+            <button id="btn-hotupdate-reload" class="btn btn-outline">立即重载页面</button>
+            <button id="btn-hotupdate-rollback" class="btn btn-danger">一键回滚至内置底座</button>
+          </div>
+          <div id="hotupdate-version-display" class="code-box mt-2"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">离线包检查与静默增量更新</span>
+          </div>
+          <div class="field">
+            <label>更新清单服务地址 (update-manifest.json)：</label>
+            <div class="input-group">
+              <input type="text" id="input-hotupdate-url" class="input" value="http://10.0.2.2:8088/update-manifest.json" placeholder="http://10.0.2.2:8088/update-manifest.json">
+              <button id="btn-hotupdate-check" class="btn btn-default">检查更新</button>
+            </div>
+            <div class="form-hint" style="font-size:11px; color:var(--text-sub); margin-top:4px;">
+              模拟器测试建议：Android 使用 <code>http://10.0.2.2:8088/update-manifest.json</code>，iOS 模拟器使用 <code>http://127.0.0.1:8088/update-manifest.json</code>，真机使用电脑 IP。
+            </div>
+          </div>
+
+          <div id="hotupdate-check-result" class="code-box mt-2"></div>
+
+          <div id="hotupdate-download-card" class="mt-2" style="display: none;">
+            <div class="field">
+              <label>发现可用版本：<strong id="hotupdate-new-ver-label" style="color:#2563EB;"></strong></label>
+              <div class="btn-row mt-1">
+                <button id="btn-hotupdate-install" class="btn btn-default" style="background:#16A34A; color:#FFF;">下载并静默部署</button>
+              </div>
+            </div>
+            <div id="hotupdate-progress-container" class="mt-2" style="display: none;">
+              <div style="font-size: 11px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                <span>下载与部署进度</span>
+                <span id="hotupdate-progress-text">0%</span>
+              </div>
+              <div style="background: var(--bg-card); border-radius: 4px; height: 6px; overflow: hidden; border: 1px solid var(--border);">
+                <div id="hotupdate-progress-bar" style="background: #2563EB; height: 100%; width: 0%; transition: width 0.2s;"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

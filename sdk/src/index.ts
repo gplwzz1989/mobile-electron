@@ -15,6 +15,7 @@ import { StorageModule } from './modules/storage';
 import { DialogModule } from './modules/dialog';
 import { TabBarModule } from './modules/tabBar';
 import { DebugModule } from './modules/debug';
+import { HotUpdateModule } from './modules/hotUpdate';
 
 export * from './types';
 export { MobileElectronClient, Page } from './client';
@@ -29,6 +30,7 @@ export { StorageModule } from './modules/storage';
 export { DialogModule } from './modules/dialog';
 export { TabBarModule } from './modules/tabBar';
 export { DebugModule } from './modules/debug';
+export { HotUpdateModule } from './modules/hotUpdate';
 export { MockEngine } from './mock';
 
 /**
@@ -48,6 +50,7 @@ export class MobileElectron {
     public readonly dialog: DialogModule;
     public readonly tabBar: TabBarModule;
     public readonly debug: DebugModule;
+    public readonly hotUpdate: HotUpdateModule;
 
     constructor() {
         this.client = new MobileElectronClient();
@@ -63,6 +66,7 @@ export class MobileElectron {
         this.dialog = new DialogModule(this.client);
         this.tabBar = new TabBarModule(this.client);
         this.debug = new DebugModule(this.client);
+        this.hotUpdate = new HotUpdateModule(this.client);
     }
 
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
@@ -76,8 +80,8 @@ export class MobileElectron {
     }
 
     /** 统一监听原生推送事件 */
-    public on(eventName: string, listener: Function) {
-        return this.client.on(eventName, listener);
+    public on<T = any>(eventName: string, listener: (data: T) => void) {
+        return this.client.on<T>(eventName, listener);
     }
 }
 

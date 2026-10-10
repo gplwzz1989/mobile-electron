@@ -13,7 +13,7 @@ flowchart LR
     
     M2["里程碑 2 (已完成)<br/>✓ 在线/离线双模打包支持<br/>✓ 前端Vite相对路径内嵌<br/>✓ AndroidX WebViewAssetLoader<br/>✓ iOS Bundle资源沙盒加载<br/>✓ GitHub Actions自动化CI/CD"]
 
-    M3["里程碑 3 (演进中)<br/>· 离线资源包差分增量热更新<br/>· 动态原生插件扩展市场<br/>· CLI脚手架 create-mobile-electron<br/>· 灰度发布与配置云控中心"]
+    M3["里程碑 3 (核心落地)<br/>✓ .mep离线包规范与清单生成<br/>✓ Android/iOS 双端沙箱热更新引擎<br/>✓ SHA-256校验与自愈回滚兜底<br/>✓ electron.hotUpdate 前端控制台<br/>· CLI脚手架与动态插件生态 (演进中)"]
 
     M1 --> M2 --> M3
 ```
@@ -22,8 +22,8 @@ flowchart LR
 
 ## 2. 详细演进阶段与具体开发任务
 
-### 阶段一：离线资源包引擎与热更新体系 (Phase 1: Dynamic Offline Bundle & Hot Reload)
-> **目标**：解决远程网络加载慢、离线不可用问题，实现类似高德/微信小程序的高性能离线启动与热更新体验。
+### 阶段一：离线资源包引擎与热更新体系 (Phase 1: Dynamic Offline Bundle & Hot Reload - 已完成)
+> **状态**：**已交付落地**。包含 `.mep` 离线包规范、Android/iOS 原生沙箱拦截切换、SHA-256 完整性防篡改校验、自愈回滚机制、前端 SDK API 及可视化热更新面板。
 
 1. **离线资源包规范定义**：
    - 支持将 Vite / Webpack 构建出的 `dist/` 目录压缩为 `.mep` (Mobile Electron Package) 加密压缩包；

@@ -33,8 +33,9 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
         super.viewDidLoad()
         view.backgroundColor = .white
 
-        // 1. 初始化框架全局配置
+        // 1. 初始化框架全局配置与离线热更新管理器
         AppConfigManager.shared.initialize()
+        HotUpdateManager.shared.initialize()
         let config = AppConfigManager.shared.config
 
         // 2. 布局前台与后台隐形容器 (Edge-to-Edge 沉浸式)
@@ -85,6 +86,9 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
         bridgeEngine.registerPlugin(FilePlugin())
         bridgeEngine.registerPlugin(StoragePlugin())
         bridgeEngine.registerPlugin(DialogPlugin())
+        let hotUpdatePlugin = HotUpdatePlugin(webView: mainWebView)
+        hotUpdatePlugin.bridgeEngine = bridgeEngine
+        bridgeEngine.registerPlugin(hotUpdatePlugin)
 
         webConfig.userContentController.add(bridgeEngine, name: "NativeBridge")
 

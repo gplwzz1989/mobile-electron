@@ -231,6 +231,10 @@ public class WebViewPool {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (request != null) {
+                    WebResourceResponse sandboxResp = HotUpdateManager.getInstance().interceptSandboxResource(request.getUrl());
+                    if (sandboxResp != null) return sandboxResp;
+                }
                 if (assetLoader != null && request != null) {
                     WebResourceResponse response = assetLoader.shouldInterceptRequest(request.getUrl());
                     if (response != null) return response;
@@ -240,6 +244,10 @@ public class WebViewPool {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                if (url != null) {
+                    WebResourceResponse sandboxResp = HotUpdateManager.getInstance().interceptSandboxResource(Uri.parse(url));
+                    if (sandboxResp != null) return sandboxResp;
+                }
                 if (assetLoader != null && url != null) {
                     WebResourceResponse response = assetLoader.shouldInterceptRequest(Uri.parse(url));
                     if (response != null) return response;

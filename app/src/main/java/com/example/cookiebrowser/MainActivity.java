@@ -47,10 +47,12 @@ import com.example.cookiebrowser.bridge.JsBridgeEngine;
 import com.example.cookiebrowser.core.AppConfig;
 import com.example.cookiebrowser.core.AppConfigManager;
 import com.example.cookiebrowser.core.HardwareConfig;
+import com.example.cookiebrowser.core.HotUpdateManager;
 import com.example.cookiebrowser.core.WebViewPool;
 import com.example.cookiebrowser.plugins.AppPlugin;
 import com.example.cookiebrowser.plugins.CookiePlugin;
 import com.example.cookiebrowser.plugins.DevicePlugin;
+import com.example.cookiebrowser.plugins.HotUpdatePlugin;
 import com.example.cookiebrowser.plugins.NetworkPlugin;
 import com.example.cookiebrowser.plugins.PagePlugin;
 import com.example.cookiebrowser.plugins.WindowPlugin;
@@ -134,8 +136,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. 初始化框架应用配置
+        // 1. 初始化框架应用配置与离线热更新管理器
         AppConfigManager.getInstance().init(this);
+        HotUpdateManager.getInstance().init(this);
         AppConfig config = AppConfigManager.getInstance().getConfig();
 
         // 2. 初始化视图与原生底座
@@ -203,6 +206,9 @@ public class MainActivity extends AppCompatActivity {
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(MainActivity.this));
             pageEngine.registerPlugin(new TabBarPlugin(MainActivity.this));
             pageEngine.registerPlugin(new DebugPlugin(MainActivity.this));
+            HotUpdatePlugin pageHotUpdate = new HotUpdatePlugin(MainActivity.this, targetWebView);
+            pageHotUpdate.setBridgeEngine(pageEngine);
+            pageEngine.registerPlugin(pageHotUpdate);
             targetWebView.addJavascriptInterface(pageEngine, "AndroidBridge");
         });
 
@@ -230,6 +236,9 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(this));
         bridgeEngine.registerPlugin(new TabBarPlugin(this));
         bridgeEngine.registerPlugin(new DebugPlugin(this));
+        HotUpdatePlugin mainHotUpdate = new HotUpdatePlugin(this, webView);
+        mainHotUpdate.setBridgeEngine(bridgeEngine);
+        bridgeEngine.registerPlugin(mainHotUpdate);
 
         webView.addJavascriptInterface(bridgeEngine, "AndroidBridge");
     }
@@ -262,6 +271,10 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if (request != null) {
+                    WebResourceResponse sandboxResp = HotUpdateManager.getInstance().interceptSandboxResource(request.getUrl());
+                    if (sandboxResp != null) return sandboxResp;
+                }
                 if (webViewPool != null && webViewPool.getAssetLoader() != null && request != null) {
                     WebResourceResponse response = webViewPool.getAssetLoader().shouldInterceptRequest(request.getUrl());
                     if (response != null) return response;
@@ -271,6 +284,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                if (url != null) {
+                    WebResourceResponse sandboxResp = HotUpdateManager.getInstance().interceptSandboxResource(Uri.parse(url));
+                    if (sandboxResp != null) return sandboxResp;
+                }
                 if (webViewPool != null && webViewPool.getAssetLoader() != null && url != null) {
                     WebResourceResponse response = webViewPool.getAssetLoader().shouldInterceptRequest(Uri.parse(url));
                     if (response != null) return response;

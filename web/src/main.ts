@@ -1201,6 +1201,130 @@ function setupConsoleDrawer() {
   });
 }
 
+let lastCheckResult: any = null;
+
+async function refreshHotUpdateStatus() {
+  try {
+    const info = await electron.hotUpdate.getCurrentVersion();
+    showResult('hotupdate-version-display', info);
+    const badge = document.getElementById('hotupdate-status-badge');
+    if (badge) {
+      if (info.isHotUpdated) {
+        badge.textContent = `沙箱热更 v${info.version}`;
+        badge.style.background = '#16A34A';
+        badge.style.color = '#FFF';
+      } else {
+        badge.textContent = `内置底座 v${info.version}`;
+        badge.style.background = '#64748B';
+        badge.style.color = '#FFF';
+      }
+    }
+    log(`[热更新] 当前离线包: v${info.version} (来源: ${info.source})`, 'i');
+  } catch (err: any) {
+    log(`[热更新] 获取当前版本失败: ${err.message}`, 'e');
+  }
+}
+
+function setupHotUpdate() {
+  refreshHotUpdateStatus();
+
+  document.getElementById('btn-hotupdate-current')?.addEventListener('click', () => {
+    refreshHotUpdateStatus();
+    appToast('已刷新热更新状态');
+  });
+
+  document.getElementById('btn-hotupdate-reload')?.addEventListener('click', async () => {
+    log('[热更新] 正在重新加载当前页面...', 'i');
+    await appToast('正在重载应用...');
+    await electron.hotUpdate.applyAndReload();
+  });
+
+  document.getElementById('btn-hotupdate-rollback')?.addEventListener('click', async () => {
+    if (!confirm('确认回滚至原生底座内置静态离线包？沙箱下载的增量包将被清除。')) return;
+    try {
+      log('[热更新] 正在回滚至内置版本...', 'i');
+      await electron.hotUpdate.rollback();
+      await appToast('已成功回滚至内置底座');
+      refreshHotUpdateStatus();
+    } catch (err: any) {
+      log(`[热更新] 回滚失败: ${err.message}`, 'e');
+      await appToast('回滚失败: ' + err.message);
+    }
+  });
+
+  document.getElementById('btn-hotupdate-check')?.addEventListener('click', async () => {
+    const input = document.getElementById('input-hotupdate-url') as HTMLInputElement;
+    const url = input?.value?.trim() || undefined;
+    log(`[热更新] 检查更新: ${url || '默认地址'}`, 'i');
+    try {
+      const res = await electron.hotUpdate.checkForUpdate(url);
+      lastCheckResult = res;
+      showResult('hotupdate-check-result', res);
+
+      const downloadCard = document.getElementById('hotupdate-download-card');
+      const newVerLabel = document.getElementById('hotupdate-new-ver-label');
+
+      if (res.hasUpdate) {
+        log(`[热更新] 发现新版本: v${res.latestVersion} (当前: v${res.currentVersion})`, 's');
+        await appToast(`发现新版本 v${res.latestVersion}`);
+        if (downloadCard && newVerLabel) {
+          newVerLabel.textContent = `v${res.latestVersion} (${res.description || '无更新日志'})`;
+          downloadCard.style.display = 'block';
+        }
+      } else {
+        log(`[热更新] 当前已是最新版本 (v${res.currentVersion})`, 's');
+        await appToast('当前已是最新版本');
+        if (downloadCard) downloadCard.style.display = 'none';
+      }
+    } catch (err: any) {
+      log(`[热更新] 检查更新失败: ${err.message}`, 'e');
+      await appToast('检查更新失败: ' + err.message);
+    }
+  });
+
+  document.getElementById('btn-hotupdate-install')?.addEventListener('click', async () => {
+    if (!lastCheckResult || !lastCheckResult.packageUrl) {
+      await appToast('未找到待安装的更新包');
+      return;
+    }
+
+    const progressContainer = document.getElementById('hotupdate-progress-container');
+    const progressBar = document.getElementById('hotupdate-progress-bar');
+    const progressText = document.getElementById('hotupdate-progress-text');
+    const installBtn = document.getElementById('btn-hotupdate-install') as HTMLButtonElement;
+
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (installBtn) installBtn.disabled = true;
+
+    log(`[热更新] 开始下载安装离线包: ${lastCheckResult.packageUrl}`, 'i');
+    try {
+      const info = await electron.hotUpdate.downloadAndInstall(
+        {
+          packageUrl: lastCheckResult.packageUrl,
+          packageHash: lastCheckResult.packageHash
+        },
+        (progress) => {
+          if (progressBar) progressBar.style.width = `${progress.percent}%`;
+          if (progressText) progressText.textContent = `${progress.percent}% (${(progress.downloadedBytes / 1024).toFixed(1)} KB)`;
+        }
+      );
+
+      log(`[热更新] 离线包安装部署成功！版本: v${info.version}`, 's');
+      await appToast(`安装成功: v${info.version}`);
+      refreshHotUpdateStatus();
+
+      if (confirm(`离线包 v${info.version} 安装成功！是否立即重新加载生效？`)) {
+        await electron.hotUpdate.applyAndReload();
+      }
+    } catch (err: any) {
+      log(`[热更新] 安装失败: ${err.message}`, 'e');
+      await appToast('安装失败: ' + err.message);
+    } finally {
+      if (installBtn) installBtn.disabled = false;
+    }
+  });
+}
+
 function initApp() {
   document.addEventListener('touchstart', () => {}, { passive: true });
   initEnvironment();
@@ -1216,6 +1340,7 @@ function initApp() {
   setupNetwork();
   setupDeviceAndDialog();
   setupBrowser();
+  setupHotUpdate();
   setupConsoleDrawer();
 }
 

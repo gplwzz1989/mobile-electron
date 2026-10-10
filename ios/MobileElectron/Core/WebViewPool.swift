@@ -174,6 +174,20 @@ public class WebViewPool: NSObject {
                 relPath = String(relPath.dropFirst(1))
             }
 
+            // 优先检查沙箱中生效的热更新离线包
+            if let sandboxDir = HotUpdateManager.shared.getActiveBundleDir() {
+                var sandboxRelPath = relPath
+                if sandboxRelPath.hasPrefix("dist/") {
+                    sandboxRelPath = String(sandboxRelPath.dropFirst(5))
+                }
+                let sandboxFile = sandboxDir.appendingPathComponent(sandboxRelPath)
+                if FileManager.default.fileExists(atPath: sandboxFile.path) {
+                    NSLog("[MobileElectron-iOS] Loading hot-updated sandbox file: %@", sandboxFile.path)
+                    webView.loadFileURL(sandboxFile, allowingReadAccessTo: sandboxDir)
+                    return
+                }
+            }
+
             let candidateUrl = Bundle.main.bundleURL.appendingPathComponent(relPath)
             if FileManager.default.fileExists(atPath: candidateUrl.path) {
                 NSLog("[MobileElectron-iOS] Loading local bundle file: %@", candidateUrl.path)

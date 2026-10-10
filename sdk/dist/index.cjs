@@ -26,6 +26,7 @@ __export(index_exports, {
   DeviceModule: () => DeviceModule,
   DialogModule: () => DialogModule,
   FileModule: () => FileModule,
+  HotUpdateModule: () => HotUpdateModule,
   MobileElectron: () => MobileElectron,
   MobileElectronClient: () => MobileElectronClient,
   MockEngine: () => MockEngine,
@@ -295,6 +296,43 @@ var MockEngine = class {
         return Promise.resolve({ success: true });
       case "debug.getInfo":
         return Promise.resolve({ platform: "web-mock", pid: 0 });
+      case "hotUpdate.getCurrentVersion":
+        return Promise.resolve({
+          version: "2.0.0-mock",
+          buildNumber: 100,
+          isHotUpdated: false,
+          source: "builtin",
+          description: "Web Mock \u5F00\u53D1\u4EFF\u771F\u73AF\u5883"
+        });
+      case "hotUpdate.checkForUpdate":
+        return Promise.resolve({
+          hasUpdate: true,
+          currentVersion: "2.0.0-mock",
+          currentBuild: 100,
+          latestVersion: "2.1.0",
+          latestBuild: 210,
+          packageUrl: "http://127.0.0.1:8088/bundle-v2.1.0.mep",
+          packageHash: "sha256:mock_hash_for_browser_test",
+          packageSize: 33075,
+          description: "Mock \u6A21\u62DF\u65B0\u7248\u672C\u589E\u91CF\u5305\u53D1\u5E03 (\u70ED\u66F4\u6D4B\u8BD5)",
+          mandatory: false
+        });
+      case "hotUpdate.downloadAndInstall":
+        return Promise.resolve({
+          version: "2.1.0",
+          buildNumber: 210,
+          isHotUpdated: true,
+          source: "sandbox",
+          hash: "sha256:mock_hash_for_browser_test",
+          appliedAt: Date.now()
+        });
+      case "hotUpdate.applyAndReload":
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
+        return Promise.resolve({ applied: true });
+      case "hotUpdate.rollback":
+        return Promise.resolve({ rolledBack: true });
       default:
         return Promise.resolve({ success: true, mock: true });
     }
@@ -1166,6 +1204,58 @@ var DebugModule = class {
   }
 };
 
+// src/modules/hotUpdate.ts
+var HotUpdateModule = class {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * 获取当前生效的离线包版本与来源信息
+   */
+  async getCurrentVersion() {
+    return this.client.invoke("hotUpdate", "getCurrentVersion");
+  }
+  /**
+   * 检查远端是否有新版本离线包
+   * @param url 自定义更新清单地址 (不传则使用默认配置或开发服务器)
+   */
+  async checkForUpdate(url) {
+    return this.client.invoke("hotUpdate", "checkForUpdate", { url });
+  }
+  /**
+   * 下载离线包并解压安装到本地沙箱
+   * @param options packageUrl 与 expectedHash
+   * @param onProgress 进度回调函数
+   */
+  async downloadAndInstall(options, onProgress) {
+    let cleanup = null;
+    if (onProgress) {
+      cleanup = this.client.on("hotUpdate:progress", (evt) => {
+        onProgress(evt);
+      });
+    }
+    try {
+      return await this.client.invoke("hotUpdate", "downloadAndInstall", options);
+    } finally {
+      if (cleanup) {
+        cleanup();
+      }
+    }
+  }
+  /**
+   * 应用新版本并立即重新加载页面
+   */
+  async applyAndReload() {
+    return this.client.invoke("hotUpdate", "applyAndReload");
+  }
+  /**
+   * 安全回滚至原生底座内置静态离线包并重载
+   */
+  async rollback() {
+    return this.client.invoke("hotUpdate", "rollback");
+  }
+};
+
 // src/index.ts
 var MobileElectron = class {
   constructor() {
@@ -1182,6 +1272,7 @@ var MobileElectron = class {
     this.dialog = new DialogModule(this.client);
     this.tabBar = new TabBarModule(this.client);
     this.debug = new DebugModule(this.client);
+    this.hotUpdate = new HotUpdateModule(this.client);
   }
   /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
   get platform() {

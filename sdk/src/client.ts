@@ -272,16 +272,16 @@ export class MobileElectronClient {
         });
     }
 
-    public on(eventName: string, listener: Function): UnsubscribeFn {
+    public on<T = any>(eventName: string, listener: (data: T) => void): UnsubscribeFn {
         if (!this.eventListeners.has(eventName)) {
             this.eventListeners.set(eventName, new Set());
         }
-        this.eventListeners.get(eventName)!.add(listener);
+        this.eventListeners.get(eventName)!.add(listener as Function);
 
         return () => {
             const listeners = this.eventListeners.get(eventName);
             if (listeners) {
-                listeners.delete(listener);
+                listeners.delete(listener as Function);
             }
         };
     }

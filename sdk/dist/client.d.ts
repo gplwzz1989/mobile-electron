@@ -89,5 +89,5 @@ export declare class MobileElectronClient {
     private detectPlatform;
     private initBridgeListener;
     invoke<T = any>(module: string, action: string, params?: Record<string, any>, timeoutMs?: number): Promise<T>;
-    on(eventName: string, listener: Function): UnsubscribeFn;
+    on<T = any>(eventName: string, listener: (data: T) => void): UnsubscribeFn;
 }

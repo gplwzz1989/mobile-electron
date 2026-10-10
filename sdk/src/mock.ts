@@ -316,8 +316,51 @@ export class MockEngine {
             case 'debug.getInfo':
                 return Promise.resolve({ platform: 'web-mock', pid: 0 } as unknown as T);
 
+            case 'hotUpdate.getCurrentVersion':
+                return Promise.resolve({
+                    version: '2.0.0-mock',
+                    buildNumber: 100,
+                    isHotUpdated: false,
+                    source: 'builtin',
+                    description: 'Web Mock 开发仿真环境'
+                } as unknown as T);
+
+            case 'hotUpdate.checkForUpdate':
+                return Promise.resolve({
+                    hasUpdate: true,
+                    currentVersion: '2.0.0-mock',
+                    currentBuild: 100,
+                    latestVersion: '2.1.0',
+                    latestBuild: 210,
+                    packageUrl: 'http://127.0.0.1:8088/bundle-v2.1.0.mep',
+                    packageHash: 'sha256:mock_hash_for_browser_test',
+                    packageSize: 33075,
+                    description: 'Mock 模拟新版本增量包发布 (热更测试)',
+                    mandatory: false
+                } as unknown as T);
+
+            case 'hotUpdate.downloadAndInstall':
+                return Promise.resolve({
+                    version: '2.1.0',
+                    buildNumber: 210,
+                    isHotUpdated: true,
+                    source: 'sandbox',
+                    hash: 'sha256:mock_hash_for_browser_test',
+                    appliedAt: Date.now()
+                } as unknown as T);
+
+            case 'hotUpdate.applyAndReload':
+                if (typeof window !== 'undefined') {
+                    window.location.reload();
+                }
+                return Promise.resolve({ applied: true } as unknown as T);
+
+            case 'hotUpdate.rollback':
+                return Promise.resolve({ rolledBack: true } as unknown as T);
+
             default:
                 return Promise.resolve({ success: true, mock: true } as unknown as T);
         }
     }
 }
+

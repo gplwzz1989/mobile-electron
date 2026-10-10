@@ -243,3 +243,30 @@ export interface DevToolsResult {
     remotePort?: number;
     message?: string;
 }
+export interface HotUpdateVersionInfo {
+    version: string;
+    buildNumber?: number;
+    isHotUpdated: boolean;
+    source: 'builtin' | 'sandbox';
+    hash?: string;
+    appliedAt?: number;
+    description?: string;
+    fileCount?: number;
+}
+export interface HotUpdateCheckResult {
+    hasUpdate: boolean;
+    currentVersion: string;
+    currentBuild?: number;
+    latestVersion: string;
+    latestBuild?: number;
+    packageUrl: string;
+    packageHash: string;
+    packageSize: number;
+    description?: string;
+    mandatory?: boolean;
+}
+export interface HotUpdateProgressEvent {
+    percent: number;
+    downloadedBytes: number;
+    totalBytes: number;
+}
