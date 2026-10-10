@@ -361,7 +361,21 @@ export class MockEngine {
                     packageHash: 'sha256:mock_hash_for_browser_test',
                     packageSize: 33075,
                     description: 'Mock 模拟新版本增量包发布 (热更测试)',
-                    mandatory: false
+                    mandatory: false,
+                    diff: {
+                        isDiffSupported: true,
+                        canUseDiff: true,
+                        changedCount: 2,
+                        reusableCount: 3,
+                        diffSize: 4890,
+                        fullPackageSize: 33075,
+                        savedPercent: 85.2,
+                        filesBaseUrl: 'http://127.0.0.1:8088/files/',
+                        changedFiles: [
+                            { path: 'index.html', hash: 'sha256:mock_html', size: 3200 },
+                            { path: 'assets/index.js', hash: 'sha256:mock_js', size: 1690 }
+                        ]
+                    }
                 } as unknown as T);
 
             case 'hotUpdate.downloadAndInstall':
@@ -370,6 +384,8 @@ export class MockEngine {
                     buildNumber: 210,
                     isHotUpdated: true,
                     source: 'sandbox',
+                    updateType: params?.diff?.canUseDiff ? 'incremental_diff' : 'full_package',
+                    diffFilesCount: params?.diff?.canUseDiff ? 2 : 0,
                     hash: 'sha256:mock_hash_for_browser_test',
                     appliedAt: Date.now()
                 } as unknown as T);

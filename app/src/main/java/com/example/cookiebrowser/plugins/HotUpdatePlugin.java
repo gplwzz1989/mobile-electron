@@ -76,10 +76,12 @@ public class HotUpdatePlugin implements IBridgePlugin {
             }
             String packageUrl = params.optString("packageUrl", "");
             String packageHash = params.optString("packageHash", "");
+            JSONObject diffInfo = params.optJSONObject("diff");
 
             HotUpdateManager.getInstance().downloadAndInstall(
                     packageUrl,
                     packageHash,
+                    diffInfo,
                     (percent, downloadedBytes, totalBytes) -> {
                         if (bridgeEngine != null) {
                             try {

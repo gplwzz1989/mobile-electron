@@ -25,12 +25,12 @@ export class HotUpdateModule {
     }
 
     /**
-     * 下载离线包并解压安装到本地沙箱
-     * @param options packageUrl 与 expectedHash
+     * 下载离线包并解压安装到本地沙箱 (支持增量差分下载与整包全量下载)
+     * @param options packageUrl, packageHash 及可选的增量差分信息 diff
      * @param onProgress 进度回调函数
      */
     public async downloadAndInstall(
-        options: { packageUrl: string; packageHash?: string },
+        options: { packageUrl: string; packageHash?: string; diff?: any },
         onProgress?: (progress: HotUpdateProgressEvent) => void
     ): Promise<HotUpdateVersionInfo> {
         let cleanup: (() => void) | null = null;

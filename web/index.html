@@ -663,13 +663,14 @@
           <div id="hotupdate-download-card" class="mt-2" style="display: none;">
             <div class="field">
               <label>发现可用版本：<strong id="hotupdate-new-ver-label" style="color:#2563EB;"></strong></label>
+              <div id="hotupdate-diff-badge" style="display: none; margin: 6px 0; padding: 6px 10px; border-radius: 6px; font-size: 12px; background: #DCFCE7; color: #166534; font-weight: 500; border: 1px solid #BBF7D0;"></div>
               <div class="btn-row mt-1">
                 <button id="btn-hotupdate-install" class="btn btn-default" style="background:#16A34A; color:#FFF;">下载并静默部署</button>
               </div>
             </div>
             <div id="hotupdate-progress-container" class="mt-2" style="display: none;">
               <div style="font-size: 11px; margin-bottom: 4px; display: flex; justify-content: space-between;">
-                <span>下载与部署进度</span>
+                <span id="hotupdate-progress-title">下载与部署进度</span>
                 <span id="hotupdate-progress-text">0%</span>
               </div>
               <div style="background: var(--bg-card); border-radius: 4px; height: 6px; overflow: hidden; border: 1px solid var(--border);">

@@ -61,10 +61,12 @@ public class HotUpdatePlugin: IBridgePlugin {
                 return
             }
             let packageHash = (params["packageHash"] as? String) ?? ""
+            let diffInfo = params["diff"] as? [String: Any]
 
             HotUpdateManager.shared.downloadAndInstall(
                 packageUrl: packageUrl,
                 expectedHash: packageHash,
+                diffInfo: diffInfo,
                 progress: { [weak self] percent, downloaded, total in
                     self?.bridgeEngine?.sendEvent(eventName: "hotUpdate:progress", data: [
                         "percent": percent,

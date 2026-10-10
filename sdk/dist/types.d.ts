@@ -252,6 +252,28 @@ export interface HotUpdateVersionInfo {
     appliedAt?: number;
     description?: string;
     fileCount?: number;
+    updateType?: 'incremental_diff' | 'full_package';
+    diffFilesCount?: number;
+    installMode?: 'incremental_diff' | 'full_package';
+    downloadedFiles?: number;
+    reusedFiles?: number;
+}
+export interface HotUpdateDiffItem {
+    path: string;
+    hash: string;
+    size: number;
+}
+export interface HotUpdateDiffInfo {
+    isDiffSupported: boolean;
+    canUseDiff: boolean;
+    reason?: string;
+    changedCount?: number;
+    reusableCount?: number;
+    diffSize?: number;
+    fullPackageSize?: number;
+    savedPercent?: number;
+    filesBaseUrl?: string;
+    changedFiles?: HotUpdateDiffItem[];
 }
 export interface HotUpdateCheckResult {
     hasUpdate: boolean;
@@ -264,6 +286,7 @@ export interface HotUpdateCheckResult {
     packageSize: number;
     description?: string;
     mandatory?: boolean;
+    diff?: HotUpdateDiffInfo;
 }
 export interface HotUpdateProgressEvent {
     percent: number;

@@ -340,7 +340,21 @@ var MockEngine = class {
           packageHash: "sha256:mock_hash_for_browser_test",
           packageSize: 33075,
           description: "Mock \u6A21\u62DF\u65B0\u7248\u672C\u589E\u91CF\u5305\u53D1\u5E03 (\u70ED\u66F4\u6D4B\u8BD5)",
-          mandatory: false
+          mandatory: false,
+          diff: {
+            isDiffSupported: true,
+            canUseDiff: true,
+            changedCount: 2,
+            reusableCount: 3,
+            diffSize: 4890,
+            fullPackageSize: 33075,
+            savedPercent: 85.2,
+            filesBaseUrl: "http://127.0.0.1:8088/files/",
+            changedFiles: [
+              { path: "index.html", hash: "sha256:mock_html", size: 3200 },
+              { path: "assets/index.js", hash: "sha256:mock_js", size: 1690 }
+            ]
+          }
         });
       case "hotUpdate.downloadAndInstall":
         return Promise.resolve({
@@ -348,6 +362,8 @@ var MockEngine = class {
           buildNumber: 210,
           isHotUpdated: true,
           source: "sandbox",
+          updateType: params?.diff?.canUseDiff ? "incremental_diff" : "full_package",
+          diffFilesCount: params?.diff?.canUseDiff ? 2 : 0,
           hash: "sha256:mock_hash_for_browser_test",
           appliedAt: Date.now()
         });
@@ -1354,8 +1370,8 @@ var HotUpdateModule = class {
     return this.client.invoke("hotUpdate", "checkForUpdate", { url });
   }
   /**
-   * 下载离线包并解压安装到本地沙箱
-   * @param options packageUrl 与 expectedHash
+   * 下载离线包并解压安装到本地沙箱 (支持增量差分下载与整包全量下载)
+   * @param options packageUrl, packageHash 及可选的增量差分信息 diff
    * @param onProgress 进度回调函数
    */
   async downloadAndInstall(options, onProgress) {

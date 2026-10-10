@@ -160,6 +160,19 @@ async function main() {
     ? (opts.baseUrl.endsWith('/') ? opts.baseUrl : opts.baseUrl + '/') + bundleFileName
     : bundleFileName;
 
+  // 将文件完整复制到 release/bundles/files 供增量差分下载使用
+  const filesOutputDir = path.join(opts.out, 'files');
+  if (fs.existsSync(filesOutputDir)) {
+    fs.rmSync(filesOutputDir, { recursive: true, force: true });
+  }
+  fs.mkdirSync(filesOutputDir, { recursive: true });
+  for (const filePath of updatedFiles) {
+    const relPath = path.relative(WEB_DIST_DIR, filePath);
+    const targetFile = path.join(filesOutputDir, relPath);
+    fs.mkdirSync(path.dirname(targetFile), { recursive: true });
+    fs.copyFileSync(filePath, targetFile);
+  }
+
   const updateManifest = {
     appId: 'com.example.cookiebrowser',
     latestVersion: opts.version,
@@ -170,7 +183,9 @@ async function main() {
     packageSize: bundleStat.size,
     description: opts.desc,
     mandatory: opts.mandatory,
-    publishedAt: new Date().toISOString()
+    publishedAt: new Date().toISOString(),
+    filesBaseUrl: 'files/',
+    files: fileManifest
   };
 
   const updateManifestPath = path.join(opts.out, 'update-manifest.json');

@@ -1454,7 +1454,8 @@ async function refreshHotUpdateStatus() {
     const badge = document.getElementById('hotupdate-status-badge');
     if (badge) {
       if (info.isHotUpdated) {
-        badge.textContent = `沙箱热更 v${info.version}`;
+        const typeTag = info.updateType === 'incremental_diff' ? ' (⚡差分)' : '';
+        badge.textContent = `沙箱热更 v${info.version}${typeTag}`;
         badge.style.background = '#16A34A';
         badge.style.color = '#FFF';
       } else {
@@ -1463,7 +1464,7 @@ async function refreshHotUpdateStatus() {
         badge.style.color = '#FFF';
       }
     }
-    log(`[热更新] 当前离线包: v${info.version} (来源: ${info.source})`, 'i');
+    log(`[热更新] 当前离线包: v${info.version} (来源: ${info.source}${info.updateType ? ', 模式: ' + info.updateType : ''})`, 'i');
   } catch (err: any) {
     log(`[热更新] 获取当前版本失败: ${err.message}`, 'e');
   }
@@ -1507,12 +1508,32 @@ function setupHotUpdate() {
 
       const downloadCard = document.getElementById('hotupdate-download-card');
       const newVerLabel = document.getElementById('hotupdate-new-ver-label');
+      const diffBadge = document.getElementById('hotupdate-diff-badge');
+      const installBtn = document.getElementById('btn-hotupdate-install') as HTMLButtonElement;
 
       if (res.hasUpdate) {
         log(`[热更新] 发现新版本: v${res.latestVersion} (当前: v${res.currentVersion})`, 's');
         await appToast(`发现新版本 v${res.latestVersion}`);
         if (downloadCard && newVerLabel) {
           newVerLabel.textContent = `v${res.latestVersion} (${res.description || '无更新日志'})`;
+          
+          if (res.diff && res.diff.canUseDiff) {
+            const kb = (res.diff.diffSize ? res.diff.diffSize / 1024 : 0).toFixed(1);
+            if (diffBadge) {
+              diffBadge.style.display = 'block';
+              diffBadge.innerHTML = `⚡ <strong>增量差分就绪</strong>: 仅需下载 <strong>${res.diff.changedCount}</strong> 个变动文件 (~${kb} KB)，预计节省 <strong>${res.diff.savedPercent}%</strong> 流量！`;
+            }
+            if (installBtn) {
+              installBtn.textContent = `⚡ 增量差分下载部署 (省 ${res.diff.savedPercent}%)`;
+            }
+          } else {
+            if (diffBadge) {
+              diffBadge.style.display = 'none';
+            }
+            if (installBtn) {
+              installBtn.textContent = '📦 全量整包下载部署';
+            }
+          }
           downloadCard.style.display = 'block';
         }
       } else {
@@ -1535,17 +1556,24 @@ function setupHotUpdate() {
     const progressContainer = document.getElementById('hotupdate-progress-container');
     const progressBar = document.getElementById('hotupdate-progress-bar');
     const progressText = document.getElementById('hotupdate-progress-text');
+    const progressTitle = document.getElementById('hotupdate-progress-title');
     const installBtn = document.getElementById('btn-hotupdate-install') as HTMLButtonElement;
 
     if (progressContainer) progressContainer.style.display = 'block';
     if (installBtn) installBtn.disabled = true;
 
-    log(`[热更新] 开始下载安装离线包: ${lastCheckResult.packageUrl}`, 'i');
+    const useDiff = !!(lastCheckResult.diff && lastCheckResult.diff.canUseDiff);
+    if (progressTitle) {
+      progressTitle.textContent = useDiff ? '⚡ 增量差分文件下载与合并中...' : '📦 全量包下载与解压中...';
+    }
+
+    log(`[热更新] 开始${useDiff ? '增量差分' : '全量整包'}下载安装: ${lastCheckResult.packageUrl}`, 'i');
     try {
       const info = await electron.hotUpdate.downloadAndInstall(
         {
           packageUrl: lastCheckResult.packageUrl,
-          packageHash: lastCheckResult.packageHash
+          packageHash: lastCheckResult.packageHash,
+          diff: lastCheckResult.diff
         },
         (progress) => {
           if (progressBar) progressBar.style.width = `${progress.percent}%`;
@@ -1553,11 +1581,12 @@ function setupHotUpdate() {
         }
       );
 
-      log(`[热更新] 离线包安装部署成功！版本: v${info.version}`, 's');
-      await appToast(`安装成功: v${info.version}`);
+      const modeStr = info.installMode === 'incremental_diff' ? '⚡ 增量差分 (文件级复用)' : '📦 全量整包';
+      log(`[热更新] 离线包安装部署成功！模式: ${modeStr}, 版本: v${info.version}`, 's');
+      await appToast(`安装成功 [${modeStr}]: v${info.version}`);
       refreshHotUpdateStatus();
 
-      if (confirm(`离线包 v${info.version} 安装成功！是否立即重新加载生效？`)) {
+      if (confirm(`离线包 v${info.version} 安装成功！\n部署模式: ${modeStr}\n是否立即重新加载生效？`)) {
         await electron.hotUpdate.applyAndReload();
       }
     } catch (err: any) {
