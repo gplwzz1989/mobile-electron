@@ -13,9 +13,11 @@ flowchart LR
     
     M2["里程碑 2 (已完成)<br/>✓ 在线/离线双模打包支持<br/>✓ 前端Vite相对路径内嵌<br/>✓ AndroidX WebViewAssetLoader<br/>✓ iOS Bundle资源沙盒加载<br/>✓ GitHub Actions自动化CI/CD"]
 
-    M3["里程碑 3 (核心落地)<br/>✓ .mep离线包规范与清单生成<br/>✓ Android/iOS 双端沙箱热更新引擎<br/>✓ SHA-256校验与自愈回滚兜底<br/>✓ electron.hotUpdate 前端控制台<br/>· CLI脚手架与动态插件生态 (演进中)"]
+    M3["里程碑 3 (已完成)<br/>✓ .mep离线包规范与清单生成<br/>✓ Android/iOS 双端沙箱热更新引擎<br/>✓ SHA-256校验与自愈回滚兜底<br/>✓ electron.hotUpdate 前端控制台<br/>✓ create-mobile-electron-app脚手架 (Vue/React/Vanilla)"]
 
-    M1 --> M2 --> M3
+    M4["里程碑 4 (核心插件落地)<br/>✓ Haptics 触感反馈系统<br/>✓ Biometrics 生物识别认证 (Face/Touch ID)<br/>✓ SecureStorage 硬件级安全加密库<br/>✓ Camera/Barcode 拍照与二维码扫描<br/>· 动态云控中心与增量差分 (演进中)"]
+
+    M1 --> M2 --> M3 --> M4
 ```
 
 ---
@@ -53,34 +55,33 @@ flowchart LR
 
 ---
 
-### 阶段三：开发者工具链与工程化脚手架 (Phase 3: CLI & Developer Ecosystem)
-> **目标**：让任何前端开发者无需接触 Android Studio 或 Xcode，仅用一行命令即可创建、开发、预览、打包 Mobile Electron 应用。
+### 阶段三：开发者工具链与工程化脚手架 (Phase 3: CLI & Developer Ecosystem - 已交付)
+> **状态**：**已交付落地**。包含独立脚手架包 `create-mobile-electron-app`、交互式/参数化初始化流程、Vanilla-TS / Vue-TS / React-TS 三套完整工程模版。
 
 1. **交互式脚手架 CLI (`create-mobile-electron-app`)**：
    ```bash
-   npx create-mobile-electron-app my-app --template vue3
+   npx create-mobile-electron-app my-app --template vue-ts
    ```
-   - 自动生成配置好的 Vue 3 / React / Svelte 现代模版；
-   - 预配置 `@mobile-electron/core`、`app-config.json` 与 Vite 插件；
-2. **本地调试与实时热重载工具 (`mobile-electron dev`)**：
-   - 本地启动 Vite 开发服务，同时联动局域网连接的 Android 调试真机实时刷新；
-3. **云端 / 本地无环境一键打包工具 (`mobile-electron build`)**：
-   - 支持输入网址或前端目录，直接产出已签名的 `.apk` 与 `.ipa` 安装包。
+   - 自动生成预置 `@mobile-electron/core`、`app-config.json` 与 Vite 的工程模版；
+   - 支持 `--template`, `--mode`, `--yes` 等命令行参数自动化初始化；
+2. **离线包构建与本地分发调试工具**：
+   - `npm run bundle:build`：一键自动扫描并构建 `.mep` 离线更新包；
+   - `npm run bundle:serve`：一键启动本地/模拟器热更新分发调试服务。
 
 ---
 
-### 阶段四：动态插件化中心与底层扩展能力 (Phase 4: Dynamic Plugin System)
-> **目标**：支持业务团队按需扩展底层能力（如蓝牙、扫码枪、NFC、生物识别、后台长保活等）。
+### 阶段四：动态插件化中心与底层扩展能力 (Phase 4: Dynamic Plugin System - 核心插件已交付)
+> **状态**：**核心高频插件已落地**。双端零三方外部依赖，完全基于 Android 与 iOS 系统原生硬件与安全框架构建。
 
 1. **统一原生插件规范 (`IBridgePlugin` 跨语言标准)**：
-   - 制定插件生命周期：`onAttach`, `onDetach`, `handleAction`, `onEvent`；
-2. **开箱即用官方插件库**：
-   - `@mobile-electron/plugin-storage`：基于 MMKV / SQLite 的高性能底层安全存储；
-   - `@mobile-electron/plugin-camera`：自定义全屏扫码识别镜头；
-   - `@mobile-electron/plugin-biometrics`：指纹 / 面容 ID 生物识别认证；
-   - `@mobile-electron/plugin-keepalive`：前台 Service 深度后台长保活机制；
-3. **安全沙箱强化**：
-   - 插件权限声明机制，在 `app-config.json` 中配置插件授权作用域，防止三方网页滥用硬件。
+   - Android（Java / AndroidX）与 iOS（Swift / WebKit）统一 JSON-RPC 2.0 桥接协议与三级权限分级安全机制；
+2. **开箱即用官方高频特权插件库**：
+   - **触感系统 (`electron.haptics`)**：支持轻/中/重 Impact、通知震动 (Success/Warning/Error) 与 Selection 刻度；
+   - **生物识别 (`electron.biometrics`)**：集成 Android `BiometricPrompt` 与 iOS `LocalAuthentication` (Face ID / Touch ID)；
+   - **硬件加密存储 (`electron.secureStorage`)**：基于 AndroidKeyStore (AES-256-GCM) 与 iOS Keychain Services，芯片级安全沙箱；
+   - **媒体与扫码 (`electron.camera`)**：支持原生相机拍摄、相册拾取与毫秒级条码/二维码扫描识别；
+3. **安全沙箱强化与白名单拦截**：
+   - `DomainWhitelistManager` 双端对齐，按调用者 URL 动态阻断非受信任来源对底层硬件特权的未授权调用。
 
 ---
 
