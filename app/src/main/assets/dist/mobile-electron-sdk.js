@@ -63,6 +63,27 @@ var MobileElectronFacade = (() => {
           });
         case "app.getConfig":
           return Promise.resolve({});
+        case "app.getConfigStatus":
+          return Promise.resolve({
+            source: "builtin_asset",
+            defaultUrl: typeof window !== "undefined" ? window.location.href : "",
+            whitelistCount: 8,
+            version: "2.0.0-mock"
+          });
+        case "app.fetchRemoteConfig":
+          return Promise.resolve({
+            success: true,
+            source: "remote_cached",
+            config: {
+              app: { name: "Mobile Electron (Remote Mock)", version: "2.2.0" },
+              security: { whitelist: ["*", "https://*.example.com"] },
+              window: { defaultUrl: (params == null ? void 0 : params.url) || "" }
+            }
+          });
+        case "app.applyRemoteConfig":
+          return Promise.resolve({ success: true, applied: true });
+        case "app.resetRemoteConfig":
+          return Promise.resolve({ success: true, source: "builtin_asset" });
         case "app.exit":
           alert("[Mock App Exit] exit() called");
           return Promise.resolve({ success: true });
@@ -917,6 +938,33 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
      */
     async getConfig() {
       return this.client.invoke("app", "getConfig");
+    }
+    /**
+     * 获取当前配置生效来源与白名单状态
+     */
+    async getConfigStatus() {
+      return this.client.invoke("app", "getConfigStatus");
+    }
+    /**
+     * 动态从远程云端配置服务器拉取新配置并实时生效持久化
+     * @param url 云控配置 JSON 下载地址
+     */
+    async fetchRemoteConfig(url) {
+      return this.client.invoke("app", "fetchRemoteConfig", { url });
+    }
+    /**
+     * 运行时动态更新生效配置 (可选择是否持久化到应用沙箱)
+     * @param config 新的配置对象
+     * @param persist 是否持久化到沙箱缓存 (默认 true)
+     */
+    async applyRemoteConfig(config, persist = true) {
+      return this.client.invoke("app", "applyRemoteConfig", { config, persist });
+    }
+    /**
+     * 重置清除远程沙箱配置，恢复出厂内置 Assets / Bundle 默认配置
+     */
+    async resetRemoteConfig() {
+      return this.client.invoke("app", "resetRemoteConfig");
     }
     /**
      * 退出当前应用程序

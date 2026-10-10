@@ -360,4 +360,17 @@ export interface BarcodeScanResult {
     format?: string;
 }
 
+export interface RemoteConfigStatus {
+    source: 'builtin_asset' | 'remote_cached';
+    defaultUrl: string;
+    whitelistCount: number;
+    version: string;
+}
+
+export interface FetchRemoteConfigResult {
+    success: boolean;
+    source: string;
+    config: Record<string, any>;
+}
+
 

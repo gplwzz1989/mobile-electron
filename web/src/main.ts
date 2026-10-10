@@ -277,6 +277,62 @@ function setupAppAndWindow() {
       log(`导航失败: ${err.message}`, 'e');
     }
   });
+
+  // ========== 云控配置中心 (electron.app.remoteConfig) ==========
+  const badgeSource = document.getElementById('badge-config-source');
+
+  async function updateConfigStatusDisplay() {
+    try {
+      const status = await electron.app.getConfigStatus();
+      if (badgeSource) {
+        badgeSource.textContent = status.source === 'remote_cached' ? '沙箱云控 (Active)' : '内置出厂 (Builtin)';
+        badgeSource.style.background = status.source === 'remote_cached' ? '#DCFCE7' : '#E0E7FF';
+        badgeSource.style.color = status.source === 'remote_cached' ? '#166534' : '#4338CA';
+      }
+      showResult('remote-config-result', status);
+      log(`配置状态: 来源=${status.source}, 白名单规则=${status.whitelistCount}条`, 's');
+    } catch (err: any) {
+      log(`获取配置状态失败: ${err.message}`, 'e');
+    }
+  }
+
+  // 初始获取一次状态
+  setTimeout(updateConfigStatusDisplay, 300);
+
+  document.getElementById('btn-get-config-status')?.addEventListener('click', updateConfigStatusDisplay);
+
+  document.getElementById('btn-fetch-remote-config')?.addEventListener('click', async () => {
+    const url = (document.getElementById('input-remote-config-url') as HTMLInputElement)?.value?.trim();
+    if (!url) return;
+    log(`从云端拉取配置: ${url}...`);
+    try {
+      const res = await electron.app.fetchRemoteConfig(url);
+      showResult('remote-config-result', res);
+      log('云控配置拉取并热生效成功！', 's');
+      await appToast('云控配置热更新成功！');
+      await electron.haptics.notification('success');
+      await updateConfigStatusDisplay();
+    } catch (err: any) {
+      showResult('remote-config-result', err.message);
+      log(`拉取配置失败: ${err.message}`, 'e');
+      await electron.haptics.notification('error');
+    }
+  });
+
+  document.getElementById('btn-reset-remote-config')?.addEventListener('click', async () => {
+    const ok = await electron.dialog.confirm('确定要清除云控缓存并恢复内置出厂配置吗？', '确认');
+    if (!ok) return;
+    try {
+      const res = await electron.app.resetRemoteConfig();
+      showResult('remote-config-result', res);
+      log('已恢复内置出厂配置', 's');
+      await appToast('已重置为内置默认配置');
+      await electron.haptics.notification('success');
+      await updateConfigStatusDisplay();
+    } catch (err: any) {
+      log(`重置失败: ${err.message}`, 'e');
+    }
+  });
 }
 
 function setupCookie() {

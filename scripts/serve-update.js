@@ -97,13 +97,16 @@ server.listen(port, () => {
   console.log('\n======================================================');
   console.log(`🚀 Mobile Electron 热更新测试服务已启动 (Port: ${port})`);
   console.log(`📁 离线包分发根目录: ${BUNDLE_DIR}`);
-  console.log('------------------------------------------------------');
-  console.log('🔗 可用访问地址：');
-  console.log(`   - 本地主机/iOS 模拟器:  http://127.0.0.1:${port}/update-manifest.json`);
-  console.log(`   - Android 官方模拟器:   http://10.0.2.2:${port}/update-manifest.json`);
+  console.log('🔗 热更清单 (update-manifest.json)：');
+  console.log(`   - 本地/iOS 模拟器:      http://127.0.0.1:${port}/update-manifest.json`);
+  console.log(`   - Android 模拟器:       http://10.0.2.2:${port}/update-manifest.json`);
+  console.log('🔗 云控配置 (app-config.json)：');
+  console.log(`   - 本地/iOS 模拟器:      http://127.0.0.1:${port}/app-config.json`);
+  console.log(`   - Android 模拟器:       http://10.0.2.2:${port}/app-config.json`);
   const ips = getLocalIpAddresses();
   for (const ip of ips) {
     console.log(`   - 真机/局域网连接:      http://${ip}:${port}/update-manifest.json`);
+    console.log(`                          http://${ip}:${port}/app-config.json`);
   }
   console.log('======================================================\n');
 });

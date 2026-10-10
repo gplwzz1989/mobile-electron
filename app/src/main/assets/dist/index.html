@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)">
   <title>Mobile Electron</title>
-  <script type="module" crossorigin src="./assets/index-D2KKizpX.js"></script>
+  <script type="module" crossorigin src="./assets/index-DHmxPCGt.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DUYz1dLy.css">
 </head>
 <body>
@@ -101,6 +101,28 @@
               <button id="btn-window-load-url" class="btn btn-default">加载</button>
             </div>
           </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">云控配置中心 (electron.app.remoteConfig)</span>
+            <span id="badge-config-source" class="badge-count" style="background:#E0E7FF; color:#4338CA;">检测中</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            支持云端动态下发 app-config.json，实时热更新域名白名单、特性开关及外观配置，并缓存于应用私有沙箱。
+          </p>
+          <div class="field">
+            <label>远程云控配置 URL：</label>
+            <div class="input-group">
+              <input type="text" id="input-remote-config-url" class="input" value="http://10.0.2.2:8088/app-config.json">
+              <button id="btn-fetch-remote-config" class="btn btn-default">拉取并热更新</button>
+            </div>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-get-config-status" class="btn btn-outline">获取当前状态</button>
+            <button id="btn-reset-remote-config" class="btn btn-subtle">恢复出厂配置 (Reset)</button>
+          </div>
+          <div id="remote-config-result" class="code-box mt-2"></div>
         </div>
       </section>
 

@@ -27,6 +27,31 @@ export class MockEngine {
             case 'app.getConfig':
                 return Promise.resolve({} as unknown as T);
 
+            case 'app.getConfigStatus':
+                return Promise.resolve({
+                    source: 'builtin_asset',
+                    defaultUrl: typeof window !== 'undefined' ? window.location.href : '',
+                    whitelistCount: 8,
+                    version: '2.0.0-mock'
+                } as unknown as T);
+
+            case 'app.fetchRemoteConfig':
+                return Promise.resolve({
+                    success: true,
+                    source: 'remote_cached',
+                    config: {
+                        app: { name: 'Mobile Electron (Remote Mock)', version: '2.2.0' },
+                        security: { whitelist: ['*', 'https://*.example.com'] },
+                        window: { defaultUrl: params?.url || '' }
+                    }
+                } as unknown as T);
+
+            case 'app.applyRemoteConfig':
+                return Promise.resolve({ success: true, applied: true } as unknown as T);
+
+            case 'app.resetRemoteConfig':
+                return Promise.resolve({ success: true, source: 'builtin_asset' } as unknown as T);
+
             case 'app.exit':
                 alert('[Mock App Exit] exit() called');
                 return Promise.resolve({ success: true } as unknown as T);
