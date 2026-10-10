@@ -1,0 +1,30 @@
+{
+  "app": {
+    "name": "{{APP_TITLE}}",
+    "appId": "{{APP_ID}}",
+    "version": "1.0.0"
+  },
+  "window": {
+    "defaultUrl": "{{DEFAULT_URL}}",
+    "title": "{{APP_TITLE}}",
+    "fullscreen": false,
+    "immersiveStatusBar": true,
+    "statusBarColor": "#FFFFFF",
+    "statusBarDarkIcons": true,
+    "showNativeDebugToolbar": false
+  },
+  "security": {
+    "whitelist": [
+      "*",
+      "file://*",
+      "http://localhost:*",
+      "http://127.0.0.1:*",
+      "http://10.0.2.2:*"
+    ],
+    "allowInsecureContent": true
+  },
+  "profile": {
+    "defaultProfile": "default",
+    "hardwarePreset": "flagship"
+  }
+}

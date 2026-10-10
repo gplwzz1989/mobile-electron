@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>{{APP_TITLE}}</title>
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="logo">⚡</div>
+      <h1>{{APP_TITLE}}</h1>
+      <span class="badge" id="env-badge">检测中...</span>
+    </header>
+
+    <main class="content">
+      <section class="card">
+        <h2>原生能力体验</h2>
+        <div class="btn-grid">
+          <button id="btn-toast" class="btn btn-primary">原生 Toast</button>
+          <button id="btn-haptic" class="btn btn-outline">冲击触感 (Haptic)</button>
+          <button id="btn-bio" class="btn btn-outline">生物识别认证</button>
+          <button id="btn-cookie" class="btn btn-outline">读取底层 Cookie</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>输出日志</h2>
+        <pre id="log-box" class="code-box">应用就绪...</pre>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>

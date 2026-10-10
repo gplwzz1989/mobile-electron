@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)">
   <title>Mobile Electron</title>
-  <script type="module" crossorigin src="./assets/index-BfRLx0L-.js"></script>
+  <script type="module" crossorigin src="./assets/index-avnQb6QU.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DUYz1dLy.css">
 </head>
 <body>
@@ -368,6 +368,44 @@
             <button id="btn-dialog-prompt" class="btn btn-subtle">Prompt</button>
           </div>
           <div id="dialog-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">触感与震动反馈 (electron.haptics)</span>
+          </div>
+          <div class="field">
+            <label>冲击触感 (Impact)：</label>
+            <div class="btn-row">
+              <button id="btn-haptics-light" class="btn btn-outline">轻度 (Light)</button>
+              <button id="btn-haptics-medium" class="btn btn-default">中度 (Medium)</button>
+              <button id="btn-haptics-heavy" class="btn btn-outline">重度 (Heavy)</button>
+            </div>
+          </div>
+          <div class="field mt-2">
+            <label>通知触感 (Notification) 与刻度选择：</label>
+            <div class="btn-row">
+              <button id="btn-haptics-success" class="btn btn-subtle" style="color:#16A34A;">成功 (Success)</button>
+              <button id="btn-haptics-warning" class="btn btn-subtle" style="color:#D97706;">警告 (Warning)</button>
+              <button id="btn-haptics-error" class="btn btn-subtle" style="color:#DC2626;">错误 (Error)</button>
+              <button id="btn-haptics-selection" class="btn btn-subtle">刻度拨动 (Selection)</button>
+              <button id="btn-haptics-vibrate" class="btn btn-subtle">长震动 (200ms)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">生物特征身份认证 (electron.biometrics)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            调用系统级指纹认证或 Face ID 面容识别，支持验证系统锁屏密码/指纹/面部凭据。
+          </p>
+          <div class="btn-row">
+            <button id="btn-bio-check" class="btn btn-default">检查可用状态 (isAvailable)</button>
+            <button id="btn-bio-auth" class="btn btn-outline" style="color:#2563EB; font-weight:bold;">调起生物识别认证 (authenticate)</button>
+          </div>
+          <div id="bio-result-box" class="code-box mt-2"></div>
         </div>
       </section>
 

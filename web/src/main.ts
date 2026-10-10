@@ -779,6 +779,72 @@ function setupDeviceAndDialog() {
     showResult('dialog-result-box', { inputVal });
     log(`Prompt 结果: ${inputVal}`, 's');
   });
+
+  // 触感反馈 (Haptics)
+  document.getElementById('btn-haptics-light')?.addEventListener('click', async () => {
+    await electron.haptics.impact('light');
+    log('触发触感: Light Impact', 's');
+  });
+  document.getElementById('btn-haptics-medium')?.addEventListener('click', async () => {
+    await electron.haptics.impact('medium');
+    log('触发触感: Medium Impact', 's');
+  });
+  document.getElementById('btn-haptics-heavy')?.addEventListener('click', async () => {
+    await electron.haptics.impact('heavy');
+    log('触发触感: Heavy Impact', 's');
+  });
+  document.getElementById('btn-haptics-success')?.addEventListener('click', async () => {
+    await electron.haptics.notification('success');
+    log('触发通知触感: Success', 's');
+  });
+  document.getElementById('btn-haptics-warning')?.addEventListener('click', async () => {
+    await electron.haptics.notification('warning');
+    log('触发通知触感: Warning', 's');
+  });
+  document.getElementById('btn-haptics-error')?.addEventListener('click', async () => {
+    await electron.haptics.notification('error');
+    log('触发通知触感: Error', 's');
+  });
+  document.getElementById('btn-haptics-selection')?.addEventListener('click', async () => {
+    await electron.haptics.selection();
+    log('触发拨动触感: Selection Tick', 's');
+  });
+  document.getElementById('btn-haptics-vibrate')?.addEventListener('click', async () => {
+    await electron.haptics.vibrate(200);
+    log('触发系统震动: 200ms', 's');
+  });
+
+  // 生物识别认证 (Biometrics)
+  document.getElementById('btn-bio-check')?.addEventListener('click', async () => {
+    log('检查设备生物识别支持...');
+    try {
+      const res = await electron.biometrics.isAvailable();
+      showResult('bio-result-box', res);
+      log(`生物识别: 支持=${res.supported}, 可用=${res.available}, 类型=${res.biometricType}`, 's');
+    } catch (err: any) {
+      showResult('bio-result-box', err.message);
+      log(`检查失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-bio-auth')?.addEventListener('click', async () => {
+    log('调起生物识别认证...');
+    try {
+      const res = await electron.biometrics.authenticate({
+        title: '身份安全验证',
+        description: '请验证面容或指纹以解锁敏感特权操作'
+      });
+      showResult('bio-result-box', res);
+      log('生物识别认证成功！', 's');
+      await appToast('身份认证成功！');
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      showResult('bio-result-box', err.message);
+      log(`认证失败: ${err.message}`, 'e');
+      await appToast('认证失败: ' + err.message);
+      await electron.haptics.notification('error');
+    }
+  });
 }
 
 function setupBrowser() {

@@ -1,0 +1,22 @@
+{
+  "name": "create-mobile-electron-app",
+  "version": "2.0.0",
+  "description": "Interactive CLI scaffolder for Mobile Electron cross-platform apps",
+  "main": "bin/cli.js",
+  "bin": {
+    "create-mobile-electron-app": "bin/cli.js"
+  },
+  "keywords": [
+    "mobile-electron",
+    "scaffold",
+    "cli",
+    "cross-platform",
+    "android",
+    "ios",
+    "vue",
+    "react",
+    "vite"
+  ],
+  "author": "Mobile Electron Team",
+  "license": "MIT"
+}

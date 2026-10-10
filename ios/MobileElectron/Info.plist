@@ -52,5 +52,7 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
+    <key>NSFaceIDUsageDescription</key>
+    <string>使用 Face ID 验证您的身份以保护安全数据</string>
 </dict>
 </plist>

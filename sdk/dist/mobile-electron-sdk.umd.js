@@ -21,12 +21,14 @@ var MobileElectronFacade = (() => {
   var index_exports = {};
   __export(index_exports, {
     AppModule: () => AppModule,
+    BiometricsModule: () => BiometricsModule,
     BrowserModule: () => BrowserModule,
     CookieModule: () => CookieModule,
     DebugModule: () => DebugModule,
     DeviceModule: () => DeviceModule,
     DialogModule: () => DialogModule,
     FileModule: () => FileModule,
+    HapticsModule: () => HapticsModule,
     HotUpdateModule: () => HotUpdateModule,
     MobileElectron: () => MobileElectron,
     MobileElectronClient: () => MobileElectronClient,
@@ -333,6 +335,31 @@ var MobileElectronFacade = (() => {
           return Promise.resolve({ applied: true });
         case "hotUpdate.rollback":
           return Promise.resolve({ rolledBack: true });
+        case "haptics.impact":
+        case "haptics.notification":
+        case "haptics.selection":
+        case "haptics.vibrate":
+          if (typeof window !== "undefined" && "vibrate" in navigator) {
+            navigator.vibrate((params == null ? void 0 : params.duration) || 20);
+          }
+          return Promise.resolve({ success: true });
+        case "biometrics.isAvailable":
+          return Promise.resolve({
+            available: true,
+            supported: true,
+            deviceSecure: true,
+            hasFingerprint: true,
+            hasFace: true,
+            biometricType: "face"
+          });
+        case "biometrics.authenticate":
+          const ok = confirm(`[Mock \u751F\u7269\u8BC6\u522B] ${(params == null ? void 0 : params.title) || "\u9A8C\u8BC1\u8EAB\u4EFD"}
+${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u9762\u5BB9\u8BC6\u522B\u6210\u529F\uFF1F"}`);
+          if (ok) {
+            return Promise.resolve({ success: true, authenticated: true });
+          } else {
+            return Promise.reject(new Error("\u7528\u6237\u53D6\u6D88\u4E86\u751F\u7269\u8BC6\u522B (Mock)"));
+          }
         default:
           return Promise.resolve({ success: true, mock: true });
       }
@@ -1259,6 +1286,66 @@ var MobileElectronFacade = (() => {
     }
   };
 
+  // src/modules/haptics.ts
+  var HapticsModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 触发冲击碰撞触感反馈 (支持 light, medium, heavy)
+     */
+    async impact(style = "medium") {
+      var _a;
+      const res = await this.client.invoke("haptics", "impact", { style });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 触发状态通知触感反馈 (支持 success, warning, error)
+     */
+    async notification(type = "success") {
+      var _a;
+      const res = await this.client.invoke("haptics", "notification", { type });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 触发刻度滚轮/选择项切换极微触感 (类似 iOS 滚轮拨动或 Android 滑动刻度)
+     */
+    async selection() {
+      var _a;
+      const res = await this.client.invoke("haptics", "selection");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 触发指定时长的标准系统马达震动
+     * @param durationMs 震动毫秒数 (默认 200ms)
+     */
+    async vibrate(durationMs = 200) {
+      var _a;
+      const res = await this.client.invoke("haptics", "vibrate", { duration: durationMs });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+  };
+
+  // src/modules/biometrics.ts
+  var BiometricsModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 检查当前设备生物识别可用状态 (是否配备硬件、是否已录入特征、支持的类型等)
+     */
+    async isAvailable() {
+      return this.client.invoke("biometrics", "isAvailable");
+    }
+    /**
+     * 调起系统原生生物特征认证弹窗 (指纹/面容/凭据验证)
+     * @param options 弹窗标题、副标题、提示说明与取消按钮文案
+     */
+    async authenticate(options) {
+      return this.client.invoke("biometrics", "authenticate", options || {});
+    }
+  };
+
   // src/index.ts
   var MobileElectron = class {
     constructor() {
@@ -1276,6 +1363,8 @@ var MobileElectronFacade = (() => {
       this.tabBar = new TabBarModule(this.client);
       this.debug = new DebugModule(this.client);
       this.hotUpdate = new HotUpdateModule(this.client);
+      this.haptics = new HapticsModule(this.client);
+      this.biometrics = new BiometricsModule(this.client);
     }
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
     get platform() {

@@ -306,3 +306,28 @@ export interface HotUpdateProgressEvent {
     totalBytes: number;
 }
 
+export type HapticImpactStyle = 'light' | 'medium' | 'heavy';
+export type HapticNotificationType = 'success' | 'warning' | 'error';
+
+export interface BiometricsAvailability {
+    available: boolean;
+    supported: boolean;
+    deviceSecure: boolean;
+    hasFingerprint: boolean;
+    hasFace: boolean;
+    biometricType: 'fingerprint' | 'face' | 'none';
+}
+
+export interface BiometricsAuthOptions {
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    cancelText?: string;
+}
+
+export interface BiometricsAuthResult {
+    success: boolean;
+    authenticated: boolean;
+}
+
+

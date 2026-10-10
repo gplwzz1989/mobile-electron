@@ -358,6 +358,33 @@ export class MockEngine {
             case 'hotUpdate.rollback':
                 return Promise.resolve({ rolledBack: true } as unknown as T);
 
+            case 'haptics.impact':
+            case 'haptics.notification':
+            case 'haptics.selection':
+            case 'haptics.vibrate':
+                if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                    navigator.vibrate(params?.duration || 20);
+                }
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'biometrics.isAvailable':
+                return Promise.resolve({
+                    available: true,
+                    supported: true,
+                    deviceSecure: true,
+                    hasFingerprint: true,
+                    hasFace: true,
+                    biometricType: 'face'
+                } as unknown as T);
+
+            case 'biometrics.authenticate':
+                const ok = confirm(`[Mock 生物识别] ${params?.title || '验证身份'}\n${params?.description || '模拟指纹/面容识别成功？'}`);
+                if (ok) {
+                    return Promise.resolve({ success: true, authenticated: true } as unknown as T);
+                } else {
+                    return Promise.reject(new Error('用户取消了生物识别 (Mock)'));
+                }
+
             default:
                 return Promise.resolve({ success: true, mock: true } as unknown as T);
         }

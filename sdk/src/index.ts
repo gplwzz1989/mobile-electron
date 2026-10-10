@@ -16,6 +16,8 @@ import { DialogModule } from './modules/dialog';
 import { TabBarModule } from './modules/tabBar';
 import { DebugModule } from './modules/debug';
 import { HotUpdateModule } from './modules/hotUpdate';
+import { HapticsModule } from './modules/haptics';
+import { BiometricsModule } from './modules/biometrics';
 
 export * from './types';
 export { MobileElectronClient, Page } from './client';
@@ -31,6 +33,8 @@ export { DialogModule } from './modules/dialog';
 export { TabBarModule } from './modules/tabBar';
 export { DebugModule } from './modules/debug';
 export { HotUpdateModule } from './modules/hotUpdate';
+export { HapticsModule } from './modules/haptics';
+export { BiometricsModule } from './modules/biometrics';
 export { MockEngine } from './mock';
 
 /**
@@ -51,6 +55,8 @@ export class MobileElectron {
     public readonly tabBar: TabBarModule;
     public readonly debug: DebugModule;
     public readonly hotUpdate: HotUpdateModule;
+    public readonly haptics: HapticsModule;
+    public readonly biometrics: BiometricsModule;
 
     constructor() {
         this.client = new MobileElectronClient();
@@ -67,6 +73,8 @@ export class MobileElectron {
         this.tabBar = new TabBarModule(this.client);
         this.debug = new DebugModule(this.client);
         this.hotUpdate = new HotUpdateModule(this.client);
+        this.haptics = new HapticsModule(this.client);
+        this.biometrics = new BiometricsModule(this.client);
     }
 
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */

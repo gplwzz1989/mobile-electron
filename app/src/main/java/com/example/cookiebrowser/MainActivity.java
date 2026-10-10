@@ -50,8 +50,10 @@ import com.example.cookiebrowser.core.HardwareConfig;
 import com.example.cookiebrowser.core.HotUpdateManager;
 import com.example.cookiebrowser.core.WebViewPool;
 import com.example.cookiebrowser.plugins.AppPlugin;
+import com.example.cookiebrowser.plugins.BiometricsPlugin;
 import com.example.cookiebrowser.plugins.CookiePlugin;
 import com.example.cookiebrowser.plugins.DevicePlugin;
+import com.example.cookiebrowser.plugins.HapticsPlugin;
 import com.example.cookiebrowser.plugins.HotUpdatePlugin;
 import com.example.cookiebrowser.plugins.NetworkPlugin;
 import com.example.cookiebrowser.plugins.PagePlugin;
@@ -206,6 +208,8 @@ public class MainActivity extends AppCompatActivity {
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(MainActivity.this));
             pageEngine.registerPlugin(new TabBarPlugin(MainActivity.this));
             pageEngine.registerPlugin(new DebugPlugin(MainActivity.this));
+            pageEngine.registerPlugin(new HapticsPlugin(MainActivity.this));
+            pageEngine.registerPlugin(new BiometricsPlugin(MainActivity.this));
             HotUpdatePlugin pageHotUpdate = new HotUpdatePlugin(MainActivity.this, targetWebView);
             pageHotUpdate.setBridgeEngine(pageEngine);
             pageEngine.registerPlugin(pageHotUpdate);
@@ -236,6 +240,8 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(this));
         bridgeEngine.registerPlugin(new TabBarPlugin(this));
         bridgeEngine.registerPlugin(new DebugPlugin(this));
+        bridgeEngine.registerPlugin(new HapticsPlugin(this));
+        bridgeEngine.registerPlugin(new BiometricsPlugin(this));
         HotUpdatePlugin mainHotUpdate = new HotUpdatePlugin(this, webView);
         mainHotUpdate.setBridgeEngine(bridgeEngine);
         bridgeEngine.registerPlugin(mainHotUpdate);
