@@ -23,6 +23,7 @@ var MobileElectronFacade = (() => {
     AppModule: () => AppModule,
     BiometricsModule: () => BiometricsModule,
     BrowserModule: () => BrowserModule,
+    CameraModule: () => CameraModule,
     CookieModule: () => CookieModule,
     DebugModule: () => DebugModule,
     DeviceModule: () => DeviceModule,
@@ -35,6 +36,7 @@ var MobileElectronFacade = (() => {
     MockEngine: () => MockEngine,
     NetworkModule: () => NetworkModule,
     Page: () => Page,
+    SecureStorageModule: () => SecureStorageModule,
     StorageModule: () => StorageModule,
     TabBarModule: () => TabBarModule,
     WindowModule: () => WindowModule,
@@ -359,6 +361,60 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
             return Promise.resolve({ success: true, authenticated: true });
           } else {
             return Promise.reject(new Error("\u7528\u6237\u53D6\u6D88\u4E86\u751F\u7269\u8BC6\u522B (Mock)"));
+          }
+        case "secureStorage.setItem": {
+          const k = "sec_" + ((params == null ? void 0 : params.key) || "");
+          if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem(k, (params == null ? void 0 : params.value) || "");
+          }
+          return Promise.resolve({ success: true });
+        }
+        case "secureStorage.getItem": {
+          const k = "sec_" + ((params == null ? void 0 : params.key) || "");
+          const val = typeof sessionStorage !== "undefined" ? sessionStorage.getItem(k) : null;
+          return Promise.resolve({ value: val, exists: val !== null });
+        }
+        case "secureStorage.removeItem": {
+          const k = "sec_" + ((params == null ? void 0 : params.key) || "");
+          if (typeof sessionStorage !== "undefined") {
+            sessionStorage.removeItem(k);
+          }
+          return Promise.resolve({ success: true });
+        }
+        case "secureStorage.clear": {
+          if (typeof sessionStorage !== "undefined") {
+            const toDel = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+              const k = sessionStorage.key(i);
+              if (k && k.startsWith("sec_")) toDel.push(k);
+            }
+            toDel.forEach((k) => sessionStorage.removeItem(k));
+          }
+          return Promise.resolve({ success: true });
+        }
+        case "secureStorage.getAllKeys": {
+          const keys = [];
+          if (typeof sessionStorage !== "undefined") {
+            for (let i = 0; i < sessionStorage.length; i++) {
+              const k = sessionStorage.key(i);
+              if (k && k.startsWith("sec_")) keys.push(k.substring(4));
+            }
+          }
+          return Promise.resolve({ keys });
+        }
+        case "camera.takePhoto":
+        case "camera.pickImage":
+          return Promise.resolve({
+            base64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+            width: 640,
+            height: 480
+          });
+        case "camera.scanBarcode":
+          const mockCode = prompt("[Mock \u6A21\u62DF\u626B\u7801] \u8BF7\u8F93\u5165\u626B\u7801\u7ED3\u679C\u5B57\u7B26\u4E32:", "https://mobile-electron.dev/scanned-sample");
+          if (mockCode !== null) {
+            return Promise.resolve({ text: mockCode, format: "QR_CODE" });
+          } else {
+            return Promise.reject(new Error("\u7528\u6237\u53D6\u6D88\u4E86\u626B\u7801 (Mock)"));
           }
         default:
           return Promise.resolve({ success: true, mock: true });
@@ -1346,6 +1402,82 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
     }
   };
 
+  // src/modules/secureStorage.ts
+  var SecureStorageModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 安全加密保存键值数据
+     * @param key 键名
+     * @param value 敏感数据字符串 (如 Token, PrivateKey, 密码凭证)
+     */
+    async setItem(key, value) {
+      const res = await this.client.invoke("secureStorage", "setItem", { key, value });
+      return !!res.success;
+    }
+    /**
+     * 安全解密获取键值数据
+     * @param key 键名
+     * @returns 解密后的明文字符串，若不存在返回 null
+     */
+    async getItem(key) {
+      var _a;
+      const res = await this.client.invoke("secureStorage", "getItem", { key });
+      return (_a = res.value) != null ? _a : null;
+    }
+    /**
+     * 删除指定安全键值数据
+     * @param key 键名
+     */
+    async removeItem(key) {
+      const res = await this.client.invoke("secureStorage", "removeItem", { key });
+      return !!res.success;
+    }
+    /**
+     * 清空当前应用所有的安全加密数据
+     */
+    async clear() {
+      const res = await this.client.invoke("secureStorage", "clear", {});
+      return !!res.success;
+    }
+    /**
+     * 获取所有受保护的安全存储键名列表
+     */
+    async getAllKeys() {
+      const res = await this.client.invoke("secureStorage", "getAllKeys", {});
+      return res.keys || [];
+    }
+  };
+
+  // src/modules/camera.ts
+  var CameraModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 调起原生摄像头拍照
+     * @param options 拍照参数（质量、最大限制宽度）
+     */
+    async takePhoto(options = {}) {
+      return this.client.invoke("camera", "takePhoto", options);
+    }
+    /**
+     * 调起原生系统相册选取图片
+     * @param options 选图参数
+     */
+    async pickImage(options = {}) {
+      return this.client.invoke("camera", "pickImage", options);
+    }
+    /**
+     * 调起原生摄像头扫描二维码/条码 (QR Code / EAN-13 / Code-128 等)
+     * @returns 扫码识别出的文本及编码格式
+     */
+    async scanBarcode() {
+      return this.client.invoke("camera", "scanBarcode", {});
+    }
+  };
+
   // src/index.ts
   var MobileElectron = class {
     constructor() {
@@ -1365,6 +1497,8 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
       this.hotUpdate = new HotUpdateModule(this.client);
       this.haptics = new HapticsModule(this.client);
       this.biometrics = new BiometricsModule(this.client);
+      this.secureStorage = new SecureStorageModule(this.client);
+      this.camera = new CameraModule(this.client);
     }
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
     get platform() {

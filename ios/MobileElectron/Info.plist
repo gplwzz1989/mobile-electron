@@ -54,5 +54,9 @@
     </dict>
     <key>NSFaceIDUsageDescription</key>
     <string>使用 Face ID 验证您的身份以保护安全数据</string>
+    <key>NSCameraUsageDescription</key>
+    <string>需要使用相机拍摄照片及扫描二维码</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>需要访问相册以选取图片</string>
 </dict>
 </plist>

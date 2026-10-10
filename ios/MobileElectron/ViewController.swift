@@ -88,6 +88,8 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
         bridgeEngine.registerPlugin(DialogPlugin())
         bridgeEngine.registerPlugin(HapticsPlugin())
         bridgeEngine.registerPlugin(BiometricsPlugin())
+        bridgeEngine.registerPlugin(SecureStoragePlugin())
+        bridgeEngine.registerPlugin(CameraPlugin(viewController: self))
         let hotUpdatePlugin = HotUpdatePlugin(webView: mainWebView)
         hotUpdatePlugin.bridgeEngine = bridgeEngine
         bridgeEngine.registerPlugin(hotUpdatePlugin)

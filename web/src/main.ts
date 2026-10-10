@@ -481,6 +481,73 @@ function setupStorage() {
     }
   });
 
+  // ========== 硬件级安全加密存储 (electron.secureStorage) ==========
+  document.getElementById('btn-sec-set')?.addEventListener('click', async () => {
+    const key = (document.getElementById('input-sec-key') as HTMLInputElement)?.value?.trim();
+    const val = (document.getElementById('input-sec-value') as HTMLInputElement)?.value;
+    if (!key) return;
+    try {
+      await electron.secureStorage.setItem(key, val);
+      log(`硬件加密保存成功: [${key}]`, 's');
+      showResult('sec-result-box', { status: 'Encrypted & Saved', key, length: val.length });
+      await appToast(`已安全加密写入: ${key}`);
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      log(`加密保存失败: ${err.message}`, 'e');
+      showResult('sec-result-box', err.message);
+    }
+  });
+
+  document.getElementById('btn-sec-get')?.addEventListener('click', async () => {
+    const key = (document.getElementById('input-sec-key') as HTMLInputElement)?.value?.trim();
+    if (!key) return;
+    try {
+      const val = await electron.secureStorage.getItem(key);
+      showResult('sec-result-box', { key, decryptedValue: val !== null ? val : '(不存在)' });
+      log(`解密读取成功 [${key}]: ${val}`, 's');
+      await electron.haptics.selection();
+    } catch (err: any) {
+      log(`解密读取失败: ${err.message}`, 'e');
+      showResult('sec-result-box', err.message);
+    }
+  });
+
+  document.getElementById('btn-sec-keys')?.addEventListener('click', async () => {
+    try {
+      const keys = await electron.secureStorage.getAllKeys();
+      showResult('sec-result-box', { allSecureKeys: keys });
+      log(`安全库全部键名: ${keys.join(', ')}`, 's');
+    } catch (err: any) {
+      log(`获取安全键名失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-sec-remove')?.addEventListener('click', async () => {
+    const key = (document.getElementById('input-sec-key') as HTMLInputElement)?.value?.trim();
+    if (!key) return;
+    try {
+      await electron.secureStorage.removeItem(key);
+      log(`已删除安全键: [${key}]`, 's');
+      showResult('sec-result-box', { removed: key });
+      await appToast(`已删除安全键: ${key}`);
+    } catch (err: any) {
+      log(`删除失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-sec-clear')?.addEventListener('click', async () => {
+    const ok = await electron.dialog.confirm('确定要清空安全库中所有加密数据吗？', '警告');
+    if (!ok) return;
+    try {
+      await electron.secureStorage.clear();
+      showResult('sec-result-box', '安全加密密钥库已清空');
+      log('安全库已清空', 's');
+      await appToast('安全库已清空');
+    } catch (err: any) {
+      log(`清空失败: ${err.message}`, 'e');
+    }
+  });
+
   document.getElementById('btn-ls-read')?.addEventListener('click', async () => {
     try {
       const data = await electron.storage.getLocalStorage();
@@ -842,6 +909,61 @@ function setupDeviceAndDialog() {
       showResult('bio-result-box', err.message);
       log(`认证失败: ${err.message}`, 'e');
       await appToast('认证失败: ' + err.message);
+      await electron.haptics.notification('error');
+    }
+  });
+
+  // ========== 原生相机与条码扫描 (electron.camera) ==========
+  const previewContainer = document.getElementById('camera-preview-container');
+  const previewImg = document.getElementById('camera-preview-img') as HTMLImageElement;
+
+  document.getElementById('btn-camera-take')?.addEventListener('click', async () => {
+    log('调起原生摄像头拍照...');
+    try {
+      const res = await electron.camera.takePhoto({ quality: 85, targetWidth: 1024 });
+      showResult('camera-result-box', { width: res.width, height: res.height, hasBase64: !!res.base64 });
+      log(`拍照成功: ${res.width}x${res.height}`, 's');
+      if (res.base64 && previewImg && previewContainer) {
+        previewImg.src = res.base64;
+        previewContainer.style.display = 'block';
+      }
+      await appToast('拍照成功！');
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      showResult('camera-result-box', err.message);
+      log(`拍照失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-camera-pick')?.addEventListener('click', async () => {
+    log('打开系统相册选取图片...');
+    try {
+      const res = await electron.camera.pickImage({ quality: 80, targetWidth: 1280 });
+      showResult('camera-result-box', { width: res.width, height: res.height, uri: res.uri, hasBase64: !!res.base64 });
+      log(`选取图片成功: ${res.width}x${res.height}`, 's');
+      if (res.base64 && previewImg && previewContainer) {
+        previewImg.src = res.base64;
+        previewContainer.style.display = 'block';
+      }
+      await appToast('选图成功！');
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      showResult('camera-result-box', err.message);
+      log(`选图失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-camera-scan')?.addEventListener('click', async () => {
+    log('启动二维码/条码扫描...');
+    try {
+      const res = await electron.camera.scanBarcode();
+      showResult('camera-result-box', res);
+      log(`扫码成功: [${res.format}] ${res.text}`, 's');
+      await appToast(`扫描结果: ${res.text}`);
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      showResult('camera-result-box', err.message);
+      log(`扫码失败: ${err.message}`, 'e');
       await electron.haptics.notification('error');
     }
   });

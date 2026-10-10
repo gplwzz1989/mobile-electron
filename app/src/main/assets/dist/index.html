@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)">
   <title>Mobile Electron</title>
-  <script type="module" crossorigin src="./assets/index-avnQb6QU.js"></script>
+  <script type="module" crossorigin src="./assets/index-D2KKizpX.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DUYz1dLy.css">
 </head>
 <body>
@@ -198,6 +198,31 @@
             <button id="btn-kv-clear" class="btn btn-danger">清空</button>
           </div>
           <div id="kv-result-box" class="code-box"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">硬件级安全加密存储 (electron.secureStorage)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            采用 AndroidKeyStore (AES-256-GCM) 与 iOS Keychain 硬件隔离安全芯片，适合存储 Token/私钥/密码凭据。
+          </p>
+          <div class="field">
+            <label>安全键名：</label>
+            <input type="text" id="input-sec-key" class="input" value="jwt_auth_token">
+          </div>
+          <div class="field">
+            <label>机密明文内容：</label>
+            <input type="text" id="input-sec-value" class="input" placeholder="机密内容" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.SecretToken_98721">
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-sec-set" class="btn btn-default">加密保存 (setItem)</button>
+            <button id="btn-sec-get" class="btn btn-outline">解密读取 (getItem)</button>
+            <button id="btn-sec-keys" class="btn btn-subtle">全部安全键名</button>
+            <button id="btn-sec-remove" class="btn btn-subtle">删除此键</button>
+            <button id="btn-sec-clear" class="btn btn-danger">清空安全库</button>
+          </div>
+          <div id="sec-result-box" class="code-box"></div>
         </div>
 
         <div class="box">
@@ -406,6 +431,24 @@
             <button id="btn-bio-auth" class="btn btn-outline" style="color:#2563EB; font-weight:bold;">调起生物识别认证 (authenticate)</button>
           </div>
           <div id="bio-result-box" class="code-box mt-2"></div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">原生相机与条码扫描 (electron.camera)</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            支持原生拍照 (takePhoto)、系统相册选取 (pickImage) 与硬件级条码/二维码毫秒扫描 (scanBarcode)。
+          </p>
+          <div class="btn-row">
+            <button id="btn-camera-take" class="btn btn-default">拍照 (takePhoto)</button>
+            <button id="btn-camera-pick" class="btn btn-outline">选图 (pickImage)</button>
+            <button id="btn-camera-scan" class="btn btn-subtle" style="color:#2563EB; font-weight:bold;">扫描二维码 (scanBarcode)</button>
+          </div>
+          <div id="camera-result-box" class="code-box mt-2"></div>
+          <div id="camera-preview-container" style="margin-top:10px; display:none; text-align:center;">
+            <img id="camera-preview-img" style="max-width:100%; max-height:220px; border-radius:8px; border:1px solid #E2E8F0;" />
+          </div>
         </div>
       </section>
 

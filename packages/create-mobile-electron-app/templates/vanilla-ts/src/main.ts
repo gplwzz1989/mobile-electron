@@ -48,6 +48,29 @@ document.getElementById('btn-bio')?.addEventListener('click', async () => {
   }
 });
 
+document.getElementById('btn-sec')?.addEventListener('click', async () => {
+  try {
+    const key = 'user_token';
+    const val = 'SECURE_SECRET_' + Math.random().toString(36).substring(2);
+    await electron.secureStorage.setItem(key, val);
+    const readBack = await electron.secureStorage.getItem(key);
+    log({ action: '硬件KeyStore加密写入并解密读取', key, readBack });
+    await electron.haptics.notification('success');
+  } catch (err: any) {
+    log({ error: err.message });
+  }
+});
+
+document.getElementById('btn-scan')?.addEventListener('click', async () => {
+  try {
+    const res = await electron.camera.scanBarcode();
+    log({ action: '条码扫描完成', result: res });
+    await electron.haptics.notification('success');
+  } catch (err: any) {
+    log({ error: err.message });
+  }
+});
+
 document.getElementById('btn-cookie')?.addEventListener('click', async () => {
   try {
     const cookies = await electron.cookie.getAll({ all: true });

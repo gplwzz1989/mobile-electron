@@ -39,6 +39,29 @@ async function triggerBiometrics() {
   }
 }
 
+async function triggerSecureStorage() {
+  try {
+    const key = 'auth_secret';
+    const val = 'TOKEN_' + Math.random().toString(36).substring(2);
+    await electron.secureStorage.setItem(key, val);
+    const read = await electron.secureStorage.getItem(key);
+    log(`硬件KeyStore加密写入并解密成功: ${read}`);
+    await electron.haptics.notification('success');
+  } catch (err: any) {
+    log(`加密存储失败: ${err.message}`);
+  }
+}
+
+async function triggerScanBarcode() {
+  try {
+    const res = await electron.camera.scanBarcode();
+    log(`扫码成功 [${res.format}]: ${res.text}`);
+    await electron.haptics.notification('success');
+  } catch (err: any) {
+    log(`扫码取消或失败: ${err.message}`);
+  }
+}
+
 async function getCookies() {
   try {
     const cookies = await electron.cookie.getAll({ all: true });
@@ -72,6 +95,8 @@ onMounted(() => {
           <button class="btn btn-primary" @click="triggerToast">原生 Toast</button>
           <button class="btn btn-outline" @click="triggerHaptics">触感反馈</button>
           <button class="btn btn-outline" @click="triggerBiometrics">生物识别</button>
+          <button class="btn btn-outline" @click="triggerSecureStorage">硬件加密存储</button>
+          <button class="btn btn-outline" @click="triggerScanBarcode">扫码 (Camera)</button>
           <button class="btn btn-outline" @click="getCookies">底层 Cookie</button>
         </div>
       </div>

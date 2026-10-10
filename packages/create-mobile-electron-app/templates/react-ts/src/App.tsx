@@ -43,6 +43,29 @@ export default function App() {
     }
   };
 
+  const handleSecureStorage = async () => {
+    try {
+      const key = 'auth_secret';
+      const val = 'TOKEN_' + Math.random().toString(36).substring(2);
+      await electron.secureStorage.setItem(key, val);
+      const read = await electron.secureStorage.getItem(key);
+      addLog(`硬件KeyStore加密写入并解密成功: ${read}`);
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      addLog(`加密存储失败: ${err.message}`);
+    }
+  };
+
+  const handleScanBarcode = async () => {
+    try {
+      const res = await electron.camera.scanBarcode();
+      addLog(`扫码成功 [${res.format}]: ${res.text}`);
+      await electron.haptics.notification('success');
+    } catch (err: any) {
+      addLog(`扫码取消或失败: ${err.message}`);
+    }
+  };
+
   const handleCookies = async () => {
     try {
       const cookies = await electron.cookie.getAll({ all: true });
@@ -99,6 +122,18 @@ export default function App() {
               style={{ padding: 12, borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}
             >
               生物识别
+            </button>
+            <button
+              onClick={handleSecureStorage}
+              style={{ padding: 12, borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}
+            >
+              硬件加密存储
+            </button>
+            <button
+              onClick={handleScanBarcode}
+              style={{ padding: 12, borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}
+            >
+              扫码 (Camera)
             </button>
             <button
               onClick={handleCookies}

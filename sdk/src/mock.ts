@@ -385,6 +385,67 @@ export class MockEngine {
                     return Promise.reject(new Error('用户取消了生物识别 (Mock)'));
                 }
 
+            case 'secureStorage.setItem': {
+                const k = 'sec_' + (params?.key || '');
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.setItem(k, params?.value || '');
+                }
+                return Promise.resolve({ success: true } as unknown as T);
+            }
+
+            case 'secureStorage.getItem': {
+                const k = 'sec_' + (params?.key || '');
+                const val = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(k) : null;
+                return Promise.resolve({ value: val, exists: val !== null } as unknown as T);
+            }
+
+            case 'secureStorage.removeItem': {
+                const k = 'sec_' + (params?.key || '');
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.removeItem(k);
+                }
+                return Promise.resolve({ success: true } as unknown as T);
+            }
+
+            case 'secureStorage.clear': {
+                if (typeof sessionStorage !== 'undefined') {
+                    const toDel: string[] = [];
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const k = sessionStorage.key(i);
+                        if (k && k.startsWith('sec_')) toDel.push(k);
+                    }
+                    toDel.forEach(k => sessionStorage.removeItem(k));
+                }
+                return Promise.resolve({ success: true } as unknown as T);
+            }
+
+            case 'secureStorage.getAllKeys': {
+                const keys: string[] = [];
+                if (typeof sessionStorage !== 'undefined') {
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const k = sessionStorage.key(i);
+                        if (k && k.startsWith('sec_')) keys.push(k.substring(4));
+                    }
+                }
+                return Promise.resolve({ keys } as unknown as T);
+            }
+
+            case 'camera.takePhoto':
+            case 'camera.pickImage':
+                return Promise.resolve({
+                    base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+                    width: 640,
+                    height: 480
+                } as unknown as T);
+
+            case 'camera.scanBarcode':
+                const mockCode = prompt('[Mock 模拟扫码] 请输入扫码结果字符串:', 'https://mobile-electron.dev/scanned-sample');
+                if (mockCode !== null) {
+                    return Promise.resolve({ text: mockCode, format: 'QR_CODE' } as unknown as T);
+                } else {
+                    return Promise.reject(new Error('用户取消了扫码 (Mock)'));
+                }
+
             default:
                 return Promise.resolve({ success: true, mock: true } as unknown as T);
         }

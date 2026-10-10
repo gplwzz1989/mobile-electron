@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -51,12 +52,14 @@ import com.example.cookiebrowser.core.HotUpdateManager;
 import com.example.cookiebrowser.core.WebViewPool;
 import com.example.cookiebrowser.plugins.AppPlugin;
 import com.example.cookiebrowser.plugins.BiometricsPlugin;
+import com.example.cookiebrowser.plugins.CameraPlugin;
 import com.example.cookiebrowser.plugins.CookiePlugin;
 import com.example.cookiebrowser.plugins.DevicePlugin;
 import com.example.cookiebrowser.plugins.HapticsPlugin;
 import com.example.cookiebrowser.plugins.HotUpdatePlugin;
 import com.example.cookiebrowser.plugins.NetworkPlugin;
 import com.example.cookiebrowser.plugins.PagePlugin;
+import com.example.cookiebrowser.plugins.SecureStoragePlugin;
 import com.example.cookiebrowser.plugins.WindowPlugin;
 import com.example.cookiebrowser.plugins.TabBarPlugin;
 import com.example.cookiebrowser.plugins.DebugPlugin;
@@ -108,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
     // 原生容器底座
     private WebViewPool webViewPool;
     private JsBridgeEngine bridgeEngine;
+    private CameraPlugin cameraPlugin;
 
     // 动态原生 TabBar 组件与状态 (核心要求 1)
     private LinearLayout layoutNativeTabBar;
@@ -194,6 +198,8 @@ public class MainActivity extends AppCompatActivity {
         webViewPool.setForegroundContainer(webviewContainer);
         webViewPool.registerMainPage("main", webView, config.getDefaultProfile(), hwConfig);
 
+        this.cameraPlugin = new CameraPlugin(this);
+
         // 统一为池中所有 WebView（无论是主页面还是后续创建的独立 Profile 页面）绑定 JS Bridge
         webViewPool.setPageConfigurator((targetWebView, pageId, profileName) -> {
             JsBridgeEngine pageEngine = new JsBridgeEngine(targetWebView);
@@ -205,6 +211,8 @@ public class MainActivity extends AppCompatActivity {
             pageEngine.registerPlugin(new AppPlugin(MainActivity.this));
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(MainActivity.this));
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(MainActivity.this, webViewPool));
+            pageEngine.registerPlugin(new SecureStoragePlugin(MainActivity.this));
+            pageEngine.registerPlugin(cameraPlugin);
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(MainActivity.this));
             pageEngine.registerPlugin(new TabBarPlugin(MainActivity.this));
             pageEngine.registerPlugin(new DebugPlugin(MainActivity.this));
@@ -237,6 +245,8 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine.registerPlugin(new AppPlugin(this));
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.FilePlugin(this));
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.StoragePlugin(this, webViewPool));
+        bridgeEngine.registerPlugin(new SecureStoragePlugin(this));
+        bridgeEngine.registerPlugin(cameraPlugin);
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.DialogPlugin(this));
         bridgeEngine.registerPlugin(new TabBarPlugin(this));
         bridgeEngine.registerPlugin(new DebugPlugin(this));
@@ -1752,6 +1762,14 @@ public class MainActivity extends AppCompatActivity {
             return text != null ? text.toString() : "";
         }
         return "";
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (cameraPlugin != null) {
+            cameraPlugin.handleActivityResult(requestCode, resultCode, data);
+        }
     }
 
     @Override

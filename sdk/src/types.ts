@@ -330,4 +330,34 @@ export interface BiometricsAuthResult {
     authenticated: boolean;
 }
 
+export interface SecureStorageResult {
+    success: boolean;
+}
+
+export interface SecureStorageGetResult {
+    value: string | null;
+    exists: boolean;
+}
+
+export interface SecureStorageKeysResult {
+    keys: string[];
+}
+
+export interface CameraPhotoOptions {
+    quality?: number;
+    targetWidth?: number;
+}
+
+export interface CameraPhotoResult {
+    base64?: string;
+    uri?: string;
+    width?: number;
+    height?: number;
+}
+
+export interface BarcodeScanResult {
+    text: string;
+    format?: string;
+}
+
 
