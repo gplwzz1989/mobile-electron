@@ -12,7 +12,10 @@
     "build:apk:online": "node scripts/prepare-build.js --mode online && gradlew assembleRelease",
     "bundle:build": "node scripts/build-bundle.js",
     "bundle:serve": "node scripts/serve-update.js",
-    "create:app": "node packages/create-mobile-electron-app/bin/cli.js"
+    "create:app": "node packages/create-mobile-electron-app/bin/cli.js",
+    "cli": "node packages/cli/bin/mobile-electron.js",
+    "doctor": "node packages/cli/bin/mobile-electron.js doctor",
+    "test": "node tests/run-all.js"
   },
   "devDependencies": {
     "adm-zip": "^0.6.1"

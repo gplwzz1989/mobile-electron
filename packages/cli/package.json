@@ -1,0 +1,25 @@
+{
+  "name": "@mobile-electron/cli",
+  "version": "2.0.0",
+  "description": "Unified CLI tool for Mobile Electron cross-platform hybrid mobile applications",
+  "main": "bin/mobile-electron.js",
+  "bin": {
+    "mobile-electron": "bin/mobile-electron.js",
+    "me": "bin/mobile-electron.js"
+  },
+  "scripts": {
+    "test": "node bin/mobile-electron.js --version"
+  },
+  "keywords": [
+    "mobile-electron",
+    "cli",
+    "hybrid",
+    "android",
+    "ios",
+    "cross-platform",
+    "devtools",
+    "hot-update"
+  ],
+  "author": "Mobile Electron Team",
+  "license": "MIT"
+}

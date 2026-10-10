@@ -7,6 +7,8 @@ import { AppInfo, NativeResponse } from './types';
 
 export class MockEngine {
     public static isMockEnabled = true;
+    private static memoryStorage = new Map<string, string>();
+    private static memorySecureStorage = new Map<string, string>();
 
     public static mockInvoke<T = any>(module: string, action: string, params: Record<string, any> = {}): Promise<T> {
         console.warn(`[MobileElectron Mock] (${module}.${action}) called outside of native container. Returning mock fallback.`, params);
@@ -99,29 +101,45 @@ export class MockEngine {
             case 'storage.set':
                 if (typeof localStorage !== 'undefined' && params.key) {
                     localStorage.setItem('me_' + params.key, params.value || '');
+                } else if (params.key) {
+                    MockEngine.memoryStorage.set('me_' + params.key, params.value || '');
                 }
                 return Promise.resolve({ success: true } as unknown as T);
 
             case 'storage.get':
-                const sVal = typeof localStorage !== 'undefined' && params.key ? localStorage.getItem('me_' + params.key) : null;
+                let sVal: string | null = null;
+                if (typeof localStorage !== 'undefined' && params.key) {
+                    sVal = localStorage.getItem('me_' + params.key);
+                } else if (params.key) {
+                    sVal = MockEngine.memoryStorage.has('me_' + params.key)
+                        ? MockEngine.memoryStorage.get('me_' + params.key)!
+                        : null;
+                }
                 return Promise.resolve({ value: sVal, exists: sVal !== null } as unknown as T);
 
             case 'storage.remove':
                 if (typeof localStorage !== 'undefined' && params.key) {
                     localStorage.removeItem('me_' + params.key);
+                } else if (params.key) {
+                    MockEngine.memoryStorage.delete('me_' + params.key);
                 }
                 return Promise.resolve({ success: true } as unknown as T);
 
             case 'storage.clear':
                 if (typeof localStorage !== 'undefined') {
                     Object.keys(localStorage).filter(k => k.startsWith('me_')).forEach(k => localStorage.removeItem(k));
+                } else {
+                    MockEngine.memoryStorage.clear();
                 }
                 return Promise.resolve({ success: true } as unknown as T);
 
             case 'storage.keys':
-                const sKeys = typeof localStorage !== 'undefined'
-                    ? Object.keys(localStorage).filter(k => k.startsWith('me_')).map(k => k.replace('me_', ''))
-                    : [];
+                let sKeys: string[] = [];
+                if (typeof localStorage !== 'undefined') {
+                    sKeys = Object.keys(localStorage).filter(k => k.startsWith('me_')).map(k => k.replace('me_', ''));
+                } else {
+                    sKeys = Array.from(MockEngine.memoryStorage.keys()).filter(k => k.startsWith('me_')).map(k => k.replace('me_', ''));
+                }
                 return Promise.resolve({ keys: sKeys } as unknown as T);
 
             case 'file.getPaths':
@@ -419,7 +437,9 @@ export class MockEngine {
                 } as unknown as T);
 
             case 'biometrics.authenticate':
-                const ok = confirm(`[Mock 生物识别] ${params?.title || '验证身份'}\n${params?.description || '模拟指纹/面容识别成功？'}`);
+                const ok = typeof window !== 'undefined'
+                    ? confirm(`[Mock 生物识别] ${params?.title || '验证身份'}\n${params?.description || '模拟指纹/面容识别成功？'}`)
+                    : true;
                 if (ok) {
                     return Promise.resolve({ success: true, authenticated: true } as unknown as T);
                 } else {
@@ -430,13 +450,22 @@ export class MockEngine {
                 const k = 'sec_' + (params?.key || '');
                 if (typeof sessionStorage !== 'undefined') {
                     sessionStorage.setItem(k, params?.value || '');
+                } else {
+                    MockEngine.memorySecureStorage.set(k, params?.value || '');
                 }
                 return Promise.resolve({ success: true } as unknown as T);
             }
 
             case 'secureStorage.getItem': {
                 const k = 'sec_' + (params?.key || '');
-                const val = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(k) : null;
+                let val: string | null = null;
+                if (typeof sessionStorage !== 'undefined') {
+                    val = sessionStorage.getItem(k);
+                } else {
+                    val = MockEngine.memorySecureStorage.has(k)
+                        ? MockEngine.memorySecureStorage.get(k)!
+                        : null;
+                }
                 return Promise.resolve({ value: val, exists: val !== null } as unknown as T);
             }
 
@@ -444,6 +473,8 @@ export class MockEngine {
                 const k = 'sec_' + (params?.key || '');
                 if (typeof sessionStorage !== 'undefined') {
                     sessionStorage.removeItem(k);
+                } else {
+                    MockEngine.memorySecureStorage.delete(k);
                 }
                 return Promise.resolve({ success: true } as unknown as T);
             }
