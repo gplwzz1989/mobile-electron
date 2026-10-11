@@ -218,6 +218,74 @@ function setupAppAndWindow() {
     }
   });
 
+  // 外部应用协议唤醒与拉起 (URL Scheme / DeepLink)
+  document.getElementById('btn-launch-douyin')?.addEventListener('click', async () => {
+    const douyinScheme = 'snssdk1128://webview?url=https://iesdouyin.com/user/123';
+    const fallbackUrl = 'https://www.douyin.com';
+    log(`正在唤醒抖音 App: ${douyinScheme}...`);
+    try {
+      const res = await electron.app.openUrl(douyinScheme, { fallbackUrl });
+      showResult('deeplink-result-display', res);
+      if (res.success) {
+        if (res.fallback) {
+          log('未检测到安装抖音 App，已自动打开备用网页', 'i');
+          appToast('未检测到抖音，已打开备用网页');
+        } else {
+          log('成功拉起抖音 App！', 's');
+          appToast('已成功拉起抖音 App');
+        }
+      } else {
+        log(`唤起失败: ${res.reason || res.message}`, 'e');
+        appToast(`唤起失败: ${res.reason || '未安装'}`);
+      }
+    } catch (err: any) {
+      showResult('deeplink-result-display', err.message);
+      log(`唤起异常: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-check-deeplink')?.addEventListener('click', async () => {
+    const inputScheme = (document.getElementById('input-deeplink-url') as HTMLInputElement)?.value?.trim() || '';
+    if (!inputScheme) {
+      appToast('请输入要检测的协议 Scheme');
+      return;
+    }
+    log(`检测协议是否可拉起: ${inputScheme}...`);
+    try {
+      const canOpen = await electron.app.canOpenUrl(inputScheme);
+      showResult('deeplink-result-display', { url: inputScheme, canOpen });
+      log(`检测结果: ${canOpen ? '可以拉起 (已安装)' : '无法拉起 (未安装或受限)'}`, canOpen ? 's' : 'i');
+      appToast(canOpen ? '可以拉起' : '无法直接拉起');
+    } catch (err: any) {
+      showResult('deeplink-result-display', err.message);
+      log(`检测异常: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-launch-custom-scheme')?.addEventListener('click', async () => {
+    const inputScheme = (document.getElementById('input-deeplink-url') as HTMLInputElement)?.value?.trim() || '';
+    const fallback = (document.getElementById('input-deeplink-fallback') as HTMLInputElement)?.value?.trim() || '';
+    if (!inputScheme) {
+      appToast('请输入要拉起的协议');
+      return;
+    }
+    log(`正在拉起自定义协议: ${inputScheme}...`);
+    try {
+      const res = await electron.app.openUrl(inputScheme, { fallbackUrl: fallback });
+      showResult('deeplink-result-display', res);
+      if (res.success) {
+        log(`拉起协议成功${res.fallback ? ' (已打开备用地址)' : ''}`, 's');
+        appToast('已触发协议拉起');
+      } else {
+        log(`拉起失败: ${res.reason || res.message}`, 'e');
+        appToast(`拉起失败: ${res.reason || '未安装'}`);
+      }
+    } catch (err: any) {
+      showResult('deeplink-result-display', err.message);
+      log(`拉起异常: ${err.message}`, 'e');
+    }
+  });
+
   document.querySelectorAll<HTMLElement>('.color-dot').forEach(dot => {
     dot.addEventListener('click', async () => {
       const color = dot.getAttribute('data-color') || '#FFFFFF';

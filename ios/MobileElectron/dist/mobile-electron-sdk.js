@@ -24,6 +24,7 @@ var MobileElectronFacade = (() => {
     BiometricsModule: () => BiometricsModule,
     BrowserModule: () => BrowserModule,
     CameraModule: () => CameraModule,
+    ClipboardModule: () => ClipboardModule,
     CookieModule: () => CookieModule,
     DebugModule: () => DebugModule,
     DeviceModule: () => DeviceModule,
@@ -36,6 +37,7 @@ var MobileElectronFacade = (() => {
     MobileElectronClient: () => MobileElectronClient,
     MockEngine: () => MockEngine,
     NetworkModule: () => NetworkModule,
+    NotificationModule: () => NotificationModule,
     Page: () => Page,
     SecureStorageModule: () => SecureStorageModule,
     StorageModule: () => StorageModule,
@@ -88,6 +90,11 @@ var MobileElectronFacade = (() => {
           return Promise.resolve({ success: true, source: "builtin_asset" });
         case "app.exit":
           alert("[Mock App Exit] exit() called");
+          return Promise.resolve({ success: true });
+        case "app.canOpenUrl":
+          return Promise.resolve({ canOpen: true });
+        case "app.openUrl":
+          console.info("[Mock App openUrl]", params == null ? void 0 : params.url, "fallback:", params == null ? void 0 : params.fallbackUrl);
           return Promise.resolve({ success: true });
         case "window.setStatusBar":
         case "window.setFullscreen":
@@ -593,6 +600,26 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
           } else {
             return Promise.reject(new Error("\u7528\u6237\u53D6\u6D88\u4E86\u626B\u7801 (Mock)"));
           }
+        case "clipboard.readText":
+          return Promise.resolve({ text: _MockEngine.mockClipboardText || "" });
+        case "clipboard.writeText":
+          _MockEngine.mockClipboardText = (params == null ? void 0 : params.text) || "";
+          return Promise.resolve({ success: true });
+        case "clipboard.hasText":
+          return Promise.resolve({ hasText: Boolean(_MockEngine.mockClipboardText) });
+        case "clipboard.clear":
+          _MockEngine.mockClipboardText = "";
+          return Promise.resolve({ success: true });
+        case "notification.show": {
+          const notifId = (params == null ? void 0 : params.id) || "mock_notif_" + Date.now();
+          console.info("[Mock Notification]", params == null ? void 0 : params.title, (params == null ? void 0 : params.body) || (params == null ? void 0 : params.message));
+          return Promise.resolve({ success: true, id: notifId });
+        }
+        case "notification.cancel":
+        case "notification.cancelAll":
+          return Promise.resolve({ success: true });
+        case "notification.areNotificationsEnabled":
+          return Promise.resolve({ enabled: true });
         default:
           return Promise.resolve({ success: true, mock: true });
       }
@@ -602,6 +629,7 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
   _MockEngine.memoryStorage = /* @__PURE__ */ new Map();
   _MockEngine.memorySecureStorage = /* @__PURE__ */ new Map();
   _MockEngine.mockFloatingWindows = /* @__PURE__ */ new Map();
+  _MockEngine.mockClipboardText = "";
   var MockEngine = _MockEngine;
 
   // src/client.ts
@@ -1169,6 +1197,26 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
      */
     async getInfo() {
       return this.client.invoke("app", "getInfo");
+    }
+    /**
+     * 检查设备是否能够处理指定的自定义协议 Scheme 或 URL (例如 'snssdk1128://', 'weixin://', 'tiktok://')
+     * @param url 完整的协议或链接字符串
+     */
+    async canOpenUrl(url) {
+      var _a;
+      const res = await this.client.invoke("app", "canOpenUrl", { url });
+      return (_a = res == null ? void 0 : res.canOpen) != null ? _a : false;
+    }
+    /**
+     * 调起系统或第三方外部应用协议 (支持完整的通用协议与参数，如 'snssdk1128://webview?url=https://iesdouyin.com/user/123')
+     * @param url 完整协议字符串
+     * @param options 可选配置项 (如未安装应用时的 fallbackUrl 兜底地址)
+     */
+    async openUrl(url, options) {
+      return this.client.invoke("app", "openUrl", {
+        url,
+        fallbackUrl: options == null ? void 0 : options.fallbackUrl
+      });
     }
     /**
      * 获取框架当前加载的应用配置 (app-config.json)
@@ -1831,6 +1879,91 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
     }
   };
 
+  // src/modules/clipboard.ts
+  var ClipboardModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 读取系统剪贴板中的纯文本内容
+     */
+    async readText() {
+      var _a;
+      const res = await this.client.invoke("clipboard", "readText");
+      return (_a = res == null ? void 0 : res.text) != null ? _a : "";
+    }
+    /**
+     * 将指定纯文本写入系统剪贴板
+     * @param text 要写入的文本
+     */
+    async writeText(text) {
+      var _a;
+      const res = await this.client.invoke("clipboard", "writeText", { text });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 判断系统剪贴板当前是否包含有效文本
+     */
+    async hasText() {
+      var _a;
+      const res = await this.client.invoke("clipboard", "hasText");
+      return (_a = res == null ? void 0 : res.hasText) != null ? _a : false;
+    }
+    /**
+     * 清空系统剪贴板中的内容
+     */
+    async clear() {
+      var _a;
+      const res = await this.client.invoke("clipboard", "clear");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+  };
+
+  // src/modules/notification.ts
+  var NotificationModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 派发一条本地通知
+     * @param options 通知配置项 (title, body, id, badge, data, sound)
+     */
+    async show(options) {
+      const payload = {
+        ...options
+      };
+      if (options.data && typeof options.data === "object") {
+        payload.data = JSON.stringify(options.data);
+      }
+      return this.client.invoke("notification", "show", payload);
+    }
+    /**
+     * 取消指定 ID 的通知
+     * @param id 通知唯一 ID
+     */
+    async cancel(id) {
+      var _a;
+      const res = await this.client.invoke("notification", "cancel", { id });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 取消所有已发送或挂起的本地通知
+     */
+    async cancelAll() {
+      var _a;
+      const res = await this.client.invoke("notification", "cancelAll");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 检查当前 App 是否具备发送系统通知的权限
+     */
+    async areNotificationsEnabled() {
+      var _a;
+      const res = await this.client.invoke("notification", "areNotificationsEnabled");
+      return (_a = res == null ? void 0 : res.enabled) != null ? _a : true;
+    }
+  };
+
   // src/index.ts
   var MobileElectron = class {
     constructor() {
@@ -1853,6 +1986,8 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
       this.secureStorage = new SecureStorageModule(this.client);
       this.camera = new CameraModule(this.client);
       this.ipc = new IpcModule(this.client);
+      this.clipboard = new ClipboardModule(this.client);
+      this.notification = new NotificationModule(this.client);
     }
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
     get platform() {

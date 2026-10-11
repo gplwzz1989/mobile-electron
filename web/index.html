@@ -72,6 +72,31 @@
           <div id="app-info-display" class="code-box"></div>
         </div>
 
+        <!-- 外部应用唤醒与拉起 (URL Scheme / DeepLink) -->
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">外部应用唤醒与拉起 (electron.app.openUrl)</span>
+            <span id="badge-deeplink-status" class="badge" style="background:#E0E7FF; color:#4338CA;">DeepLink</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            支持传入完整协议与复杂参数拉起外部原生 App（如抖音、TikTok、微信等），带未安装安全防崩与备用网页降级。
+          </p>
+          <div class="field">
+            <label>目标协议 Scheme：</label>
+            <input type="text" id="input-deeplink-url" class="input" value="snssdk1128://webview?url=https://iesdouyin.com/user/123">
+          </div>
+          <div class="field mt-2">
+            <label>未安装降级 Fallback URL (可选)：</label>
+            <input type="text" id="input-deeplink-fallback" class="input" value="https://www.douyin.com">
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-launch-douyin" class="btn btn-default" style="background:linear-gradient(135deg, #161823, #FE2C55); color:#FFF; font-weight:bold;">🎵 拉起抖音 App (测试按钮)</button>
+            <button id="btn-check-deeplink" class="btn btn-outline">检测是否可拉起 (canOpenUrl)</button>
+            <button id="btn-launch-custom-scheme" class="btn btn-subtle">拉起输入协议</button>
+          </div>
+          <div id="deeplink-result-display" class="code-box mt-2">点击上方按钮执行协议拉起测试...</div>
+        </div>
+
         <div class="box">
           <div class="box-header">
             <span class="box-title">状态栏与视窗 (electron.window)</span>
