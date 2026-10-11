@@ -28,6 +28,18 @@ async function testSdkModules() {
   assert.strictEqual(typeof electron.app.resetRemoteConfig, 'function');
   assert.strictEqual(typeof electron.app.getConfigStatus, 'function');
 
+  // 通用 URL Scheme / DeepLink 协议拉起接口
+  assert.strictEqual(typeof electron.app.canOpenUrl, 'function', 'canOpenUrl 必须为函数');
+  assert.strictEqual(typeof electron.app.openUrl, 'function', 'openUrl 必须为函数');
+
+  const canOpenDouyin = await electron.app.canOpenUrl('snssdk1128://webview?url=https://iesdouyin.com/user/123');
+  assert.strictEqual(typeof canOpenDouyin, 'boolean');
+
+  const openDouyinRes = await electron.app.openUrl('snssdk1128://webview?url=https://iesdouyin.com/user/123', {
+    fallbackUrl: 'https://www.douyin.com'
+  });
+  assert.strictEqual(openDouyinRes.success, true);
+
   // 2. Storage & SecureStorage 模块
   assert.ok(electron.storage, 'electron.storage 必须存在');
   await electron.storage.set('test_k', 'test_v');

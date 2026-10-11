@@ -1,6 +1,11 @@
 package com.example.cookiebrowser.plugins;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -15,6 +20,7 @@ import com.example.cookiebrowser.security.DomainWhitelistManager;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 /**
  * 宿主应用系统级控制与框架配置插件
@@ -35,7 +41,7 @@ public class AppPlugin implements IBridgePlugin {
 
     @Override
     public int getRequiredTier(String action) {
-        if ("getInfo".equals(action)) {
+        if ("getInfo".equals(action) || "canOpenUrl".equals(action) || "openUrl".equals(action)) {
             return DomainWhitelistManager.TIER_0_PUBLIC;
         }
         return DomainWhitelistManager.TIER_1_BUSINESS;
@@ -163,6 +169,93 @@ public class AppPlugin implements IBridgePlugin {
                 res.put("success", reset);
                 res.put("source", AppConfigManager.getInstance().getConfigSource());
                 callback.success(res);
+                break;
+            }
+
+            case "canOpenUrl": {
+                String targetUrl = params != null ? params.optString("url", "").trim() : "";
+                if (targetUrl.isEmpty()) {
+                    callback.error(400, "Missing 'url' parameter");
+                    return;
+                }
+                boolean canOpen = false;
+                try {
+                    Intent intent;
+                    if (targetUrl.startsWith("intent://")) {
+                        intent = Intent.parseUri(targetUrl, Intent.URI_INTENT_SCHEME);
+                    } else {
+                        intent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
+                    }
+                    PackageManager pm = activity != null ? activity.getPackageManager() : null;
+                    if (pm != null) {
+                        ResolveInfo info = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                        canOpen = (info != null);
+                        if (!canOpen) {
+                            List<ResolveInfo> list = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                            canOpen = (list != null && !list.isEmpty());
+                        }
+                    }
+                } catch (Exception e) {
+                    canOpen = false;
+                }
+                JSONObject res = new JSONObject();
+                res.put("canOpen", canOpen);
+                callback.success(res);
+                break;
+            }
+
+            case "openUrl": {
+                if (activity == null) {
+                    callback.error(500, "Activity context is null");
+                    return;
+                }
+                String targetUrl = params != null ? params.optString("url", "").trim() : "";
+                if (targetUrl.isEmpty()) {
+                    callback.error(400, "Missing 'url' parameter");
+                    return;
+                }
+                String fallbackUrl = params != null ? params.optString("fallbackUrl", "").trim() : "";
+
+                mainHandler.post(() -> {
+                    try {
+                        Intent intent;
+                        if (targetUrl.startsWith("intent://")) {
+                            intent = Intent.parseUri(targetUrl, Intent.URI_INTENT_SCHEME);
+                        } else {
+                            intent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
+                        }
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                        try {
+                            activity.startActivity(intent);
+
+                            JSONObject res = new JSONObject();
+                            res.put("success", true);
+                            callback.success(res);
+                        } catch (ActivityNotFoundException notFound) {
+                            if (!fallbackUrl.isEmpty()) {
+                                try {
+                                    Intent fallbackIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl));
+                                    fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    activity.startActivity(fallbackIntent);
+
+                                    JSONObject res = new JSONObject();
+                                    res.put("success", true);
+                                    res.put("fallback", true);
+                                    callback.success(res);
+                                    return;
+                                } catch (Exception ignored) {}
+                            }
+                            JSONObject res = new JSONObject();
+                            res.put("success", false);
+                            res.put("reason", "app_not_installed");
+                            res.put("message", "未找到能够处理该协议的应用程序");
+                            callback.success(res);
+                        }
+                    } catch (Exception e) {
+                        callback.error(500, "拉起外部协议失败: " + e.getMessage());
+                    }
+                });
                 break;
             }
 

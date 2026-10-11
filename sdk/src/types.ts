@@ -495,4 +495,20 @@ export interface NotificationResult {
     id: number | string;
 }
 
+export interface OpenUrlOptions {
+    /** 未安装目标应用时的备用网页降级 URL */
+    fallbackUrl?: string;
+}
+
+export interface OpenUrlResult {
+    /** 是否成功调起目标应用或备用地址 */
+    success: boolean;
+    /** 是否降级打开了 fallback 地址 */
+    fallback?: boolean;
+    /** 失败原因 (如 'app_not_installed') */
+    reason?: string;
+    /** 详细错误提示信息 */
+    message?: string;
+}
+
 

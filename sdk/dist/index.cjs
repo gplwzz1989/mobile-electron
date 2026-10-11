@@ -90,6 +90,11 @@ var _MockEngine = class _MockEngine {
       case "app.exit":
         alert("[Mock App Exit] exit() called");
         return Promise.resolve({ success: true });
+      case "app.canOpenUrl":
+        return Promise.resolve({ canOpen: true });
+      case "app.openUrl":
+        console.info("[Mock App openUrl]", params?.url, "fallback:", params?.fallbackUrl);
+        return Promise.resolve({ success: true });
       case "window.setStatusBar":
       case "window.setFullscreen":
       case "window.setDebugToolbarVisible":
@@ -1188,6 +1193,25 @@ var AppModule = class {
    */
   async getInfo() {
     return this.client.invoke("app", "getInfo");
+  }
+  /**
+   * 检查设备是否能够处理指定的自定义协议 Scheme 或 URL (例如 'snssdk1128://', 'weixin://', 'tiktok://')
+   * @param url 完整的协议或链接字符串
+   */
+  async canOpenUrl(url) {
+    const res = await this.client.invoke("app", "canOpenUrl", { url });
+    return res?.canOpen ?? false;
+  }
+  /**
+   * 调起系统或第三方外部应用协议 (支持完整的通用协议与参数，如 'snssdk1128://webview?url=https://iesdouyin.com/user/123')
+   * @param url 完整协议字符串
+   * @param options 可选配置项 (如未安装应用时的 fallbackUrl 兜底地址)
+   */
+  async openUrl(url, options) {
+    return this.client.invoke("app", "openUrl", {
+      url,
+      fallbackUrl: options?.fallbackUrl
+    });
   }
   /**
    * 获取框架当前加载的应用配置 (app-config.json)

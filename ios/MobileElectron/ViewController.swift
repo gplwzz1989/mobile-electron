@@ -132,6 +132,23 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
     }
 
     // MARK: - WKNavigationDelegate
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.allow)
+            return
+        }
+
+        let scheme = url.scheme?.lowercased() ?? ""
+        if scheme == "http" || scheme == "https" || scheme == "file" || scheme == "about" || scheme == "data" || scheme == "javascript" {
+            decisionHandler(.allow)
+            return
+        }
+
+        // 通用第三方 App 自定义 Scheme (如 snssdk1128, tiktok, weixin, alipays, tel, mailto 等)
+        UIApplication.shared.open(url, options: [:]) { _ in }
+        decisionHandler(.cancel)
+    }
+
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         NSLog("[MobileElectron-iOS] Page loaded: %@", webView.url?.absoluteString ?? "")
     }

@@ -40,7 +40,9 @@ public class AppPlugin: IBridgePlugin {
     }
 
     public func getRequiredTier(action: String) -> Int {
-        if action == "getInfo" || action == "getConfigStatus" { return DomainWhitelistManager.TIER_0_PUBLIC }
+        if action == "getInfo" || action == "getConfigStatus" || action == "canOpenUrl" || action == "openUrl" {
+            return DomainWhitelistManager.TIER_0_PUBLIC
+        }
         return DomainWhitelistManager.TIER_1_BUSINESS
     }
 
@@ -130,6 +132,39 @@ public class AppPlugin: IBridgePlugin {
                 exit(0)
             }
             completion(200, ["success": true], "success")
+
+        case "canOpenUrl":
+            guard let urlStr = params["url"] as? String, let url = URL(string: urlStr) else {
+                completion(400, nil, "Missing or invalid 'url' parameter")
+                return
+            }
+            let canOpen = UIApplication.shared.canOpenURL(url)
+            completion(200, ["canOpen": canOpen], "success")
+
+        case "openUrl":
+            guard let urlStr = params["url"] as? String, let url = URL(string: urlStr) else {
+                completion(400, nil, "Missing or invalid 'url' parameter")
+                return
+            }
+            let fallbackStr = params["fallbackUrl"] as? String
+
+            DispatchQueue.main.async {
+                UIApplication.shared.open(url, options: [:]) { success in
+                    if success {
+                        completion(200, ["success": true], "success")
+                    } else if let fallback = fallbackStr, let fallbackUrl = URL(string: fallback) {
+                        UIApplication.shared.open(fallbackUrl, options: [:]) { fbSuccess in
+                            completion(200, ["success": fbSuccess, "fallback": true], "success")
+                        }
+                    } else {
+                        completion(200, [
+                            "success": false,
+                            "reason": "app_not_installed",
+                            "message": "未找到能够处理该协议的应用程序"
+                        ], "App not installed")
+                    }
+                }
+            }
 
         default:
             completion(404, nil, "Unknown action '\(action)' in module 'app'")

@@ -71,7 +71,7 @@ import { electron } from '@mobile-electron/core';
 
 | 模块名 | 作用描述 | 核心方法 / 特性 | 权限等级 |
 | :--- | :--- | :--- | :--- |
-| **`electron.app`** | 应用元信息、生命周期监听与云控配置 | `getInfo()`, `onStateChange(fn)`, `getConfigStatus()`, `fetchRemoteConfig()` | Tier 0 / Tier 1 |
+| **`electron.app`** | 应用元信息、生命周期监听、云控配置与通用 URL Scheme 外部协议拉起 | `getInfo()`, `canOpenUrl()`, `openUrl()`, `onStateChange()`, `fetchRemoteConfig()` | Tier 0 / Tier 1 |
 | **`electron.network`** | 原生网络连通性与类型监听 | `getStatus()`, `onNetworkChange(fn)` | Tier 0 |
 | **`electron.window`** | 沉浸式状态栏、全屏与画中画悬浮窗 | `setStatusBar()`, `createFloatingWindow()`, `minimizeFloatingWindow()` | Tier 1 |
 | **`electron.clipboard`** | 系统剪贴板纯文本读写与清空 | `readText()`, `writeText()`, `hasText()`, `clear()` | Tier 0 |

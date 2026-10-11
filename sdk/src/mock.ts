@@ -61,6 +61,13 @@ export class MockEngine {
                 alert('[Mock App Exit] exit() called');
                 return Promise.resolve({ success: true } as unknown as T);
 
+            case 'app.canOpenUrl':
+                return Promise.resolve({ canOpen: true } as unknown as T);
+
+            case 'app.openUrl':
+                console.info('[Mock App openUrl]', params?.url, 'fallback:', params?.fallbackUrl);
+                return Promise.resolve({ success: true } as unknown as T);
+
             case 'window.setStatusBar':
             case 'window.setFullscreen':
             case 'window.setDebugToolbarVisible':

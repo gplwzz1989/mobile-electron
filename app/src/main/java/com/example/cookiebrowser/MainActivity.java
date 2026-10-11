@@ -5,6 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ActivityNotFoundException;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -326,8 +327,59 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
-                return true;
+                return handleUrlLoading(view, url);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (request != null && request.getUrl() != null) {
+                    return handleUrlLoading(view, request.getUrl().toString());
+                }
+                return false;
+            }
+
+            private boolean handleUrlLoading(WebView view, String url) {
+                if (url == null || url.trim().isEmpty()) {
+                    return false;
+                }
+                String trimmed = url.trim();
+
+                // 1. 标准网页协议 (http, https, file, data, about, javascript) 交由内置 WebView 加载
+                if (trimmed.startsWith("http://") || trimmed.startsWith("https://")
+                        || trimmed.startsWith("file://") || trimmed.startsWith("about:")
+                        || trimmed.startsWith("data:") || trimmed.startsWith("javascript:")) {
+                    view.loadUrl(trimmed);
+                    return true;
+                }
+
+                // 2. 通用第三方 App 自定义 Scheme 或 intent:// 协议 (如 snssdk1128, tiktok, weixin, alipays, tel 等)
+                try {
+                    Intent intent;
+                    if (trimmed.startsWith("intent://")) {
+                        intent = Intent.parseUri(trimmed, Intent.URI_INTENT_SCHEME);
+                    } else {
+                        intent = new Intent(Intent.ACTION_VIEW, Uri.parse(trimmed));
+                    }
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    return true;
+                } catch (ActivityNotFoundException notFound) {
+                    android.util.Log.w("MainActivity", "未安装处理该协议的应用: " + trimmed);
+                    try {
+                        if (trimmed.startsWith("intent://")) {
+                            Intent parsed = Intent.parseUri(trimmed, Intent.URI_INTENT_SCHEME);
+                            String fallbackUrl = parsed.getStringExtra("browser_fallback_url");
+                            if (fallbackUrl != null && !fallbackUrl.isEmpty()) {
+                                view.loadUrl(fallbackUrl);
+                                return true;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    return true; // 拦截阻止，避免 WebView 抛出 ERR_UNKNOWN_URL_SCHEME 导致白屏
+                } catch (Exception e) {
+                    android.util.Log.e("MainActivity", "处理自定义协议异常: " + e.getMessage());
+                    return true;
+                }
             }
 
             @Override

@@ -1,9 +1,5 @@
-/**
- * @file app.ts
- * @description 宿主应用系统级信息、生命周期控制与动态云控配置模块
- */
 import { MobileElectronClient } from '../client';
-import { AppInfo, RemoteConfigStatus, FetchRemoteConfigResult, AppStateChangeEvent, UnsubscribeFn } from '../types';
+import { AppInfo, RemoteConfigStatus, FetchRemoteConfigResult, AppStateChangeEvent, UnsubscribeFn, OpenUrlOptions, OpenUrlResult } from '../types';
 export declare class AppModule {
     private readonly client;
     constructor(client: MobileElectronClient);
@@ -15,6 +11,17 @@ export declare class AppModule {
      * 获取当前 App 容器运行时详细信息
      */
     getInfo(): Promise<AppInfo>;
+    /**
+     * 检查设备是否能够处理指定的自定义协议 Scheme 或 URL (例如 'snssdk1128://', 'weixin://', 'tiktok://')
+     * @param url 完整的协议或链接字符串
+     */
+    canOpenUrl(url: string): Promise<boolean>;
+    /**
+     * 调起系统或第三方外部应用协议 (支持完整的通用协议与参数，如 'snssdk1128://webview?url=https://iesdouyin.com/user/123')
+     * @param url 完整协议字符串
+     * @param options 可选配置项 (如未安装应用时的 fallbackUrl 兜底地址)
+     */
+    openUrl(url: string, options?: OpenUrlOptions): Promise<OpenUrlResult>;
     /**
      * 获取框架当前加载的应用配置 (app-config.json)
      */
