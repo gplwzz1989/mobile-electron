@@ -15,16 +15,23 @@ Mobile Electron 是一款面向企业级移动端混合应用（Android / iOS）
 1. **在线 / 本地离线双模打包支持**：
    - **在线模式 (`online`)**：启动直接加载远程 HTTPS 网站，业务无感热更新，底座轻量；
    - **本地离线模式 (`local`)**：前端全量资产（HTML/CSS/JS/图片）及 SDK 内嵌打包进 APK 与 IPA，零网络依赖，秒开启动，支持 ES Module 与离线沙盒运行。
-2. **多 Profile 物理级数据隔离**：
+2. **离线包增量差分热更与前台静默更新闭环**：
+   - 基于 SHA-256 细粒度资源清单比对（Diff Engine），只下载修改与新增文件，省流 90%+；
+   - 切回前台自动触发静默防抖检查与拉取，`onUpdateReady` 派发就绪通知，下次启动或点击无缝秒级生效。
+3. **应用内画中画悬浮多窗口 (Floating Overlay Window)**：
+   - 移动端单屏创新多窗口方案，内嵌独立 WebView，支持手指自由拖拽、屏幕边缘自动阻尼吸附、折叠为浮标小球与跨窗口 JS 通信；
+   - **100% 免敏感高危权限**，直接在宿主 Activity / UIViewController 根容器上渲染，完全符合各大应用商店审核标准。
+4. **多 Profile 物理级数据隔离**：
    - 底层利用 Chromium `androidx.webkit.ProfileStore` 与 iOS `WKWebsiteDataStore`；
    - 支持同时静默运行多个相互物理隔离的 WebView 页面，各自拥有独立的 SQLite Cookie 数据库及 LocalStorage，绝无串号泄漏风险。
-3. **旗舰级硬件指纹注入与反反爬 (Stealth Engine)**：
+5. **旗舰级硬件指纹注入与反反爬 (Stealth Engine)**：
    - 底层 `.atDocumentStart` 毫秒级注入伪装 CPU 核心、内存、GPU 渲染器、屏幕参数与 Web Audio 浮点噪声；
    - 原型链深度保护，轻松穿透现代商业级风控设备采集。
-4. **统一 JSON-RPC 2.0 桥接协议与三级安全网关**：
-   - 包含窗口导航、原生 Cookie 控制、独立多页面调度、底层网络穿透、设备剪贴板与 Toast、文件读写、弹窗控制等系统级插件体系。
-5. **CI/CD 全自动化构建**：
-   - 基于 GitHub Actions，支持一键编译、测试并导出 Android APK 与 iOS IPA 安装包。
+6. **统一 JSON-RPC 2.0 桥接协议与 14 大原生系统特权插件**：
+   - 包含窗口与画中画、Cookie/Storage、网络与生命周期感知、文件读写、生物认证 FaceID/指纹、触感震动、相机扫码、动态 TabBar 等。
+7. **全栈脚手架与自动化测试套件**：
+   - 自带 `@mobile-electron/cli`（支持 `doctor` 跨端环境体检）；
+   - 自动化测试套件 100% 覆盖协议层、SDK 接口、热更差分算法及白名单沙箱。
 
 ---
 
@@ -44,9 +51,11 @@ Mobile Electron 是一款面向企业级移动端混合应用（Android / iOS）
 ├── web/                        # 前端控制台 / Web 界面工程 (Vue/Vite/TypeScript)
 │   ├── src/                    # 前端界面源码与业务逻辑
 │   └── vite.config.ts          # Vite 配置文件 (已配置相对路径 base: './')
-├── scripts/                    # 自动化工程脚本
-│   └── prepare-build.js        # 双模打包预处理与资源同步工具
+├── packages/                   # 跨端工具包 (@mobile-electron/cli 等)
+├── tests/                      # 全栈自动化测试套件 (协议层、SDK、热更差分、白名单)
+├── scripts/                    # 自动化工程脚本 (双模打包、热更打包分发)
 ├── docs/                       # 架构设计与技术文档
+│   ├── ARCHITECTURE_AND_DEVELOPER_GUIDE.md  # 📖 全景架构与开发者实战指南 (必读)
 │   ├── DUAL_MODE_PACKAGING_GUIDE.md          # 📖 在线/离线双模打包使用指南
 │   ├── MOBILE_ELECTRON_FRAMEWORK_ARCHITECTURE.md # 📖 容器框架架构设计规范
 │   ├── IOS_IMPLEMENTATION_BLUEPRINT.md       # 📖 iOS 端底座实现蓝图

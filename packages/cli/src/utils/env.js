@@ -70,18 +70,35 @@ function checkJdk() {
 }
 
 function checkAndroidSdk() {
-  const sdkRoot = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || '';
+  let sdkRoot = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || '';
   let adbVer = runSync('adb version');
-  if (!adbVer && sdkRoot) {
-    const adbBin = path.join(sdkRoot, 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb');
-    if (fs.existsSync(adbBin)) {
-      adbVer = runSync(`"${adbBin}" version`);
+  let adbPath = 'adb';
+
+  if (!adbVer) {
+    const candidates = [
+      sdkRoot ? path.join(sdkRoot, 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb') : null,
+      'C:\\Users\\Administrator\\.codex\\tools\\reverse\\platform-tools\\adb.exe',
+      'D:\\Program Files\\Netease\\MuMu\\nx_device\\12.0\\shell\\adb.exe',
+      path.join(process.env.LOCALAPPDATA || '', 'Android', 'Sdk', 'platform-tools', 'adb.exe')
+    ].filter(Boolean);
+
+    for (const cand of candidates) {
+      if (fs.existsSync(cand)) {
+        adbPath = cand;
+        adbVer = runSync(`"${cand}" version`);
+        if (adbVer) {
+          if (!sdkRoot) {
+            sdkRoot = path.dirname(path.dirname(cand));
+          }
+          break;
+        }
+      }
     }
   }
 
   let devices = [];
   if (adbVer) {
-    const devOut = runSync('adb devices');
+    const devOut = runSync(`"${adbPath}" devices`);
     if (devOut) {
       devices = devOut.split('\n')
         .slice(1)
