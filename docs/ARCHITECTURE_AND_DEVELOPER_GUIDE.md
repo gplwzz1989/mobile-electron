@@ -82,6 +82,7 @@ import { electron } from '@mobile-electron/core';
 | **`electron.biometrics`** | 生物识别鉴权（指纹 / 面容 Face ID） | `isAvailable()`, `authenticate()` | Tier 1 |
 | **`electron.haptics`** | 真实触觉反馈震动 (Taptic Engine) | `impact()`, `notification()`, `selection()` | Tier 0 |
 | **`electron.camera`** | 系统相机拍照与二维码扫码 | `takePhoto()`, `scanBarcode()` | Tier 1 |
+| **`electron.ipc`** | 跨窗口全双工通信总线 (定向/广播/监听) | `send()`, `sendTo()`, `broadcast()`, `on()`, `once()` | Tier 0 |
 | **`electron.dialog`** | 原生风格系统提示与交互弹窗 | `alert()`, `confirm()`, `prompt()` | Tier 0 |
 
 ---
@@ -187,10 +188,15 @@ npm run mode:local
 # 6. 在线远程 URL 模式切换
 npm run mode:online
 
-# 7. 编译 Android Debug 安装包
+# 7. 一键真机 / 模拟器部署安装并自动映射 DevTools 调试端口
+npm run run:android
+# (秒级热跑复用已有APK: npx mobile-electron run android --skip-build)
+# (启动并实时监听原生 Logcat 日志: npx mobile-electron run android --log)
+
+# 8. 编译 Android Debug 安装包
 ./gradlew assembleDebug
 # (产物输出至: app/build/outputs/apk/debug/app-debug.apk)
 
-# 8. 编译 Android Release 签名包
+# 9. 编译 Android Release 签名包
 ./gradlew assembleRelease
 ```

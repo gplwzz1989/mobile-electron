@@ -15,6 +15,8 @@
     "create:app": "node packages/create-mobile-electron-app/bin/cli.js",
     "cli": "node packages/cli/bin/mobile-electron.js",
     "doctor": "node packages/cli/bin/mobile-electron.js doctor",
+    "run:android": "node packages/cli/bin/mobile-electron.js run android",
+    "run:ios": "node packages/cli/bin/mobile-electron.js run ios",
     "test": "node tests/run-all.js"
   },
   "devDependencies": {

@@ -116,6 +116,7 @@ function checkAndroidSdk() {
     name: 'Android SDK & Platform-Tools',
     ok,
     sdkRoot: sdkRoot || '未显式配置 ANDROID_HOME',
+    adbPath: adbVer ? adbPath : null,
     adbVersion: adbVer ? adbVer.split('\n')[0] : '未找到 adb',
     devices,
     details: ok ? `adb 就绪 (${devices.length} 台设备连接)` : '未配置 ANDROID_HOME 或 platform-tools'

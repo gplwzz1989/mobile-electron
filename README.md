@@ -102,6 +102,18 @@ node scripts/prepare-build.js --mode online --url https://m.baidu.com
 ./gradlew assembleRelease
 ```
 
+### 3. 一键真机 / 模拟器部署安装与热跑 (Run & DevTools)
+```bash
+# 自动捕获在线设备/模拟器端口，编译并安装 APK，自动启动并开启 Chrome DevTools 映射
+npm run run:android
+
+# 极速热跑（跳过编译直接复用现有 APK 安装）:
+npx mobile-electron run android --skip-build
+
+# 启动并实时查看原生 Logcat 日志:
+npx mobile-electron run android --log
+```
+
 ---
 
 ## 🤖 GitHub Actions CI/CD 自动化打包
