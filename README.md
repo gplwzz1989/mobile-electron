@@ -114,14 +114,33 @@ npx mobile-electron run android --skip-build
 npx mobile-electron run android --log
 ```
 
+### 4. NPM 生态分发与离线包归档 (NPM Ecosystem Packaging)
+```bash
+# 一键打包核心 SDK、CLI 工具及脚手架为规范的离线 tarball (.tgz)
+npm run pack:all
+
+# 打包产物将自动归档至 release/npm/：
+# - release/npm/mobile-electron-core-2.0.0.tgz
+# - release/npm/mobile-electron-cli-2.0.0.tgz
+# - release/npm/create-mobile-electron-app-2.0.0.tgz
+```
+
 ---
 
-## 🤖 GitHub Actions CI/CD 自动化打包
+## 🤖 GitHub Actions CI/CD 自动化打包与质量门禁
 
+项目内置全自动化的工业级 CI/CD 流水线（`.github/workflows/ci.yml`）：
+1. **🧪 自动化单元测试门禁 (`test`)**：在 Android 与 iOS 编译前运行全套自动化测试，100% 通过方可继续，阻断任何破坏性改动；
+2. **🌐 Web & SDK 资产构建 (`build-web`)**：自动构建 TS SDK 与 Vite 产物；
+3. **📦 NPM 生态包打包归档 (`pack-npm`)**：自动生成 3 个子包的 `.tgz` 离线分发包并上传为 Artifact；
+4. **🤖 Android APK 构建 (`build-android`)**：编译并归档 Debug & Release APK；
+5. **🍎 iOS IPA 构建 (`build-ios`)**：基于 macOS-14 + XcodeGen 全自动编译出免签 IPA；
+6. **🚀 GitHub Release 自动发布 (`release`)**：打 Tag（如 `v2.0.0`）自动归档发布 APK、IPA 与 NPM 离线包。
+
+**手动触发双模打包**：
 在 GitHub 仓库中，进入 **Actions** -> 点击 **Mobile Electron CI (Build APK & IPA)** -> 点击 **Run workflow**：
 * **`build_mode`**：选择 `local`（内置离线包）或 `online`（在线 URL）；
-* **`online_url`**：若为在线模式，输入目标站点地址；
-* 流水线会自动输出并归档对应模式的 Android APK 与 iOS IPA 安装包！
+* **`online_url`**：若为在线模式，输入目标站点地址。
 
 ---
 

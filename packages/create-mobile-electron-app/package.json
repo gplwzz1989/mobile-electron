@@ -17,6 +17,16 @@
     "react",
     "vite"
   ],
+  "files": [
+    "bin",
+    "templates",
+    "package.json"
+  ],
   "author": "Mobile Electron Team",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gplwzz1989/mobile-electron.git",
+    "directory": "packages/create-mobile-electron-app"
+  }
 }

@@ -199,4 +199,8 @@ npm run run:android
 
 # 9. 编译 Android Release 签名包
 ./gradlew assembleRelease
+
+# 10. NPM 生态子包归档打包 (产出 @mobile-electron/core, cli, create-mobile-electron-app 离线 tarball)
+npm run pack:all
+# (产物输出至: release/npm/*.tgz)
 ```
