@@ -82,7 +82,45 @@ async function testSdkModules() {
   const ver = await electron.hotUpdate.getCurrentVersion();
   assert.ok(ver.version, '热更版本应包含 version 字段');
 
-  console.log('    ✔ SDK 14 大核心模块及生命周期/网络感知/静默热更接口校验 100% 通过');
+  // 9. 多窗口与画中画悬浮窗 (Floating Window Overlay)
+  assert.strictEqual(typeof electron.window.createFloatingWindow, 'function', 'createFloatingWindow 必须为函数');
+  assert.strictEqual(typeof electron.window.closeFloatingWindow, 'function', 'closeFloatingWindow 必须为函数');
+  assert.strictEqual(typeof electron.window.minimizeFloatingWindow, 'function', 'minimizeFloatingWindow 必须为函数');
+  assert.strictEqual(typeof electron.window.updateFloatingWindow, 'function', 'updateFloatingWindow 必须为函数');
+  assert.strictEqual(typeof electron.window.evalFloatingWindow, 'function', 'evalFloatingWindow 必须为函数');
+  assert.strictEqual(typeof electron.window.getFloatingWindowState, 'function', 'getFloatingWindowState 必须为函数');
+
+  const floatWin = await electron.window.createFloatingWindow({
+    id: 'test_float_win',
+    url: 'https://m.bilibili.com',
+    title: '测试悬浮画中画',
+    width: 300,
+    height: 220,
+    x: 50,
+    y: 100
+  });
+  assert.strictEqual(floatWin.success, true);
+  assert.strictEqual(floatWin.id, 'test_float_win');
+  assert.strictEqual(floatWin.width, 300);
+
+  const floatState = await electron.window.getFloatingWindowState('test_float_win');
+  assert.ok(floatState);
+  assert.strictEqual(floatState.title, '测试悬浮画中画');
+  assert.strictEqual(floatState.isMinimized, false);
+
+  const updateRes = await electron.window.updateFloatingWindow('test_float_win', { x: 80, y: 120 });
+  assert.strictEqual(updateRes, true);
+
+  const minRes = await electron.window.minimizeFloatingWindow('test_float_win', true);
+  assert.strictEqual(minRes, true);
+
+  const evalRes = await electron.window.evalFloatingWindow('test_float_win', 'document.title');
+  assert.ok(evalRes);
+
+  const closeRes = await electron.window.closeFloatingWindow('test_float_win');
+  assert.strictEqual(closeRes, true);
+
+  console.log('    ✔ SDK 14 大核心模块、生命周期网络感知及悬浮多窗口接口校验 100% 通过');
 }
 
 module.exports = testSdkModules;

@@ -278,6 +278,124 @@ function setupAppAndWindow() {
     }
   });
 
+  // ========== 画中画与悬浮多窗口 (Direction D: Floating Overlay Window) ==========
+  const floatingBadge = document.getElementById('badge-floating-window-status');
+  const currentFloatingId = 'pip_player_01';
+  let isFloatingMinimized = false;
+  let isFloatingVisible = true;
+
+  const updateFloatingDisplay = (state: any) => {
+    showResult('floating-window-result', state);
+    if (floatingBadge) {
+      if (!state) {
+        floatingBadge.textContent = '未创建';
+        floatingBadge.style.background = '#F1F5F9';
+        floatingBadge.style.color = '#475569';
+      } else if (state.isMinimized) {
+        floatingBadge.textContent = '已最小化 (浮标)';
+        floatingBadge.style.background = '#FEF3C7';
+        floatingBadge.style.color = '#92400E';
+      } else if (!state.isVisible) {
+        floatingBadge.textContent = '已隐藏';
+        floatingBadge.style.background = '#FEE2E2';
+        floatingBadge.style.color = '#991B1B';
+      } else {
+        floatingBadge.textContent = `运行中 (${state.width}x${state.height})`;
+        floatingBadge.style.background = '#DCFCE7';
+        floatingBadge.style.color = '#166534';
+      }
+    }
+  };
+
+  document.getElementById('btn-floating-create')?.addEventListener('click', async () => {
+    const url = (document.getElementById('input-floating-url') as HTMLInputElement)?.value?.trim() || 'https://m.bilibili.com';
+    const title = (document.getElementById('input-floating-title') as HTMLInputElement)?.value?.trim() || '画中画播放器';
+    const width = parseInt((document.getElementById('input-floating-width') as HTMLInputElement)?.value, 10) || 280;
+    const height = parseInt((document.getElementById('input-floating-height') as HTMLInputElement)?.value, 10) || 200;
+    const x = parseInt((document.getElementById('input-floating-x') as HTMLInputElement)?.value, 10) || 40;
+    const y = parseInt((document.getElementById('input-floating-y') as HTMLInputElement)?.value, 10) || 90;
+
+    log(`创建悬浮画中画小窗: ${title} -> ${url}`);
+    try {
+      const res = await electron.window.createFloatingWindow({
+        id: currentFloatingId,
+        url,
+        title,
+        width,
+        height,
+        x,
+        y,
+        draggable: true,
+        showControls: true
+      });
+      isFloatingMinimized = false;
+      isFloatingVisible = true;
+      const state = await electron.window.getFloatingWindowState(currentFloatingId);
+      updateFloatingDisplay(state || res);
+      log(`悬浮画中画创建成功: ID=${res.id}, 尺寸=${res.width}x${res.height}`, 's');
+      await appToast('画中画小窗已呼出，支持自由拖拽与吸附');
+    } catch (err: any) {
+      log(`创建悬浮画中画失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-floating-minimize')?.addEventListener('click', async () => {
+    try {
+      isFloatingMinimized = !isFloatingMinimized;
+      await electron.window.minimizeFloatingWindow(currentFloatingId, isFloatingMinimized);
+      const state = await electron.window.getFloatingWindowState(currentFloatingId);
+      updateFloatingDisplay(state);
+      log(`悬浮窗最小化状态切换: ${isFloatingMinimized ? '折叠为浮标' : '还原小窗'}`, 's');
+    } catch (err: any) {
+      log(`最小化操作失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-floating-toggle-visible')?.addEventListener('click', async () => {
+    try {
+      isFloatingVisible = !isFloatingVisible;
+      await electron.window.setFloatingWindowVisible(currentFloatingId, isFloatingVisible);
+      const state = await electron.window.getFloatingWindowState(currentFloatingId);
+      updateFloatingDisplay(state);
+      log(`悬浮窗可见性切换: ${isFloatingVisible ? '显示' : '隐藏'}`, 's');
+    } catch (err: any) {
+      log(`显隐操作失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-floating-get-state')?.addEventListener('click', async () => {
+    try {
+      const state = await electron.window.getFloatingWindowState(currentFloatingId);
+      updateFloatingDisplay(state);
+      log('获取悬浮窗最新状态成功', 's');
+    } catch (err: any) {
+      log(`获取状态失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-floating-eval')?.addEventListener('click', async () => {
+    const script = (document.getElementById('input-floating-eval') as HTMLInputElement)?.value?.trim() || 'document.title';
+    log(`向画中画执行脚本: ${script}`);
+    try {
+      const res = await electron.window.evalFloatingWindow(currentFloatingId, script);
+      showResult('floating-window-result', { evalScript: script, result: res });
+      log(`脚本执行成功: ${JSON.stringify(res)}`, 's');
+    } catch (err: any) {
+      log(`脚本执行失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-floating-close')?.addEventListener('click', async () => {
+    try {
+      const res = await electron.window.closeFloatingWindow(currentFloatingId);
+      updateFloatingDisplay(null);
+      log(`悬浮画中画已关闭: ${res}`, 's');
+      await appToast('画中画已关闭');
+    } catch (err: any) {
+      log(`关闭悬浮窗失败: ${err.message}`, 'e');
+    }
+  });
+
   // ========== 云控配置中心 (electron.app.remoteConfig) ==========
   const badgeSource = document.getElementById('badge-config-source');
 

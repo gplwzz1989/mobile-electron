@@ -364,3 +364,39 @@ export interface HotUpdateReadyEvent {
     installMode: 'incremental_diff' | 'full_package';
     appliedAt: number;
 }
+export interface FloatingWindowOptions {
+    id?: string;
+    url: string;
+    title?: string;
+    width?: number;
+    height?: number;
+    x?: number;
+    y?: number;
+    draggable?: boolean;
+    showControls?: boolean;
+}
+export interface FloatingWindowResult {
+    success: boolean;
+    id: string;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+}
+export interface FloatingWindowState {
+    id: string;
+    url: string;
+    title: string;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+    isMinimized: boolean;
+    isVisible: boolean;
+}
+export interface FloatingWindowUpdateOptions {
+    width?: number;
+    height?: number;
+    x?: number;
+    y?: number;
+}

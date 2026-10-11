@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 
 public protocol WindowControllable: AnyObject {
+    var rootContainerView: UIView { get }
     func updateStatusBar(darkIcons: Bool)
     func updateFullscreen(fullscreen: Bool)
     func loadTargetUrl(url: String)
@@ -85,6 +86,54 @@ public class WindowPlugin: IBridgePlugin {
 
         case "setDebugToolbarVisible":
             completion(200, ["success": true], "success")
+
+        case "createFloatingWindow":
+            guard let rootView = windowController?.rootContainerView else {
+                completion(500, nil, "Root container view not found")
+                return
+            }
+            FloatingWindowManager.shared.createFloatingWindow(in: rootView, options: params, completion: completion)
+
+        case "closeFloatingWindow":
+            let id = params["id"] as? String
+            let closed = FloatingWindowManager.shared.closeFloatingWindow(id: id)
+            completion(200, ["success": closed], "success")
+
+        case "setFloatingWindowVisible":
+            let id = params["id"] as? String ?? ""
+            let visible = params["visible"] as? Bool ?? true
+            let ok = FloatingWindowManager.shared.setFloatingWindowVisible(id: id, visible: visible)
+            completion(200, ["success": ok], "success")
+
+        case "minimizeFloatingWindow":
+            let id = params["id"] as? String ?? ""
+            let minimized = params["minimized"] as? Bool ?? true
+            let ok = FloatingWindowManager.shared.minimizeFloatingWindow(id: id, minimize: minimized)
+            completion(200, ["success": ok], "success")
+
+        case "updateFloatingWindow":
+            let id = params["id"] as? String ?? ""
+            let ok = FloatingWindowManager.shared.updateFloatingWindow(id: id, options: params)
+            completion(200, ["success": ok], "success")
+
+        case "evalFloatingWindow":
+            let id = params["id"] as? String ?? ""
+            let script = params["script"] as? String ?? ""
+            FloatingWindowManager.shared.evalFloatingWindow(id: id, script: script) { result, error in
+                if let err = error {
+                    completion(500, nil, err)
+                } else {
+                    completion(200, ["success": true, "result": result as Any], "success")
+                }
+            }
+
+        case "getFloatingWindowState":
+            let id = params["id"] as? String
+            if let state = FloatingWindowManager.shared.getFloatingWindowState(id: id) {
+                completion(200, state, "success")
+            } else {
+                completion(404, nil, "Floating window not found")
+            }
 
         default:
             completion(404, nil, "Unknown action '\(action)' in module 'window'")

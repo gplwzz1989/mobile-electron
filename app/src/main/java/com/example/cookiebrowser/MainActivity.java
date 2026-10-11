@@ -1827,6 +1827,7 @@ public class MainActivity extends AppCompatActivity {
         if (webViewPool != null) {
             webViewPool.destroyAll();
         }
+        com.example.cookiebrowser.core.FloatingWindowManager.getInstance().closeAll();
         super.onDestroy();
     }
 }

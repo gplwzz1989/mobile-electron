@@ -6,5 +6,6 @@ export declare class MockEngine {
     static isMockEnabled: boolean;
     private static memoryStorage;
     private static memorySecureStorage;
+    private static mockFloatingWindows;
     static mockInvoke<T = any>(module: string, action: string, params?: Record<string, any>): Promise<T>;
 }

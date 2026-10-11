@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)">
   <title>Mobile Electron</title>
-  <script type="module" crossorigin src="./assets/index-I-lab208.js"></script>
+  <script type="module" crossorigin src="./assets/index-CRrM5Fg0.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DUYz1dLy.css">
 </head>
 <body>
@@ -102,6 +102,58 @@
               <button id="btn-window-load-url" class="btn btn-default">加载</button>
             </div>
           </div>
+        </div>
+
+        <!-- 画中画与悬浮多窗口 (Direction D) -->
+        <div class="box">
+          <div class="box-header">
+            <span class="box-title">画中画 / 悬浮多窗口 (Floating Overlay Window)</span>
+            <span id="badge-floating-window-status" class="badge" style="background:#F1F5F9; color:#475569;">未创建</span>
+          </div>
+          <p class="section-desc" style="color:var(--text-sub); font-size:12px; margin:4px 0 10px 0;">
+            移动端多窗口原生级方案：应用内悬浮视窗，内嵌独立 WebView，支持自由拖拽、屏幕边缘智能吸附、折叠为浮标小球与跨窗口 JS 通信。
+          </p>
+          <div class="grid-2">
+            <div class="field">
+              <label>浮窗加载 URL：</label>
+              <input type="text" id="input-floating-url" class="input" value="https://m.bilibili.com">
+            </div>
+            <div class="field">
+              <label>浮窗标题：</label>
+              <input type="text" id="input-floating-title" class="input" value="画中画播放器">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>宽度 / 高度 (dp/pt)：</label>
+              <div class="input-group">
+                <input type="number" id="input-floating-width" class="input" value="280" placeholder="宽">
+                <input type="number" id="input-floating-height" class="input" value="200" placeholder="高">
+              </div>
+            </div>
+            <div class="field">
+              <label>初始坐标 X / Y：</label>
+              <div class="input-group">
+                <input type="number" id="input-floating-x" class="input" value="40" placeholder="X">
+                <input type="number" id="input-floating-y" class="input" value="90" placeholder="Y">
+              </div>
+            </div>
+          </div>
+          <div class="btn-row mt-2">
+            <button id="btn-floating-create" class="btn btn-default">🚀 打开画中画小窗</button>
+            <button id="btn-floating-minimize" class="btn btn-subtle">🗕 最小化 / 还原</button>
+            <button id="btn-floating-toggle-visible" class="btn btn-subtle">👁 显示 / 隐藏</button>
+            <button id="btn-floating-get-state" class="btn btn-outline">获取状态</button>
+            <button id="btn-floating-close" class="btn btn-danger">✕ 关闭浮窗</button>
+          </div>
+          <div class="field mt-2">
+            <label>向画中画执行 JS 脚本：</label>
+            <div class="input-group">
+              <input type="text" id="input-floating-eval" class="input" value="document.title">
+              <button id="btn-floating-eval" class="btn btn-primary">执行并返回</button>
+            </div>
+          </div>
+          <div id="floating-window-result" class="code-box mt-2"></div>
         </div>
 
         <div class="box">

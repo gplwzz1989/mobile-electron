@@ -9,6 +9,7 @@ export class MockEngine {
     public static isMockEnabled = true;
     private static memoryStorage = new Map<string, string>();
     private static memorySecureStorage = new Map<string, string>();
+    private static mockFloatingWindows = new Map<string, any>();
 
     public static mockInvoke<T = any>(module: string, action: string, params: Record<string, any> = {}): Promise<T> {
         console.warn(`[MobileElectron Mock] (${module}.${action}) called outside of native container. Returning mock fallback.`, params);
@@ -83,6 +84,85 @@ export class MockEngine {
                     window.location.href = params.url;
                 }
                 return Promise.resolve({ success: true, url: params.url } as unknown as T);
+
+            case 'window.createFloatingWindow': {
+                const fId = params.id || 'mock_float_' + Math.random().toString(36).substring(2, 8);
+                const winObj = {
+                    id: fId,
+                    url: params.url || '',
+                    title: params.title || '悬浮画中画',
+                    width: params.width || 280,
+                    height: params.height || 200,
+                    x: params.x !== undefined ? params.x : 100,
+                    y: params.y !== undefined ? params.y : 80,
+                    isMinimized: false,
+                    isVisible: true
+                };
+                MockEngine.mockFloatingWindows.set(fId, winObj);
+                return Promise.resolve({
+                    success: true,
+                    id: fId,
+                    width: winObj.width,
+                    height: winObj.height,
+                    x: winObj.x,
+                    y: winObj.y
+                } as unknown as T);
+            }
+
+            case 'window.closeFloatingWindow': {
+                const targetId = params.id || (MockEngine.mockFloatingWindows.keys().next().value);
+                let deleted = false;
+                if (targetId && MockEngine.mockFloatingWindows.has(targetId)) {
+                    deleted = MockEngine.mockFloatingWindows.delete(targetId);
+                }
+                return Promise.resolve({ success: deleted } as unknown as T);
+            }
+
+            case 'window.setFloatingWindowVisible': {
+                const target = MockEngine.mockFloatingWindows.get(params.id);
+                if (target) {
+                    target.isVisible = params.visible !== false;
+                    return Promise.resolve({ success: true } as unknown as T);
+                }
+                return Promise.resolve({ success: false } as unknown as T);
+            }
+
+            case 'window.minimizeFloatingWindow': {
+                const target = MockEngine.mockFloatingWindows.get(params.id);
+                if (target) {
+                    target.isMinimized = params.minimized !== false;
+                    return Promise.resolve({ success: true } as unknown as T);
+                }
+                return Promise.resolve({ success: false } as unknown as T);
+            }
+
+            case 'window.updateFloatingWindow': {
+                const target = MockEngine.mockFloatingWindows.get(params.id);
+                if (target) {
+                    if (params.width !== undefined) target.width = params.width;
+                    if (params.height !== undefined) target.height = params.height;
+                    if (params.x !== undefined) target.x = params.x;
+                    if (params.y !== undefined) target.y = params.y;
+                    return Promise.resolve({ success: true } as unknown as T);
+                }
+                return Promise.resolve({ success: false } as unknown as T);
+            }
+
+            case 'window.evalFloatingWindow': {
+                return Promise.resolve({
+                    success: true,
+                    result: 'mock_eval_result_for_' + (params.script || '')
+                } as unknown as T);
+            }
+
+            case 'window.getFloatingWindowState': {
+                const targetId = params.id || (MockEngine.mockFloatingWindows.keys().next().value);
+                const target = targetId ? MockEngine.mockFloatingWindows.get(targetId) : null;
+                if (target) {
+                    return Promise.resolve({ ...target } as unknown as T);
+                }
+                return Promise.reject(new Error('Floating window not found: ' + targetId));
+            }
 
             case 'dialog.alert':
                 if (typeof window !== 'undefined') {

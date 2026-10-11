@@ -108,6 +108,10 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
     }
 
     // MARK: - WindowControllable
+    public var rootContainerView: UIView {
+        return self.view
+    }
+
     public func updateStatusBar(darkIcons: Bool) {
         self.isStatusBarDarkIcons = darkIcons
         UIView.animate(withDuration: 0.25) {
@@ -129,5 +133,9 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
 
     public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         NSLog("[MobileElectron-iOS] Load failed: %@", error.localizedDescription)
+    }
+
+    deinit {
+        FloatingWindowManager.shared.closeAll()
     }
 }

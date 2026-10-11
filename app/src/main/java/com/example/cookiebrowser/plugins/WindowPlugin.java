@@ -165,6 +165,92 @@ public class WindowPlugin implements IBridgePlugin {
                 break;
             }
 
+            case "createFloatingWindow": {
+                com.example.cookiebrowser.core.FloatingWindowManager.getInstance().createFloatingWindow(
+                        activity,
+                        params,
+                        new com.example.cookiebrowser.core.FloatingWindowManager.CreateWindowCallback() {
+                            @Override
+                            public void onSuccess(JSONObject result) {
+                                callback.success(result);
+                            }
+
+                            @Override
+                            public void onError(int code, String error) {
+                                callback.error(code, error);
+                            }
+                        }
+                );
+                break;
+            }
+
+            case "closeFloatingWindow": {
+                String id = params.optString("id", null);
+                boolean closed = com.example.cookiebrowser.core.FloatingWindowManager.getInstance().closeFloatingWindow(id);
+                JSONObject res = new JSONObject();
+                res.put("success", closed);
+                callback.success(res);
+                break;
+            }
+
+            case "setFloatingWindowVisible": {
+                String id = params.optString("id", "");
+                boolean visible = params.optBoolean("visible", true);
+                boolean ok = com.example.cookiebrowser.core.FloatingWindowManager.getInstance().setFloatingWindowVisible(id, visible);
+                JSONObject res = new JSONObject();
+                res.put("success", ok);
+                callback.success(res);
+                break;
+            }
+
+            case "minimizeFloatingWindow": {
+                String id = params.optString("id", "");
+                boolean minimized = params.optBoolean("minimized", true);
+                boolean ok = com.example.cookiebrowser.core.FloatingWindowManager.getInstance().minimizeFloatingWindow(id, minimized);
+                JSONObject res = new JSONObject();
+                res.put("success", ok);
+                callback.success(res);
+                break;
+            }
+
+            case "updateFloatingWindow": {
+                String id = params.optString("id", "");
+                boolean ok = com.example.cookiebrowser.core.FloatingWindowManager.getInstance().updateFloatingWindow(id, params);
+                JSONObject res = new JSONObject();
+                res.put("success", ok);
+                callback.success(res);
+                break;
+            }
+
+            case "evalFloatingWindow": {
+                String id = params.optString("id", "");
+                String script = params.optString("script", "");
+                com.example.cookiebrowser.core.FloatingWindowManager.getInstance().evalFloatingWindow(id, script, (result, error) -> {
+                    if (error != null) {
+                        callback.error(500, error);
+                    } else {
+                        try {
+                            JSONObject res = new JSONObject();
+                            res.put("success", true);
+                            res.put("result", result);
+                            callback.success(res);
+                        } catch (Exception ignored) {}
+                    }
+                });
+                break;
+            }
+
+            case "getFloatingWindowState": {
+                String id = params.optString("id", null);
+                JSONObject state = com.example.cookiebrowser.core.FloatingWindowManager.getInstance().getFloatingWindowState(id);
+                if (state != null) {
+                    callback.success(state);
+                } else {
+                    callback.error(404, "Floating window not found");
+                }
+                break;
+            }
+
             default:
                 callback.error(404, "Unknown action '" + action + "' in module 'window'");
                 break;

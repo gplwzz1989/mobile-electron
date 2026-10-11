@@ -108,6 +108,78 @@ var _MockEngine = class _MockEngine {
           window.location.href = params.url;
         }
         return Promise.resolve({ success: true, url: params.url });
+      case "window.createFloatingWindow": {
+        const fId = params.id || "mock_float_" + Math.random().toString(36).substring(2, 8);
+        const winObj = {
+          id: fId,
+          url: params.url || "",
+          title: params.title || "\u60AC\u6D6E\u753B\u4E2D\u753B",
+          width: params.width || 280,
+          height: params.height || 200,
+          x: params.x !== void 0 ? params.x : 100,
+          y: params.y !== void 0 ? params.y : 80,
+          isMinimized: false,
+          isVisible: true
+        };
+        _MockEngine.mockFloatingWindows.set(fId, winObj);
+        return Promise.resolve({
+          success: true,
+          id: fId,
+          width: winObj.width,
+          height: winObj.height,
+          x: winObj.x,
+          y: winObj.y
+        });
+      }
+      case "window.closeFloatingWindow": {
+        const targetId = params.id || _MockEngine.mockFloatingWindows.keys().next().value;
+        let deleted = false;
+        if (targetId && _MockEngine.mockFloatingWindows.has(targetId)) {
+          deleted = _MockEngine.mockFloatingWindows.delete(targetId);
+        }
+        return Promise.resolve({ success: deleted });
+      }
+      case "window.setFloatingWindowVisible": {
+        const target = _MockEngine.mockFloatingWindows.get(params.id);
+        if (target) {
+          target.isVisible = params.visible !== false;
+          return Promise.resolve({ success: true });
+        }
+        return Promise.resolve({ success: false });
+      }
+      case "window.minimizeFloatingWindow": {
+        const target = _MockEngine.mockFloatingWindows.get(params.id);
+        if (target) {
+          target.isMinimized = params.minimized !== false;
+          return Promise.resolve({ success: true });
+        }
+        return Promise.resolve({ success: false });
+      }
+      case "window.updateFloatingWindow": {
+        const target = _MockEngine.mockFloatingWindows.get(params.id);
+        if (target) {
+          if (params.width !== void 0) target.width = params.width;
+          if (params.height !== void 0) target.height = params.height;
+          if (params.x !== void 0) target.x = params.x;
+          if (params.y !== void 0) target.y = params.y;
+          return Promise.resolve({ success: true });
+        }
+        return Promise.resolve({ success: false });
+      }
+      case "window.evalFloatingWindow": {
+        return Promise.resolve({
+          success: true,
+          result: "mock_eval_result_for_" + (params.script || "")
+        });
+      }
+      case "window.getFloatingWindowState": {
+        const targetId = params.id || _MockEngine.mockFloatingWindows.keys().next().value;
+        const target = targetId ? _MockEngine.mockFloatingWindows.get(targetId) : null;
+        if (target) {
+          return Promise.resolve({ ...target });
+        }
+        return Promise.reject(new Error("Floating window not found: " + targetId));
+      }
       case "dialog.alert":
         if (typeof window !== "undefined") {
           window.alert(params.message || "");
@@ -494,6 +566,7 @@ ${params?.description || "\u6A21\u62DF\u6307\u7EB9/\u9762\u5BB9\u8BC6\u522B\u621
 _MockEngine.isMockEnabled = true;
 _MockEngine.memoryStorage = /* @__PURE__ */ new Map();
 _MockEngine.memorySecureStorage = /* @__PURE__ */ new Map();
+_MockEngine.mockFloatingWindows = /* @__PURE__ */ new Map();
 var MockEngine = _MockEngine;
 
 // src/client.ts
@@ -980,6 +1053,59 @@ var WindowModule = class {
   async setDebugToolbarVisible(visible) {
     const res = await this.client.invoke("window", "setDebugToolbarVisible", { visible });
     return res.success;
+  }
+  /**
+   * 创建并在当前应用视图内挂载轻量级画中画 / 悬浮多窗口 (Floating Picture-in-Picture Window)
+   * @param options 浮窗配置项（url, title, width, height, x, y, draggable, showControls）
+   */
+  async createFloatingWindow(options) {
+    return await this.client.invoke("window", "createFloatingWindow", options);
+  }
+  /**
+   * 关闭并销毁悬浮小窗
+   * @param id 浮窗 ID（若未提供则关闭默认或活动中的悬浮窗）
+   */
+  async closeFloatingWindow(id) {
+    const res = await this.client.invoke("window", "closeFloatingWindow", { id });
+    return res.success;
+  }
+  /**
+   * 显式显示或隐藏悬浮窗
+   */
+  async setFloatingWindowVisible(id, visible = true) {
+    const res = await this.client.invoke("window", "setFloatingWindowVisible", { id, visible });
+    return res.success;
+  }
+  /**
+   * 最小化悬浮窗为轻量微型浮标，或从微型浮标还原
+   */
+  async minimizeFloatingWindow(id, minimized = true) {
+    const res = await this.client.invoke("window", "minimizeFloatingWindow", { id, minimized });
+    return res.success;
+  }
+  /**
+   * 动态调整悬浮窗位置与尺寸
+   */
+  async updateFloatingWindow(id, options) {
+    const res = await this.client.invoke("window", "updateFloatingWindow", { id, ...options });
+    return res.success;
+  }
+  /**
+   * 向悬浮窗内嵌的独立 WebView 执行 JavaScript 脚本并获取执行结果
+   */
+  async evalFloatingWindow(id, script) {
+    const res = await this.client.invoke("window", "evalFloatingWindow", { id, script });
+    return res.result;
+  }
+  /**
+   * 查询悬浮窗当前实时状态（坐标、尺寸、是否最小化、可见性等）
+   */
+  async getFloatingWindowState(id) {
+    try {
+      return await this.client.invoke("window", "getFloatingWindowState", { id });
+    } catch {
+      return null;
+    }
   }
 };
 
