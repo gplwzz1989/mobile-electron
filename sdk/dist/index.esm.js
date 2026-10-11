@@ -133,6 +133,39 @@ var _MockEngine = class _MockEngine {
         }
         return Promise.reject(new Error("Floating window not found: " + targetId));
       }
+      case "ipc.send":
+      case "ipc.broadcast": {
+        const eventPayload = {
+          channel: params.channel,
+          senderId: params.senderId || "mock_sender",
+          targetId: "all",
+          payload: params.payload,
+          timestamp: Date.now()
+        };
+        if (typeof window !== "undefined" && window.__onNativeRpcEvent) {
+          window.__onNativeRpcEvent(JSON.stringify({ event: "ipc.message", data: eventPayload }));
+        }
+        if (_MockEngine.onMockEvent) {
+          _MockEngine.onMockEvent("ipc.message", eventPayload);
+        }
+        return Promise.resolve({ success: true, recipientCount: 1 });
+      }
+      case "ipc.sendTo": {
+        const eventPayload = {
+          channel: params.channel,
+          senderId: params.senderId || "mock_sender",
+          targetId: params.targetId,
+          payload: params.payload,
+          timestamp: Date.now()
+        };
+        if (typeof window !== "undefined" && window.__onNativeRpcEvent) {
+          window.__onNativeRpcEvent(JSON.stringify({ event: "ipc.message", data: eventPayload }));
+        }
+        if (_MockEngine.onMockEvent) {
+          _MockEngine.onMockEvent("ipc.message", eventPayload);
+        }
+        return Promise.resolve({ success: true, targetId: params.targetId });
+      }
       case "dialog.alert":
         if (typeof window !== "undefined") {
           window.alert(params.message || "");
@@ -664,6 +697,12 @@ var MobileElectronClient = class {
     this.eventListeners = /* @__PURE__ */ new Map();
     this.platform = this.detectPlatform();
     this.initBridgeListener();
+    MockEngine.onMockEvent = (eventName, data) => {
+      const listeners = this.eventListeners.get(eventName);
+      if (listeners) {
+        listeners.forEach((fn) => fn(data));
+      }
+    };
   }
   get currentPlatform() {
     return this.platform;
@@ -1673,6 +1712,68 @@ var CameraModule = class {
   }
 };
 
+// src/modules/ipc.ts
+var IpcModule = class {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * 发送 IPC 消息给其他所有窗口 (广播模式)
+   * @param channel 消息频道 / 主题
+   * @param payload 携带的数据载荷
+   */
+  async send(channel, payload) {
+    const res = await this.client.invoke("ipc", "send", { channel, payload });
+    return res.success;
+  }
+  /**
+   * 向指定目标窗口定向投递 IPC 消息
+   * @param targetId 目标窗口 ID（例如 'main', 'pip_player_01', 'sandbox_01'）
+   * @param channel 消息频道 / 主题
+   * @param payload 携带的数据载荷
+   */
+  async sendTo(targetId, channel, payload) {
+    const res = await this.client.invoke("ipc", "sendTo", { targetId, channel, payload });
+    return res.success;
+  }
+  /**
+   * 向所有其他活跃窗口广播 IPC 消息
+   * @param channel 消息频道 / 主题
+   * @param payload 携带的数据载荷
+   */
+  async broadcast(channel, payload) {
+    const res = await this.client.invoke("ipc", "broadcast", { channel, payload });
+    return res.success;
+  }
+  /**
+   * 持续监听指定 Channel 的跨窗口 IPC 消息
+   * @param channel 消息频道 / 主题
+   * @param listener 消息接收回调
+   * @returns 取消监听的函数
+   */
+  on(channel, listener) {
+    return this.client.on("ipc.message", (rawEvent) => {
+      if (rawEvent && rawEvent.channel === channel) {
+        listener(rawEvent);
+      }
+    });
+  }
+  /**
+   * 仅监听一次指定 Channel 的跨窗口 IPC 消息，触发后自动注销
+   * @param channel 消息频道 / 主题
+   * @param listener 消息接收回调
+   */
+  once(channel, listener) {
+    let unsub = () => {
+    };
+    unsub = this.on(channel, (event) => {
+      unsub();
+      listener(event);
+    });
+    return unsub;
+  }
+};
+
 // src/index.ts
 var MobileElectron = class {
   constructor() {
@@ -1694,6 +1795,7 @@ var MobileElectron = class {
     this.biometrics = new BiometricsModule(this.client);
     this.secureStorage = new SecureStorageModule(this.client);
     this.camera = new CameraModule(this.client);
+    this.ipc = new IpcModule(this.client);
   }
   /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
   get platform() {
@@ -1727,6 +1829,7 @@ export {
   FileModule,
   HapticsModule,
   HotUpdateModule,
+  IpcModule,
   MobileElectron,
   MobileElectronClient,
   MockEngine,

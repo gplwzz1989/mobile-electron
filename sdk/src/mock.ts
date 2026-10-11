@@ -7,6 +7,7 @@ import { AppInfo, NativeResponse } from './types';
 
 export class MockEngine {
     public static isMockEnabled = true;
+    public static onMockEvent?: (eventName: string, data: any) => void;
     private static memoryStorage = new Map<string, string>();
     private static memorySecureStorage = new Map<string, string>();
     private static mockFloatingWindows = new Map<string, any>();
@@ -162,6 +163,41 @@ export class MockEngine {
                     return Promise.resolve({ ...target } as unknown as T);
                 }
                 return Promise.reject(new Error('Floating window not found: ' + targetId));
+            }
+
+            case 'ipc.send':
+            case 'ipc.broadcast': {
+                const eventPayload = {
+                    channel: params.channel,
+                    senderId: params.senderId || 'mock_sender',
+                    targetId: 'all',
+                    payload: params.payload,
+                    timestamp: Date.now()
+                };
+                if (typeof window !== 'undefined' && (window as any).__onNativeRpcEvent) {
+                    (window as any).__onNativeRpcEvent(JSON.stringify({ event: 'ipc.message', data: eventPayload }));
+                }
+                if (MockEngine.onMockEvent) {
+                    MockEngine.onMockEvent('ipc.message', eventPayload);
+                }
+                return Promise.resolve({ success: true, recipientCount: 1 } as unknown as T);
+            }
+
+            case 'ipc.sendTo': {
+                const eventPayload = {
+                    channel: params.channel,
+                    senderId: params.senderId || 'mock_sender',
+                    targetId: params.targetId,
+                    payload: params.payload,
+                    timestamp: Date.now()
+                };
+                if (typeof window !== 'undefined' && (window as any).__onNativeRpcEvent) {
+                    (window as any).__onNativeRpcEvent(JSON.stringify({ event: 'ipc.message', data: eventPayload }));
+                }
+                if (MockEngine.onMockEvent) {
+                    MockEngine.onMockEvent('ipc.message', eventPayload);
+                }
+                return Promise.resolve({ success: true, targetId: params.targetId } as unknown as T);
             }
 
             case 'dialog.alert':

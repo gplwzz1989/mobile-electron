@@ -472,6 +472,21 @@ public class FloatingWindowManager {
         }
     }
 
+    public WebView getFloatingWebView(String id) {
+        FloatingWindowHolder holder = activeWindows.get(id);
+        return holder != null ? holder.webView : null;
+    }
+
+    public Map<String, WebView> getAllFloatingWebViews() {
+        Map<String, WebView> result = new HashMap<>();
+        for (Map.Entry<String, FloatingWindowHolder> entry : activeWindows.entrySet()) {
+            if (entry.getValue().webView != null) {
+                result.put(entry.getKey(), entry.getValue().webView);
+            }
+        }
+        return result;
+    }
+
     // --- 内部辅助与拖拽手势 ---
 
     private void bindDragListener(Activity activity, View handleView, View moveTargetView, FloatingWindowHolder holder) {

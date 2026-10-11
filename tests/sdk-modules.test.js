@@ -120,7 +120,31 @@ async function testSdkModules() {
   const closeRes = await electron.window.closeFloatingWindow('test_float_win');
   assert.strictEqual(closeRes, true);
 
-  console.log('    ✔ SDK 14 大核心模块、生命周期网络感知及悬浮多窗口接口校验 100% 通过');
+  // 10. 跨窗口全双工 IPC 通信通道 (Cross-Window IPC Bus)
+  assert.ok(electron.ipc, 'electron.ipc 必须存在');
+  assert.strictEqual(typeof electron.ipc.send, 'function');
+  assert.strictEqual(typeof electron.ipc.sendTo, 'function');
+  assert.strictEqual(typeof electron.ipc.broadcast, 'function');
+  assert.strictEqual(typeof electron.ipc.on, 'function');
+  assert.strictEqual(typeof electron.ipc.once, 'function');
+
+  let receivedIpcPayload = null;
+  const unsubIpc = electron.ipc.on('test-channel', (event) => {
+    receivedIpcPayload = event.payload;
+  });
+
+  const sendRes = await electron.ipc.send('test-channel', { message: 'hello from test', count: 42 });
+  assert.strictEqual(sendRes, true);
+  assert.ok(receivedIpcPayload, 'IPC 监听器应成功接收到消息载荷');
+  assert.strictEqual(receivedIpcPayload.message, 'hello from test');
+  assert.strictEqual(receivedIpcPayload.count, 42);
+
+  const sendToRes = await electron.ipc.sendTo('main', 'test-channel', { direct: true });
+  assert.strictEqual(sendToRes, true);
+
+  unsubIpc();
+
+  console.log('    ✔ SDK 15 大核心模块、跨窗口全双工 IPC、网络感知及画中画小窗校验 100% 通过');
 }
 
 module.exports = testSdkModules;

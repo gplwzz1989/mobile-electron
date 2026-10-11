@@ -4,6 +4,7 @@
  */
 export declare class MockEngine {
     static isMockEnabled: boolean;
+    static onMockEvent?: (eventName: string, data: any) => void;
     private static memoryStorage;
     private static memorySecureStorage;
     private static mockFloatingWindows;

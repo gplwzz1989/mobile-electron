@@ -459,3 +459,18 @@ export interface FloatingWindowUpdateOptions {
     y?: number;
 }
 
+export interface IpcMessageEvent<T = any> {
+    channel: string;
+    senderId: string;
+    targetId?: string;
+    payload: T;
+    timestamp: number;
+}
+
+export interface IpcSendResult {
+    success: boolean;
+    recipientCount?: number;
+    targetId?: string;
+}
+
+

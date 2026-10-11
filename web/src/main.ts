@@ -396,6 +396,78 @@ function setupAppAndWindow() {
     }
   });
 
+  // 跨窗口 IPC 通信联动
+  const ipcLogBox = document.getElementById('ipc-message-log');
+  let isIpcListening = false;
+  let unsubscribeIpc: (() => void) | null = null;
+
+  const appendIpcLog = (msg: string) => {
+    if (ipcLogBox) {
+      ipcLogBox.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + ipcLogBox.textContent;
+    }
+  };
+
+  const getIpcPayload = () => {
+    const raw = (document.getElementById('input-ipc-payload') as HTMLInputElement)?.value?.trim();
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  };
+
+  document.getElementById('btn-ipc-send-pip')?.addEventListener('click', async () => {
+    const channel = (document.getElementById('input-ipc-channel') as HTMLInputElement)?.value?.trim() || 'pip-player-control';
+    const payload = getIpcPayload();
+    log(`[IPC] 定向发送给画中画(${currentFloatingId}) -> channel: ${channel}`);
+    try {
+      const ok = await electron.ipc.sendTo(currentFloatingId, channel, payload);
+      appendIpcLog(`[发送 -> ${currentFloatingId}] channel=${channel}, payload=${JSON.stringify(payload)} (结果: ${ok})`);
+      log(`IPC 定向消息发送成功`, 's');
+    } catch (err: any) {
+      log(`IPC 发送失败: ${err.message}`, 'e');
+    }
+  });
+
+  document.getElementById('btn-ipc-broadcast')?.addEventListener('click', async () => {
+    const channel = (document.getElementById('input-ipc-channel') as HTMLInputElement)?.value?.trim() || 'pip-player-control';
+    const payload = getIpcPayload();
+    log(`[IPC] 全局广播 -> channel: ${channel}`);
+    try {
+      await electron.ipc.broadcast(channel, payload);
+      appendIpcLog(`[广播] channel=${channel}, payload=${JSON.stringify(payload)}`);
+      log(`IPC 广播成功`, 's');
+    } catch (err: any) {
+      log(`IPC 广播失败: ${err.message}`, 'e');
+    }
+  });
+
+  const toggleBtn = document.getElementById('btn-ipc-listen-toggle');
+  toggleBtn?.addEventListener('click', () => {
+    const channel = (document.getElementById('input-ipc-channel') as HTMLInputElement)?.value?.trim() || 'pip-player-control';
+    if (!isIpcListening) {
+      unsubscribeIpc = electron.ipc.on(channel, (event) => {
+        appendIpcLog(`[接收 <- ${event.senderId}] channel=${event.channel}, data=${JSON.stringify(event.payload)}`);
+        log(`[IPC 收到消息] 来自 ${event.senderId}: ${JSON.stringify(event.payload)}`, 's');
+      });
+      isIpcListening = true;
+      toggleBtn.textContent = '停止监听';
+      toggleBtn.classList.add('btn-danger');
+      toggleBtn.classList.remove('btn-outline');
+      appendIpcLog(`[系统] 已开启对频道 '${channel}' 的实时监听`);
+    } else {
+      if (unsubscribeIpc) {
+        unsubscribeIpc();
+        unsubscribeIpc = null;
+      }
+      isIpcListening = false;
+      toggleBtn.textContent = '启动当前页面监听';
+      toggleBtn.classList.remove('btn-danger');
+      toggleBtn.classList.add('btn-outline');
+      appendIpcLog(`[系统] 已停止监听`);
+    }
+  });
+
   // ========== 云控配置中心 (electron.app.remoteConfig) ==========
   const badgeSource = document.getElementById('badge-config-source');
 

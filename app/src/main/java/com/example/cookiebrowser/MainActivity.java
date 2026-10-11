@@ -223,6 +223,7 @@ public class MainActivity extends AppCompatActivity {
             HotUpdatePlugin pageHotUpdate = new HotUpdatePlugin(MainActivity.this, targetWebView);
             pageHotUpdate.setBridgeEngine(pageEngine);
             pageEngine.registerPlugin(pageHotUpdate);
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.IpcPlugin());
             targetWebView.addJavascriptInterface(pageEngine, "AndroidBridge");
         });
 
@@ -259,6 +260,10 @@ public class MainActivity extends AppCompatActivity {
         HotUpdatePlugin mainHotUpdate = new HotUpdatePlugin(this, webView);
         mainHotUpdate.setBridgeEngine(bridgeEngine);
         bridgeEngine.registerPlugin(mainHotUpdate);
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.IpcPlugin());
+
+        com.example.cookiebrowser.core.IpcHub.getInstance().registerView("main", webView);
+        com.example.cookiebrowser.core.IpcHub.getInstance().setWebViewPool(webViewPool);
 
         webView.addJavascriptInterface(bridgeEngine, "AndroidBridge");
     }
@@ -1828,6 +1833,7 @@ public class MainActivity extends AppCompatActivity {
             webViewPool.destroyAll();
         }
         com.example.cookiebrowser.core.FloatingWindowManager.getInstance().closeAll();
+        com.example.cookiebrowser.core.IpcHub.getInstance().unregisterView("main");
         super.onDestroy();
     }
 }

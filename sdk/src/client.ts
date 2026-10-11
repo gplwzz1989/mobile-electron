@@ -183,6 +183,12 @@ export class MobileElectronClient {
     constructor() {
         this.platform = this.detectPlatform();
         this.initBridgeListener();
+        MockEngine.onMockEvent = (eventName: string, data: any) => {
+            const listeners = this.eventListeners.get(eventName);
+            if (listeners) {
+                listeners.forEach(fn => fn(data));
+            }
+        };
     }
 
     public get currentPlatform(): Platform {

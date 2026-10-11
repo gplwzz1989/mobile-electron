@@ -97,6 +97,9 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
         let hotUpdatePlugin = HotUpdatePlugin(webView: mainWebView)
         hotUpdatePlugin.bridgeEngine = bridgeEngine
         bridgeEngine.registerPlugin(hotUpdatePlugin)
+        bridgeEngine.registerPlugin(IpcPlugin())
+
+        IpcHub.shared.registerView(id: "main") { [weak self] in self?.mainWebView }
 
         webConfig.userContentController.add(bridgeEngine, name: "NativeBridge")
 
@@ -137,5 +140,6 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
 
     deinit {
         FloatingWindowManager.shared.closeAll()
+        IpcHub.shared.unregisterView(id: "main")
     }
 }

@@ -20,6 +20,7 @@ import { HapticsModule } from './modules/haptics';
 import { BiometricsModule } from './modules/biometrics';
 import { SecureStorageModule } from './modules/secureStorage';
 import { CameraModule } from './modules/camera';
+import { IpcModule } from './modules/ipc';
 
 export * from './types';
 export { MobileElectronClient, Page } from './client';
@@ -39,6 +40,7 @@ export { HapticsModule } from './modules/haptics';
 export { BiometricsModule } from './modules/biometrics';
 export { SecureStorageModule } from './modules/secureStorage';
 export { CameraModule } from './modules/camera';
+export { IpcModule } from './modules/ipc';
 export { MockEngine } from './mock';
 
 /**
@@ -63,6 +65,7 @@ export class MobileElectron {
     public readonly biometrics: BiometricsModule;
     public readonly secureStorage: SecureStorageModule;
     public readonly camera: CameraModule;
+    public readonly ipc: IpcModule;
 
     constructor() {
         this.client = new MobileElectronClient();
@@ -83,6 +86,7 @@ export class MobileElectron {
         this.biometrics = new BiometricsModule(this.client);
         this.secureStorage = new SecureStorageModule(this.client);
         this.camera = new CameraModule(this.client);
+        this.ipc = new IpcModule(this.client);
     }
 
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
