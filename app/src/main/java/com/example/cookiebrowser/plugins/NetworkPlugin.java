@@ -1,10 +1,17 @@
 package com.example.cookiebrowser.plugins;
 
-import android.os.AsyncTask;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
+import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.example.cookiebrowser.bridge.BridgeCallback;
 import com.example.cookiebrowser.bridge.IBridgePlugin;
+import com.example.cookiebrowser.bridge.JsBridgeEngine;
 import com.example.cookiebrowser.security.DomainWhitelistManager;
 
 import org.json.JSONObject;
@@ -20,9 +27,145 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 原生网络穿透插件 (彻底绕过浏览器前端 CORS 跨域限制)
+ * 原生网络插件
+ * 包含：网络穿透请求 (绕过 CORS)、网络连通性状态感知 (getStatus) 与全局网络变更监听 (onNetworkChange)
  */
 public class NetworkPlugin implements IBridgePlugin {
+
+    private static final String TAG = "NetworkPlugin";
+
+    private final Context context;
+    private JsBridgeEngine bridgeEngine;
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+
+    public NetworkPlugin() {
+        this(null);
+    }
+
+    public NetworkPlugin(Context context) {
+        this.context = context != null ? context.getApplicationContext() : null;
+        if (this.context != null) {
+            initNetworkListener();
+        }
+    }
+
+    public void setBridgeEngine(JsBridgeEngine engine) {
+        this.bridgeEngine = engine;
+    }
+
+    private void initNetworkListener() {
+        try {
+            connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (connectivityManager == null) return;
+
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(Network network) {
+                    dispatchNetworkChangeEvent();
+                }
+
+                @Override
+                public void onLost(Network network) {
+                    dispatchNetworkChangeEvent();
+                }
+
+                @Override
+                public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
+                    dispatchNetworkChangeEvent();
+                }
+            };
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                connectivityManager.registerDefaultNetworkCallback(networkCallback);
+            } else {
+                NetworkRequest request = new NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build();
+                connectivityManager.registerNetworkCallback(request, networkCallback);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to register network callback: " + e.getMessage());
+        }
+    }
+
+    private void dispatchNetworkChangeEvent() {
+        if (bridgeEngine == null) return;
+        try {
+            JSONObject status = getCurrentNetworkStatus();
+            bridgeEngine.sendEvent("network.onNetworkChange", status);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to dispatch network change event: " + e.getMessage());
+        }
+    }
+
+    public JSONObject getCurrentNetworkStatus() {
+        JSONObject json = new JSONObject();
+        try {
+            if (connectivityManager == null && context != null) {
+                connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            }
+
+            if (connectivityManager == null) {
+                json.put("isConnected", false);
+                json.put("type", "none");
+                json.put("isMetered", false);
+                return json;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Network activeNet = connectivityManager.getActiveNetwork();
+                if (activeNet == null) {
+                    json.put("isConnected", false);
+                    json.put("type", "none");
+                    json.put("isMetered", false);
+                    return json;
+                }
+
+                NetworkCapabilities caps = connectivityManager.getNetworkCapabilities(activeNet);
+                if (caps == null || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                    json.put("isConnected", false);
+                    json.put("type", "none");
+                    json.put("isMetered", false);
+                    return json;
+                }
+
+                json.put("isConnected", true);
+                json.put("isMetered", !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED));
+
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    json.put("type", "wifi");
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    json.put("type", "cellular");
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                    json.put("type", "ethernet");
+                } else {
+                    json.put("type", "other");
+                }
+            } else {
+                android.net.NetworkInfo info = connectivityManager.getActiveNetworkInfo();
+                boolean connected = info != null && info.isConnected();
+                json.put("isConnected", connected);
+                json.put("isMetered", connectivityManager.isActiveNetworkMetered());
+                if (!connected) {
+                    json.put("type", "none");
+                } else if (info.getType() == ConnectivityManager.TYPE_WIFI) {
+                    json.put("type", "wifi");
+                } else if (info.getType() == ConnectivityManager.TYPE_MOBILE) {
+                    json.put("type", "cellular");
+                } else {
+                    json.put("type", "other");
+                }
+            }
+        } catch (Exception e) {
+            try {
+                json.put("isConnected", false);
+                json.put("type", "none");
+                json.put("isMetered", false);
+            } catch (Exception ignored) {}
+        }
+        return json;
+    }
 
     @Override
     public String getModuleName() {
@@ -31,11 +174,19 @@ public class NetworkPlugin implements IBridgePlugin {
 
     @Override
     public int getRequiredTier(String action) {
+        if ("getStatus".equals(action)) {
+            return DomainWhitelistManager.TIER_1_BUSINESS;
+        }
         return DomainWhitelistManager.TIER_2_CORE;
     }
 
     @Override
     public void handleAction(String callingUrl, String action, JSONObject params, BridgeCallback callback) throws Exception {
+        if ("getStatus".equals(action)) {
+            callback.success(getCurrentNetworkStatus());
+            return;
+        }
+
         if ("fetch".equals(action)) {
             String urlStr = params.optString("url");
             if (TextUtils.isEmpty(urlStr)) {

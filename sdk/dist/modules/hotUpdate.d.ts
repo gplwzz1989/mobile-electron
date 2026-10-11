@@ -3,10 +3,14 @@
  * @description 离线资源包引擎与增量热更新控制模块
  */
 import { MobileElectronClient } from '../client';
-import { HotUpdateCheckResult, HotUpdateProgressEvent, HotUpdateVersionInfo } from '../types';
+import { HotUpdateCheckResult, HotUpdateProgressEvent, HotUpdateVersionInfo, HotUpdateReadyEvent, UnsubscribeFn } from '../types';
 export declare class HotUpdateModule {
     private readonly client;
     constructor(client: MobileElectronClient);
+    /**
+     * 监听后台静默完成部署的新版本就绪事件 (前台静默差分就绪时触发)
+     */
+    onUpdateReady(listener: (event: HotUpdateReadyEvent) => void): UnsubscribeFn;
     /**
      * 获取当前生效的离线包版本与来源信息
      */

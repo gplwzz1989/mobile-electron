@@ -4,10 +4,24 @@
  */
 
 import { MobileElectronClient } from '../client';
-import { NativeRequestOptions, NativeResponse, CapturedResponse, UnsubscribeFn } from '../types';
+import { NativeRequestOptions, NativeResponse, CapturedResponse, UnsubscribeFn, NetworkStatus } from '../types';
 
 export class NetworkModule {
     constructor(private readonly client: MobileElectronClient) {}
+
+    /**
+     * 获取当前设备原生网络连接状态 (Wi-Fi / 蜂窝 / 离线)
+     */
+    public async getStatus(): Promise<NetworkStatus> {
+        return this.client.invoke<NetworkStatus>('network', 'getStatus');
+    }
+
+    /**
+     * 注册原生网络状态实时变更监听
+     */
+    public onNetworkChange(listener: (status: NetworkStatus) => void): UnsubscribeFn {
+        return this.client.on<NetworkStatus>('network.onNetworkChange', listener);
+    }
 
     /**
      * 通过原生底层 HTTP 客户端发起请求，彻底绕过浏览器 CORS 跨域限制与请求头屏蔽

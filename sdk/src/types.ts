@@ -398,4 +398,23 @@ export interface FetchRemoteConfigResult {
     config: Record<string, any>;
 }
 
+export type AppState = 'active' | 'background' | 'inactive';
 
+export interface AppStateChangeEvent {
+    state: AppState;
+    timestamp: number;
+}
+
+export type NetworkType = 'wifi' | 'cellular' | 'ethernet' | 'none' | 'other';
+
+export interface NetworkStatus {
+    isConnected: boolean;
+    type: NetworkType;
+    isMetered: boolean;
+}
+
+export interface HotUpdateReadyEvent {
+    version: string;
+    installMode: 'incremental_diff' | 'full_package';
+    appliedAt: number;
+}

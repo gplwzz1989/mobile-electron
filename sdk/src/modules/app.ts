@@ -4,10 +4,17 @@
  */
 
 import { MobileElectronClient } from '../client';
-import { AppInfo, RemoteConfigStatus, FetchRemoteConfigResult } from '../types';
+import { AppInfo, RemoteConfigStatus, FetchRemoteConfigResult, AppStateChangeEvent, UnsubscribeFn } from '../types';
 
 export class AppModule {
     constructor(private readonly client: MobileElectronClient) {}
+
+    /**
+     * 注册应用前后台生命周期切换事件监听 (active / background)
+     */
+    public onStateChange(listener: (event: AppStateChangeEvent) => void): UnsubscribeFn {
+        return this.client.on<AppStateChangeEvent>('app.onStateChange', listener);
+    }
 
     /**
      * 获取当前 App 容器运行时详细信息

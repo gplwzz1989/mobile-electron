@@ -4,8 +4,11 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.WebResourceResponse;
+
+import com.example.cookiebrowser.bridge.JsBridgeEngine;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -804,5 +807,66 @@ public class HotUpdateManager {
         if (cb != null) {
             mainHandler.post(() -> cb.onError(code, msg));
         }
+    }
+
+    private long lastForegroundCheckTime = 0;
+
+    /**
+     * 应用切回前台时静默检查并自动执行增量差分热更新 (工业级无感热更闭环)
+     */
+    public void checkUpdateOnForeground(Context ctx, JsBridgeEngine bridgeEngine) {
+        long now = System.currentTimeMillis();
+        if (now - lastForegroundCheckTime < 30_000) {
+            return;
+        }
+        lastForegroundCheckTime = now;
+
+        AppConfig config = AppConfigManager.getInstance().getConfig();
+        String manifestUrl = config != null ? config.getUpdateManifestUrl() : null;
+        if (TextUtils.isEmpty(manifestUrl)) {
+            manifestUrl = getDefaultUpdateUrl();
+        }
+
+        final String targetUrl = manifestUrl;
+        checkForUpdate(targetUrl, new Callback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject checkRes) {
+                boolean hasUpdate = checkRes.optBoolean("hasUpdate", false);
+                JSONObject diff = checkRes.optJSONObject("diff");
+                String latestVer = checkRes.optString("latestVersion", "");
+                String pkgUrl = checkRes.optString("packageUrl", "");
+                String pkgHash = checkRes.optString("packageHash", "");
+
+                if (hasUpdate && !TextUtils.isEmpty(pkgUrl)) {
+                    boolean canUseDiff = diff != null && diff.optBoolean("canUseDiff", false);
+                    Log.i(TAG, "[静默热更] 前台检测到新版本 v" + latestVer + " (增量差分=" + canUseDiff + ")，正在后台静默部署...");
+                    downloadAndInstall(pkgUrl, pkgHash, diff, null, new Callback<JSONObject>() {
+                        @Override
+                        public void onSuccess(JSONObject installRes) {
+                            Log.i(TAG, "[静默热更] 部署就绪！版本: v" + latestVer + "，模式: " + installRes.optString("installMode", "diff"));
+                            if (bridgeEngine != null) {
+                                try {
+                                    JSONObject eventPayload = new JSONObject();
+                                    eventPayload.put("version", latestVer);
+                                    eventPayload.put("installMode", installRes.optString("installMode", "incremental_diff"));
+                                    eventPayload.put("appliedAt", System.currentTimeMillis());
+                                    bridgeEngine.sendEvent("hotUpdate.onUpdateReady", eventPayload);
+                                } catch (Exception ignored) {}
+                            }
+                        }
+
+                        @Override
+                        public void onError(int code, String message) {
+                            Log.w(TAG, "[静默热更] 部署失败: " + message);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(int code, String message) {
+                Log.d(TAG, "[静默热更] 检查更新失败(通常为服务未开启或断网): " + message);
+            }
+        });
     }
 }

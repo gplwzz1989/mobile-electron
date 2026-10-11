@@ -205,7 +205,9 @@ public class MainActivity extends AppCompatActivity {
             JsBridgeEngine pageEngine = new JsBridgeEngine(targetWebView);
             pageEngine.registerPlugin(new CookiePlugin(webViewPool));
             pageEngine.registerPlugin(new PagePlugin(webViewPool, MainActivity.this));
-            pageEngine.registerPlugin(new NetworkPlugin());
+            NetworkPlugin pageNetwork = new NetworkPlugin(MainActivity.this);
+            pageNetwork.setBridgeEngine(pageEngine);
+            pageEngine.registerPlugin(pageNetwork);
             pageEngine.registerPlugin(new DevicePlugin(MainActivity.this));
             pageEngine.registerPlugin(new WindowPlugin(MainActivity.this, webViewPool));
             pageEngine.registerPlugin(new AppPlugin(MainActivity.this));
@@ -239,7 +241,9 @@ public class MainActivity extends AppCompatActivity {
         bridgeEngine = new JsBridgeEngine(webView);
         bridgeEngine.registerPlugin(new CookiePlugin(webViewPool));
         bridgeEngine.registerPlugin(new PagePlugin(webViewPool, this));
-        bridgeEngine.registerPlugin(new NetworkPlugin());
+        NetworkPlugin mainNetwork = new NetworkPlugin(this);
+        mainNetwork.setBridgeEngine(bridgeEngine);
+        bridgeEngine.registerPlugin(mainNetwork);
         bridgeEngine.registerPlugin(new DevicePlugin(this));
         bridgeEngine.registerPlugin(new WindowPlugin(this, webViewPool));
         bridgeEngine.registerPlugin(new AppPlugin(this));
@@ -1783,6 +1787,34 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "已返回主页面", Toast.LENGTH_SHORT).show();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bridgeEngine != null) {
+            try {
+                JSONObject stateJson = new JSONObject();
+                stateJson.put("state", "active");
+                stateJson.put("timestamp", System.currentTimeMillis());
+                bridgeEngine.sendEvent("app.onStateChange", stateJson);
+            } catch (Exception ignored) {}
+        }
+        // 应用切回前台时静默自动检查差分热更并部署
+        HotUpdateManager.getInstance().checkUpdateOnForeground(this, bridgeEngine);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (bridgeEngine != null) {
+            try {
+                JSONObject stateJson = new JSONObject();
+                stateJson.put("state", "background");
+                stateJson.put("timestamp", System.currentTimeMillis());
+                bridgeEngine.sendEvent("app.onStateChange", stateJson);
+            } catch (Exception ignored) {}
         }
     }
 

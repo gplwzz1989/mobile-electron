@@ -32,6 +32,9 @@ public class AppConfig {
     private final List<String> whitelist = new ArrayList<>();
     private boolean allowInsecureContent = true;
 
+    // 热更清单地址
+    private String updateManifestUrl = null;
+
     public static AppConfig fromJson(JSONObject json) {
         AppConfig config = new AppConfig();
         if (json == null) return config;
@@ -77,6 +80,14 @@ public class AppConfig {
                     }
                 }
             }
+        }
+
+        // 热更新配置
+        JSONObject huObj = json.optJSONObject("hotUpdate");
+        if (huObj != null) {
+            config.updateManifestUrl = huObj.optString("manifestUrl", config.updateManifestUrl);
+        } else if (json.has("updateManifestUrl")) {
+            config.updateManifestUrl = json.optString("updateManifestUrl", config.updateManifestUrl);
         }
 
         return config;
@@ -145,4 +156,7 @@ public class AppConfig {
 
     public List<String> getWhitelist() { return whitelist; }
     public boolean isAllowInsecureContent() { return allowInsecureContent; }
+
+    public String getUpdateManifestUrl() { return updateManifestUrl; }
+    public void setUpdateManifestUrl(String updateManifestUrl) { this.updateManifestUrl = updateManifestUrl; }
 }

@@ -3,10 +3,14 @@
  * @description 宿主应用系统级信息、生命周期控制与动态云控配置模块
  */
 import { MobileElectronClient } from '../client';
-import { AppInfo, RemoteConfigStatus, FetchRemoteConfigResult } from '../types';
+import { AppInfo, RemoteConfigStatus, FetchRemoteConfigResult, AppStateChangeEvent, UnsubscribeFn } from '../types';
 export declare class AppModule {
     private readonly client;
     constructor(client: MobileElectronClient);
+    /**
+     * 注册应用前后台生命周期切换事件监听 (active / background)
+     */
+    onStateChange(listener: (event: AppStateChangeEvent) => void): UnsubscribeFn;
     /**
      * 获取当前 App 容器运行时详细信息
      */

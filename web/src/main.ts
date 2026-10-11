@@ -333,6 +333,23 @@ function setupAppAndWindow() {
       log(`重置失败: ${err.message}`, 'e');
     }
   });
+
+  // 注册前后台生命周期监听
+  const badgeLifecycle = document.getElementById('badge-app-lifecycle');
+  electron.app.onStateChange((event) => {
+    log(`[生命周期] 应用状态变更: ${event.state} (${new Date(event.timestamp).toLocaleTimeString()})`, 'i');
+    if (badgeLifecycle) {
+      if (event.state === 'active') {
+        badgeLifecycle.textContent = '前台 (Active)';
+        badgeLifecycle.style.background = '#DCFCE7';
+        badgeLifecycle.style.color = '#166534';
+      } else {
+        badgeLifecycle.textContent = '后台 (Background)';
+        badgeLifecycle.style.background = '#F1F5F9';
+        badgeLifecycle.style.color = '#64748B';
+      }
+    }
+  });
 }
 
 function setupCookie() {
@@ -792,6 +809,40 @@ function setupFileSystem() {
 function setupNetwork() {
   const presetSelect = document.getElementById('select-net-preset') as HTMLSelectElement;
   const urlInput = document.getElementById('input-net-url') as HTMLInputElement;
+  const badgeNet = document.getElementById('badge-network-status');
+
+  async function updateNetworkStatusDisplay() {
+    try {
+      const status = await electron.network.getStatus();
+      showResult('network-status-result', status);
+      if (badgeNet) {
+        if (!status.isConnected) {
+          badgeNet.textContent = '已断网 (Offline)';
+          badgeNet.style.background = '#FEE2E2';
+          badgeNet.style.color = '#991B1B';
+        } else {
+          const typeName = status.type === 'wifi' ? 'Wi-Fi 在线' : status.type === 'cellular' ? '蜂窝移动' : '在线';
+          badgeNet.textContent = `${typeName}${status.isMetered ? ' (计费)' : ''}`;
+          badgeNet.style.background = '#DCFCE7';
+          badgeNet.style.color = '#166534';
+        }
+      }
+      log(`[网络感知] 连接状态: ${status.isConnected ? '已联网' : '未连接'}, 类型: ${status.type}`, 's');
+    } catch (err: any) {
+      log(`获取网络状态失败: ${err.message}`, 'e');
+    }
+  }
+
+  // 初始获取一次
+  setTimeout(updateNetworkStatusDisplay, 300);
+  document.getElementById('btn-network-get-status')?.addEventListener('click', updateNetworkStatusDisplay);
+
+  // 注册全局网络状态动态变化监听
+  electron.network.onNetworkChange((status) => {
+    log(`[网络变更推送] isConnected=${status.isConnected}, type=${status.type}`, 'i');
+    updateNetworkStatusDisplay();
+    appToast(status.isConnected ? `网络已恢复 (${status.type})` : '网络已断开连接');
+  });
 
   presetSelect?.addEventListener('change', () => {
     if (urlInput) urlInput.value = presetSelect.value;
@@ -1472,6 +1523,26 @@ async function refreshHotUpdateStatus() {
 
 function setupHotUpdate() {
   refreshHotUpdateStatus();
+
+  // 监听原生底座前台自动静默差分拉取并合并就绪事件
+  const silentBanner = document.getElementById('hotupdate-silent-ready-banner');
+  const silentDesc = document.getElementById('hotupdate-silent-ready-desc');
+  document.getElementById('btn-hotupdate-silent-reload')?.addEventListener('click', async () => {
+    await appToast('正在应用新版本并重载...');
+    await electron.hotUpdate.applyAndReload();
+  });
+
+  electron.hotUpdate.onUpdateReady((event) => {
+    log(`[静默差分热更就绪] 远端新版本 v${event.version} 已在后台静默安装完毕 (模式: ${event.installMode})！`, 's');
+    if (silentBanner) {
+      if (silentDesc) {
+        const modeText = event.installMode === 'incremental_diff' ? '⚡ 增量差分 (文件级复用)' : '📦 全量整包';
+        silentDesc.innerHTML = `新版本 <strong>v${event.version}</strong> (${modeText}) 已在后台无感合并就绪，点击立即生效。`;
+      }
+      silentBanner.style.display = 'block';
+    }
+    appToast(`🎉 离线包 v${event.version} 已静默就绪`);
+  });
 
   document.getElementById('btn-hotupdate-current')?.addEventListener('click', () => {
     refreshHotUpdateStatus();

@@ -4,10 +4,17 @@
  */
 
 import { MobileElectronClient } from '../client';
-import { HotUpdateCheckResult, HotUpdateProgressEvent, HotUpdateVersionInfo } from '../types';
+import { HotUpdateCheckResult, HotUpdateProgressEvent, HotUpdateVersionInfo, HotUpdateReadyEvent, UnsubscribeFn } from '../types';
 
 export class HotUpdateModule {
     constructor(private readonly client: MobileElectronClient) {}
+
+    /**
+     * 监听后台静默完成部署的新版本就绪事件 (前台静默差分就绪时触发)
+     */
+    public onUpdateReady(listener: (event: HotUpdateReadyEvent) => void): UnsubscribeFn {
+        return this.client.on<HotUpdateReadyEvent>('hotUpdate.onUpdateReady', listener);
+    }
 
     /**
      * 获取当前生效的离线包版本与来源信息

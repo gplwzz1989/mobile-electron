@@ -11,6 +11,34 @@ import UIKit
 public class AppPlugin: IBridgePlugin {
     public let moduleName = "app"
 
+    public weak var bridgeEngine: JsBridgeEngine?
+
+    public init() {
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func appDidBecomeActive() {
+        let payload: [String: Any] = [
+            "state": "active",
+            "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
+        ]
+        bridgeEngine?.sendEvent(eventName: "app.onStateChange", data: payload)
+        HotUpdateManager.shared.checkUpdateOnForeground(bridgeEngine: bridgeEngine)
+    }
+
+    @objc private func appDidEnterBackground() {
+        let payload: [String: Any] = [
+            "state": "background",
+            "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
+        ]
+        bridgeEngine?.sendEvent(eventName: "app.onStateChange", data: payload)
+    }
+
     public func getRequiredTier(action: String) -> Int {
         if action == "getInfo" || action == "getConfigStatus" { return DomainWhitelistManager.TIER_0_PUBLIC }
         return DomainWhitelistManager.TIER_1_BUSINESS

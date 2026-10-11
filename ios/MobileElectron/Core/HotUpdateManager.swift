@@ -596,4 +596,40 @@ public final class HotUpdateManager {
         }
         return nil
     }
+
+    private var lastForegroundCheckTime: TimeInterval = 0
+
+    /// 应用切回前台时静默检查并自动执行增量差分热更新 (工业级无感热更闭环)
+    public func checkUpdateOnForeground(bridgeEngine: JsBridgeEngine?) {
+        let now = Date().timeIntervalSince1970
+        if now - lastForegroundCheckTime < 30.0 {
+            return
+        }
+        lastForegroundCheckTime = now
+
+        let targetUrl = getDefaultUpdateUrl()
+        checkForUpdate(manifestUrl: targetUrl) { [weak self] hasUpdate, res, err in
+            guard let self = self, hasUpdate, let res = res else { return }
+            let latestVer = res["latestVersion"] as? String ?? ""
+            let pkgUrl = res["packageUrl"] as? String ?? ""
+            let pkgHash = res["packageHash"] as? String ?? ""
+            let diff = res["diff"] as? [String: Any]
+
+            guard !pkgUrl.isEmpty else { return }
+            let canUseDiff = diff?["canUseDiff"] as? Bool ?? false
+            NSLog("[HotUpdateManager-iOS] Foreground auto-update triggered: v%@ (diff=%@)", latestVer, canUseDiff ? "true" : "false")
+
+            self.downloadAndInstall(packageUrl: pkgUrl, expectedHash: pkgHash, diffInfo: diff, progressHandler: nil) { success, installRes, err in
+                if success {
+                    NSLog("[HotUpdateManager-iOS] Silent hot update ready: v%@", latestVer)
+                    let mode = installRes?["installMode"] as? String ?? "incremental_diff"
+                    bridgeEngine?.sendEvent(eventName: "hotUpdate.onUpdateReady", data: [
+                        "version": latestVer,
+                        "installMode": mode,
+                        "appliedAt": Int64(Date().timeIntervalSince1970 * 1000)
+                    ])
+                }
+            }
+        }
+    }
 }

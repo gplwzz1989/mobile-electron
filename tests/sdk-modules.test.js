@@ -69,12 +69,20 @@ async function testSdkModules() {
   assert.strictEqual(typeof electron.tabBar.setItems, 'function');
   assert.strictEqual(typeof electron.tabBar.onTabClick, 'function');
 
-  // 7. HotUpdate 增量热更新模块
+  // 7. Network 网络状态与生命周期
+  assert.strictEqual(typeof electron.app.onStateChange, 'function', 'app.onStateChange 必须为函数');
+  assert.strictEqual(typeof electron.network.getStatus, 'function', 'network.getStatus 必须为函数');
+  assert.strictEqual(typeof electron.network.onNetworkChange, 'function', 'network.onNetworkChange 必须为函数');
+  const netStatus = await electron.network.getStatus();
+  assert.strictEqual(typeof netStatus.isConnected, 'boolean');
+
+  // 8. HotUpdate 增量热更新与静默就绪监听模块
   assert.ok(electron.hotUpdate, 'electron.hotUpdate 必须存在');
+  assert.strictEqual(typeof electron.hotUpdate.onUpdateReady, 'function', 'hotUpdate.onUpdateReady 必须为函数');
   const ver = await electron.hotUpdate.getCurrentVersion();
   assert.ok(ver.version, '热更版本应包含 version 字段');
 
-  console.log('    ✔ SDK 14 大核心模块及 Mock 仿真接口校验 100% 通过');
+  console.log('    ✔ SDK 14 大核心模块及生命周期/网络感知/静默热更接口校验 100% 通过');
 }
 
 module.exports = testSdkModules;

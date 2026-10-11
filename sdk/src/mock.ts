@@ -272,6 +272,17 @@ export class MockEngine {
             }
 
 
+            case 'network.getStatus': {
+                const online = typeof navigator !== 'undefined' && typeof (navigator as any).onLine === 'boolean'
+                    ? (navigator as any).onLine
+                    : true;
+                return Promise.resolve({
+                    isConnected: online,
+                    type: 'wifi',
+                    isMetered: false
+                } as unknown as T);
+            }
+
             case 'network.fetch':
                 return Promise.resolve({
                     status: 200,

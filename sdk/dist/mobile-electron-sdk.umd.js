@@ -270,6 +270,14 @@ var MobileElectronFacade = (() => {
             profile: params.profile || "default"
           });
         }
+        case "network.getStatus": {
+          const online = typeof navigator !== "undefined" && typeof navigator.onLine === "boolean" ? navigator.onLine : true;
+          return Promise.resolve({
+            isConnected: online,
+            type: "wifi",
+            isMetered: false
+          });
+        }
         case "network.fetch":
           return Promise.resolve({
             status: 200,
@@ -864,6 +872,18 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
       this.client = client;
     }
     /**
+     * 获取当前设备原生网络连接状态 (Wi-Fi / 蜂窝 / 离线)
+     */
+    async getStatus() {
+      return this.client.invoke("network", "getStatus");
+    }
+    /**
+     * 注册原生网络状态实时变更监听
+     */
+    onNetworkChange(listener) {
+      return this.client.on("network.onNetworkChange", listener);
+    }
+    /**
      * 通过原生底层 HTTP 客户端发起请求，彻底绕过浏览器 CORS 跨域限制与请求头屏蔽
      */
     async fetchNative(options) {
@@ -971,6 +991,12 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
   var AppModule = class {
     constructor(client) {
       this.client = client;
+    }
+    /**
+     * 注册应用前后台生命周期切换事件监听 (active / background)
+     */
+    onStateChange(listener) {
+      return this.client.on("app.onStateChange", listener);
     }
     /**
      * 获取当前 App 容器运行时详细信息
@@ -1387,6 +1413,12 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
   var HotUpdateModule = class {
     constructor(client) {
       this.client = client;
+    }
+    /**
+     * 监听后台静默完成部署的新版本就绪事件 (前台静默差分就绪时触发)
+     */
+    onUpdateReady(listener) {
+      return this.client.on("hotUpdate.onUpdateReady", listener);
     }
     /**
      * 获取当前生效的离线包版本与来源信息

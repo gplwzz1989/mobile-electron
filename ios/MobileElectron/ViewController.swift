@@ -79,10 +79,14 @@ public class ViewController: UIViewController, WKNavigationDelegate, WindowContr
         bridgeEngine = JsBridgeEngine(webView: mainWebView)
         bridgeEngine.registerPlugin(CookiePlugin())
         bridgeEngine.registerPlugin(PagePlugin())
-        bridgeEngine.registerPlugin(NetworkPlugin())
+        let netPlugin = NetworkPlugin()
+        netPlugin.bridgeEngine = bridgeEngine
+        bridgeEngine.registerPlugin(netPlugin)
         bridgeEngine.registerPlugin(DevicePlugin())
         bridgeEngine.registerPlugin(WindowPlugin(windowController: self))
-        bridgeEngine.registerPlugin(AppPlugin())
+        let appPlugin = AppPlugin()
+        appPlugin.bridgeEngine = bridgeEngine
+        bridgeEngine.registerPlugin(appPlugin)
         bridgeEngine.registerPlugin(FilePlugin())
         bridgeEngine.registerPlugin(StoragePlugin())
         bridgeEngine.registerPlugin(DialogPlugin())
