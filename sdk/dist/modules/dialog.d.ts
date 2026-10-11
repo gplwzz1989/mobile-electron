@@ -1,9 +1,9 @@
 /**
  * @file dialog.ts
- * @description 原生交互弹窗与对话框模块 (无阻塞 Material/Cupertino 对话框)
+ * @description 原生交互弹窗与对话框模块 (无阻塞 Alert/Confirm/Prompt、ActionSheet 与原生系统分享)
  */
 import { MobileElectronClient } from '../client';
-import { AlertOptions, ConfirmOptions, PromptOptions } from '../types';
+import { AlertOptions, ConfirmOptions, PromptOptions, ActionSheetOptions, ActionSheetResult, ShareOptions } from '../types';
 export declare class DialogModule {
     private readonly client;
     constructor(client: MobileElectronClient);
@@ -22,4 +22,14 @@ export declare class DialogModule {
      */
     prompt(message: string, defaultValue?: string, title?: string): Promise<string | null>;
     prompt(options: PromptOptions): Promise<string | null>;
+    /**
+     * 弹出原生操作选择列表 (ActionSheet 底部菜单)
+     * @param options 包含 options 选项数组、标题与取消文本
+     */
+    actionSheet(options: ActionSheetOptions): Promise<ActionSheetResult>;
+    /**
+     * 唤起系统级原生分享面板 (ShareSheet)
+     * 支持分享文本、网页 URL 链接至微信、系统好友等
+     */
+    share(options: ShareOptions): Promise<boolean>;
 }

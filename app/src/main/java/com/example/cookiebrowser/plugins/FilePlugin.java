@@ -1,10 +1,16 @@
 package com.example.cookiebrowser.plugins;
 
+import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.webkit.MimeTypeMap;
+import androidx.core.content.FileProvider;
 
 import com.example.cookiebrowser.bridge.BridgeCallback;
 import com.example.cookiebrowser.bridge.IBridgePlugin;
@@ -254,6 +260,96 @@ public class FilePlugin implements IBridgePlugin {
                         res.put("success", true);
                         res.put("size", totalBytes);
                         res.put("fullPath", destFile.getAbsolutePath());
+                        callback.success(res);
+                        break;
+                    }
+
+                    case "downloadFile": {
+                        String urlStr = params.optString("url", "");
+                        String fileName = params.optString("fileName", "");
+                        String title = params.optString("title", "正在下载文件");
+                        String description = params.optString("description", "");
+                        String mimeType = params.optString("mimeType", "");
+
+                        if (TextUtils.isEmpty(urlStr)) {
+                            callback.error(400, "Missing url parameter");
+                            return;
+                        }
+
+                        if (TextUtils.isEmpty(fileName)) {
+                            fileName = Uri.parse(urlStr).getLastPathSegment();
+                            if (TextUtils.isEmpty(fileName)) {
+                                fileName = "download_" + System.currentTimeMillis();
+                            }
+                        }
+
+                        DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                        if (dm == null) {
+                            callback.error(500, "DownloadManager service unavailable");
+                            return;
+                        }
+
+                        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(urlStr));
+                        request.setTitle(title);
+                        request.setDescription(description);
+                        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                        request.setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName);
+                        if (!TextUtils.isEmpty(mimeType)) {
+                            request.setMimeType(mimeType);
+                        }
+
+                        long downloadId = dm.enqueue(request);
+
+                        JSONObject res = new JSONObject();
+                        res.put("success", true);
+                        res.put("downloadId", downloadId);
+                        res.put("fileName", fileName);
+                        callback.success(res);
+                        break;
+                    }
+
+                    case "openFile": {
+                        String relativePath = params.optString("path", "");
+                        String directory = params.optString("directory", "documents");
+                        String mimeType = params.optString("mimeType", "");
+
+                        if (TextUtils.isEmpty(relativePath)) {
+                            callback.error(400, "Missing path parameter");
+                            return;
+                        }
+
+                        File targetFile = resolveSafeFile(directory, relativePath);
+                        if (!targetFile.exists()) {
+                            callback.error(404, "File not found: " + relativePath);
+                            return;
+                        }
+
+                        if (TextUtils.isEmpty(mimeType)) {
+                            String extension = MimeTypeMap.getFileExtensionFromUrl(targetFile.getName());
+                            if (!TextUtils.isEmpty(extension)) {
+                                mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.toLowerCase());
+                            }
+                            if (TextUtils.isEmpty(mimeType)) {
+                                mimeType = "*/*";
+                            }
+                        }
+
+                        Uri contentUri = FileProvider.getUriForFile(
+                                context,
+                                context.getPackageName() + ".fileprovider",
+                                targetFile
+                        );
+
+                        Intent openIntent = new Intent(Intent.ACTION_VIEW);
+                        openIntent.setDataAndType(contentUri, mimeType);
+                        openIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        openIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                        context.startActivity(openIntent);
+
+                        JSONObject res = new JSONObject();
+                        res.put("success", true);
+                        res.put("path", targetFile.getAbsolutePath());
                         callback.success(res);
                         break;
                     }

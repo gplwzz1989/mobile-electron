@@ -511,4 +511,103 @@ export interface OpenUrlResult {
     message?: string;
 }
 
+// ==========================================
+// 状态栏模块类型定义
+// ==========================================
+export type StatusBarStyle = 'light' | 'dark';
+
+export interface StatusBarInfo {
+    height: number;
+}
+
+// ==========================================
+// 屏幕与显示控制类型定义
+// ==========================================
+export type ScreenOrientation = 'portrait' | 'landscape' | 'sensor' | 'auto';
+
+export interface ScreenOrientationResult {
+    orientation: 'portrait' | 'landscape';
+}
+
+// ==========================================
+// 软键盘模块类型定义
+// ==========================================
+export interface KeyboardVisibilityEvent {
+    visible: boolean;
+    height: number;
+}
+
+// ==========================================
+// 电池感知模块类型定义
+// ==========================================
+export interface BatteryStatus {
+    level: number;
+    isCharging: boolean;
+    plugged: 'usb' | 'ac' | 'wireless' | 'unplugged' | string;
+}
+
+// ==========================================
+// 设备硬件信息扩展类型定义
+// ==========================================
+export interface DeviceInfo {
+    brand: string;
+    model: string;
+    manufacturer: string;
+    device: string;
+    systemVersion: string;
+    apiLevel: number;
+    platform: string;
+    screenWidth: number;
+    screenHeight: number;
+    density: number;
+    densityDpi: number;
+    deviceId: string;
+    language: string;
+    country: string;
+}
+
+// ==========================================
+// 交互与原生分享类型定义
+// ==========================================
+export interface ActionSheetOptions {
+    title?: string;
+    options: string[];
+    cancelButtonText?: string;
+}
+
+export interface ActionSheetResult {
+    index: number;
+    value?: string;
+    cancelled: boolean;
+}
+
+export interface ShareOptions {
+    title?: string;
+    text?: string;
+    url?: string;
+}
+
+// ==========================================
+// 文件下载与关联打开类型定义
+// ==========================================
+export interface DownloadFileOptions {
+    url: string;
+    fileName?: string;
+    title?: string;
+    description?: string;
+    mimeType?: string;
+}
+
+export interface DownloadFileResult {
+    success: boolean;
+    downloadId: number;
+    fileName: string;
+}
+
+export interface OpenFileOptions {
+    path: string;
+    directory?: 'documents' | 'cache' | 'temp' | string;
+    mimeType?: string;
+}
+
 

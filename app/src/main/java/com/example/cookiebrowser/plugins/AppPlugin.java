@@ -259,6 +259,41 @@ public class AppPlugin implements IBridgePlugin {
                 break;
             }
 
+
+            case "minimize": {
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        try {
+                            activity.moveTaskToBack(true);
+                        } catch (Exception ignored) {}
+                    });
+                }
+                JSONObject res = new JSONObject();
+                res.put("success", true);
+                callback.success(res);
+                break;
+            }
+
+            case "relaunch": {
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        try {
+                            Intent restartIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
+                            if (restartIntent != null) {
+                                restartIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                activity.startActivity(restartIntent);
+                            }
+                            activity.finishAffinity();
+                            Runtime.getRuntime().exit(0);
+                        } catch (Exception ignored) {}
+                    });
+                }
+                JSONObject res = new JSONObject();
+                res.put("success", true);
+                callback.success(res);
+                break;
+            }
+
             default:
                 callback.error(404, "Unknown action '" + action + "' in module 'app'");
                 break;

@@ -197,7 +197,75 @@ async function testSdkModules() {
   const notifEnabled = await electron.notification.areNotificationsEnabled();
   assert.strictEqual(notifEnabled, true);
 
-  console.log('    ✔ SDK 17 大核心原生模块、剪贴板读写、本地系统通知、IPC 与小窗校验 100% 通过');
+  // 13. 状态栏模块测试 (StatusBar Module)
+  assert.ok(electron.statusBar, 'electron.statusBar 必须存在');
+  assert.strictEqual(await electron.statusBar.setStyle('light'), true);
+  assert.strictEqual(await electron.statusBar.setColor('#0F172A'), true);
+  assert.strictEqual(await electron.statusBar.setTransparent(true), true);
+  assert.strictEqual(await electron.statusBar.show(), true);
+  assert.strictEqual(await electron.statusBar.hide(), true);
+  const statusInfo = await electron.statusBar.getInfo();
+  assert.strictEqual(typeof statusInfo.height, 'number');
+
+  // 14. 屏幕与显示控制模块测试 (Screen Module)
+  assert.ok(electron.screen, 'electron.screen 必须存在');
+  assert.strictEqual(await electron.screen.setOrientation('landscape'), true);
+  assert.strictEqual(await electron.screen.getOrientation(), 'portrait');
+  assert.strictEqual(await electron.screen.setKeepScreenOn(true), true);
+  assert.strictEqual(await electron.screen.setBrightness(0.8), true);
+  assert.strictEqual(await electron.screen.getBrightness(), 1.0);
+
+  // 15. 软键盘控制与感知模块测试 (Keyboard Module)
+  assert.ok(electron.keyboard, 'electron.keyboard 必须存在');
+  assert.strictEqual(await electron.keyboard.hide(), true);
+  assert.strictEqual(await electron.keyboard.show(), true);
+  const kbState = await electron.keyboard.isVisible();
+  assert.strictEqual(typeof kbState.visible, 'boolean');
+  assert.strictEqual(typeof kbState.height, 'number');
+  const unsubKb = electron.keyboard.onVisibilityChange(() => {});
+  assert.strictEqual(typeof unsubKb, 'function');
+  unsubKb();
+
+  // 16. 电池电量与状态感知模块测试 (Battery Module)
+  assert.ok(electron.battery, 'electron.battery 必须存在');
+  const batteryStatus = await electron.battery.getStatus();
+  assert.strictEqual(typeof batteryStatus.level, 'number');
+  assert.strictEqual(typeof batteryStatus.isCharging, 'boolean');
+  assert.strictEqual(typeof batteryStatus.plugged, 'string');
+  const unsubBattery = electron.battery.onChange(() => {});
+  assert.strictEqual(typeof unsubBattery, 'function');
+  unsubBattery();
+
+  // 17. 设备硬件信息查询扩展测试 (Device.getInfo)
+  assert.strictEqual(typeof electron.device.getInfo, 'function');
+  const devInfo = await electron.device.getInfo();
+  assert.strictEqual(typeof devInfo.brand, 'string');
+  assert.strictEqual(typeof devInfo.model, 'string');
+  assert.strictEqual(typeof devInfo.screenWidth, 'number');
+  assert.strictEqual(typeof devInfo.deviceId, 'string');
+
+  // 18. 交互与系统分享扩展测试 (Dialog.actionSheet & Dialog.share)
+  assert.strictEqual(typeof electron.dialog.actionSheet, 'function');
+  const sheetRes = await electron.dialog.actionSheet({ options: ['选项A', '选项B'] });
+  assert.strictEqual(sheetRes.index, 0);
+  assert.strictEqual(sheetRes.value, '选项A');
+  assert.strictEqual(typeof electron.dialog.share, 'function');
+  assert.strictEqual(await electron.dialog.share({ title: '分享', text: '内容' }), true);
+
+  // 19. 文件系统下载管理器与打开扩展测试 (File.downloadFile & File.openFile)
+  assert.strictEqual(typeof electron.file.downloadFile, 'function');
+  const dlRes = await electron.file.downloadFile({ url: 'https://example.com/file.zip' });
+  assert.strictEqual(dlRes.success, true);
+  assert.ok(dlRes.downloadId > 0);
+  assert.strictEqual(typeof electron.file.openFile, 'function');
+  assert.strictEqual(await electron.file.openFile('test.pdf'), true);
+
+  // 20. 应用生命周期控制扩展测试 (App.minimize & App.relaunch)
+  assert.strictEqual(typeof electron.app.minimize, 'function');
+  assert.strictEqual(typeof electron.app.relaunch, 'function');
+
+  console.log('    ✔ 全栈 23+ 大核心原生运行时模块、状态栏、屏幕控制、软键盘、电池、原生分享及硬件信息校验 100% 通过');
 }
 
 module.exports = testSdkModules;
+

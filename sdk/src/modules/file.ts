@@ -1,10 +1,10 @@
 /**
  * @file file.ts
- * @description 本地安全沙箱文件系统读写模块 (Local File System Module)
+ * @description 本地安全沙箱文件系统读写、系统级后台下载与外部应用打开模块 (Local File System Module)
  */
 
 import { MobileElectronClient } from '../client';
-import { FileWriteOptions, FileReadOptions, FileDownloadOptions, FileInfo, DirectoryType } from '../types';
+import { FileWriteOptions, FileReadOptions, FileDownloadOptions, FileInfo, DirectoryType, DownloadFileOptions, DownloadFileResult, OpenFileOptions } from '../types';
 
 export class FileModule {
     constructor(private readonly client: MobileElectronClient) {}
@@ -82,5 +82,22 @@ export class FileModule {
      */
     public async download(options: FileDownloadOptions): Promise<{ success: boolean; size: number; fullPath: string }> {
         return this.client.invoke<{ success: boolean; size: number; fullPath: string }>('file', 'download', options);
+    }
+
+    /**
+     * 使用系统级下载管理器 (DownloadManager) 下载文件
+     * 自动在系统通知栏展示下载进度与完成通知，支持后台断点下载
+     */
+    public async downloadFile(options: DownloadFileOptions): Promise<DownloadFileResult> {
+        return this.client.invoke<DownloadFileResult>('file', 'downloadFile', options);
+    }
+
+    /**
+     * 调用系统关联应用程序打开本地文件 (例如调用外部阅读器打开 PDF、图片、Word、Excel 文档)
+     */
+    public async openFile(options: OpenFileOptions | string): Promise<boolean> {
+        const opts: OpenFileOptions = typeof options === 'string' ? { path: options } : options;
+        const res = await this.client.invoke<{ success: boolean }>('file', 'openFile', opts);
+        return res?.success ?? true;
     }
 }

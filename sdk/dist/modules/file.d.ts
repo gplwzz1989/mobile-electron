@@ -1,9 +1,9 @@
 /**
  * @file file.ts
- * @description 本地安全沙箱文件系统读写模块 (Local File System Module)
+ * @description 本地安全沙箱文件系统读写、系统级后台下载与外部应用打开模块 (Local File System Module)
  */
 import { MobileElectronClient } from '../client';
-import { FileWriteOptions, FileReadOptions, FileDownloadOptions, FileInfo, DirectoryType } from '../types';
+import { FileWriteOptions, FileReadOptions, FileDownloadOptions, FileInfo, DirectoryType, DownloadFileOptions, DownloadFileResult, OpenFileOptions } from '../types';
 export declare class FileModule {
     private readonly client;
     constructor(client: MobileElectronClient);
@@ -67,4 +67,13 @@ export declare class FileModule {
         size: number;
         fullPath: string;
     }>;
+    /**
+     * 使用系统级下载管理器 (DownloadManager) 下载文件
+     * 自动在系统通知栏展示下载进度与完成通知，支持后台断点下载
+     */
+    downloadFile(options: DownloadFileOptions): Promise<DownloadFileResult>;
+    /**
+     * 调用系统关联应用程序打开本地文件 (例如调用外部阅读器打开 PDF、图片、Word、Excel 文档)
+     */
+    openFile(options: OpenFileOptions | string): Promise<boolean>;
 }

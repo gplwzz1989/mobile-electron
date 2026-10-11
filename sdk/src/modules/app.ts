@@ -83,4 +83,18 @@ export class AppModule {
     public async exit(): Promise<void> {
         await this.client.invoke<void>('app', 'exit');
     }
+
+    /**
+     * 将应用程序压入后台并返回手机系统桌面 (等同于用户按下手机 Home 键)
+     */
+    public async minimize(): Promise<void> {
+        await this.client.invoke<void>('app', 'minimize');
+    }
+
+    /**
+     * 重启当前应用程序 (常用于热更新应用生效后重启容器)
+     */
+    public async relaunch(): Promise<void> {
+        await this.client.invoke<void>('app', 'relaunch');
+    }
 }

@@ -680,6 +680,101 @@ export class MockEngine {
             case 'notification.areNotificationsEnabled':
                 return Promise.resolve({ enabled: true } as unknown as T);
 
+            // ================= 状态栏 Mock =================
+            case 'statusBar.setStyle':
+            case 'statusBar.setColor':
+            case 'statusBar.setTransparent':
+            case 'statusBar.show':
+            case 'statusBar.hide':
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'statusBar.getInfo':
+                return Promise.resolve({ height: 24 } as unknown as T);
+
+            // ================= 屏幕与显示控制 Mock =================
+            case 'screen.setOrientation':
+                return Promise.resolve({ success: true, orientation: params?.orientation || 'portrait' } as unknown as T);
+
+            case 'screen.getOrientation':
+                return Promise.resolve({ orientation: 'portrait' } as unknown as T);
+
+            case 'screen.setKeepScreenOn':
+                return Promise.resolve({ success: true, keepScreenOn: params?.keepScreenOn ?? true } as unknown as T);
+
+            case 'screen.setBrightness':
+                return Promise.resolve({ success: true, brightness: params?.brightness ?? 1.0 } as unknown as T);
+
+            case 'screen.getBrightness':
+                return Promise.resolve({ brightness: 1.0 } as unknown as T);
+
+            // ================= 软键盘 Mock =================
+            case 'keyboard.hide':
+            case 'keyboard.show':
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'keyboard.isVisible':
+                return Promise.resolve({ visible: false, height: 0 } as unknown as T);
+
+            // ================= 电池感知 Mock =================
+            case 'battery.getStatus':
+                return Promise.resolve({
+                    level: 98,
+                    isCharging: true,
+                    plugged: 'ac'
+                } as unknown as T);
+
+            // ================= 设备信息 Mock =================
+            case 'device.getInfo':
+                return Promise.resolve({
+                    brand: 'Google',
+                    model: 'Pixel 8 Pro (Mock)',
+                    manufacturer: 'Google',
+                    device: 'husky',
+                    systemVersion: '14',
+                    apiLevel: 34,
+                    platform: 'web-mock',
+                    screenWidth: typeof window !== 'undefined' ? window.innerWidth : 1080,
+                    screenHeight: typeof window !== 'undefined' ? window.innerHeight : 2400,
+                    density: 2.625,
+                    densityDpi: 420,
+                    deviceId: 'mock_device_uuid_8888',
+                    language: 'zh',
+                    country: 'CN'
+                } as unknown as T);
+
+            // ================= 交互与原生分享 Mock =================
+            case 'dialog.actionSheet':
+                return Promise.resolve({
+                    index: 0,
+                    value: params?.options && params.options.length > 0 ? params.options[0] : '',
+                    cancelled: false
+                } as unknown as T);
+
+            case 'dialog.share':
+                console.info('[Mock Share]', params?.title, params?.text, params?.url);
+                return Promise.resolve({ success: true } as unknown as T);
+
+            // ================= 文件下载与打开 Mock =================
+            case 'file.downloadFile':
+                return Promise.resolve({
+                    success: true,
+                    downloadId: Date.now(),
+                    fileName: params?.fileName || 'downloaded_mock.dat'
+                } as unknown as T);
+
+            case 'file.openFile':
+                console.info('[Mock Open File]', params?.path, params?.mimeType);
+                return Promise.resolve({ success: true, path: params?.path || '' } as unknown as T);
+
+            // ================= 应用生命周期 Mock =================
+            case 'app.minimize':
+                console.info('[Mock App Minimize] app.minimize() called');
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'app.relaunch':
+                console.info('[Mock App Relaunch] app.relaunch() called');
+                return Promise.resolve({ success: true } as unknown as T);
+
             default:
                 return Promise.resolve({ success: true, mock: true } as unknown as T);
         }

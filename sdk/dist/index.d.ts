@@ -22,6 +22,10 @@ import { CameraModule } from './modules/camera';
 import { IpcModule } from './modules/ipc';
 import { ClipboardModule } from './modules/clipboard';
 import { NotificationModule } from './modules/notification';
+import { StatusBarModule } from './modules/statusBar';
+import { ScreenModule } from './modules/screen';
+import { KeyboardModule } from './modules/keyboard';
+import { BatteryModule } from './modules/battery';
 export * from './types';
 export { MobileElectronClient, Page } from './client';
 export { BrowserModule } from './modules/browser';
@@ -43,9 +47,13 @@ export { CameraModule } from './modules/camera';
 export { IpcModule } from './modules/ipc';
 export { ClipboardModule } from './modules/clipboard';
 export { NotificationModule } from './modules/notification';
+export { StatusBarModule } from './modules/statusBar';
+export { ScreenModule } from './modules/screen';
+export { KeyboardModule } from './modules/keyboard';
+export { BatteryModule } from './modules/battery';
 export { MockEngine } from './mock';
 /**
- * Mobile Electron 综合门面 SDK 对象
+ * Mobile Electron 综合门面 SDK 对象 (涵盖 23+ 个全栈移动原生能力)
  */
 export declare class MobileElectron {
     readonly client: MobileElectronClient;
@@ -69,6 +77,10 @@ export declare class MobileElectron {
     readonly ipc: IpcModule;
     readonly clipboard: ClipboardModule;
     readonly notification: NotificationModule;
+    readonly statusBar: StatusBarModule;
+    readonly screen: ScreenModule;
+    readonly keyboard: KeyboardModule;
+    readonly battery: BatteryModule;
     constructor();
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
     get platform(): import("./types").Platform;

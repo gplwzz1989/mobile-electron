@@ -227,6 +227,14 @@ public class MainActivity extends AppCompatActivity {
             pageHotUpdate.setBridgeEngine(pageEngine);
             pageEngine.registerPlugin(pageHotUpdate);
             pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.IpcPlugin());
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.StatusBarPlugin(MainActivity.this));
+            pageEngine.registerPlugin(new com.example.cookiebrowser.plugins.ScreenPlugin(MainActivity.this));
+            com.example.cookiebrowser.plugins.KeyboardPlugin pageKeyboard = new com.example.cookiebrowser.plugins.KeyboardPlugin(MainActivity.this);
+            pageKeyboard.setBridgeEngine(pageEngine);
+            pageEngine.registerPlugin(pageKeyboard);
+            com.example.cookiebrowser.plugins.BatteryPlugin pageBattery = new com.example.cookiebrowser.plugins.BatteryPlugin(MainActivity.this);
+            pageBattery.setBridgeEngine(pageEngine);
+            pageEngine.registerPlugin(pageBattery);
             targetWebView.addJavascriptInterface(pageEngine, "AndroidBridge");
         });
 
@@ -266,6 +274,14 @@ public class MainActivity extends AppCompatActivity {
         mainHotUpdate.setBridgeEngine(bridgeEngine);
         bridgeEngine.registerPlugin(mainHotUpdate);
         bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.IpcPlugin());
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.StatusBarPlugin(this));
+        bridgeEngine.registerPlugin(new com.example.cookiebrowser.plugins.ScreenPlugin(this));
+        com.example.cookiebrowser.plugins.KeyboardPlugin mainKeyboard = new com.example.cookiebrowser.plugins.KeyboardPlugin(this);
+        mainKeyboard.setBridgeEngine(bridgeEngine);
+        bridgeEngine.registerPlugin(mainKeyboard);
+        com.example.cookiebrowser.plugins.BatteryPlugin mainBattery = new com.example.cookiebrowser.plugins.BatteryPlugin(this);
+        mainBattery.setBridgeEngine(bridgeEngine);
+        bridgeEngine.registerPlugin(mainBattery);
 
         com.example.cookiebrowser.core.IpcHub.getInstance().registerView("main", webView);
         com.example.cookiebrowser.core.IpcHub.getInstance().setWebViewPool(webViewPool);

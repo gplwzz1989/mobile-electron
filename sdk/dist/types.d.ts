@@ -446,3 +446,68 @@ export interface OpenUrlResult {
     /** 详细错误提示信息 */
     message?: string;
 }
+export type StatusBarStyle = 'light' | 'dark';
+export interface StatusBarInfo {
+    height: number;
+}
+export type ScreenOrientation = 'portrait' | 'landscape' | 'sensor' | 'auto';
+export interface ScreenOrientationResult {
+    orientation: 'portrait' | 'landscape';
+}
+export interface KeyboardVisibilityEvent {
+    visible: boolean;
+    height: number;
+}
+export interface BatteryStatus {
+    level: number;
+    isCharging: boolean;
+    plugged: 'usb' | 'ac' | 'wireless' | 'unplugged' | string;
+}
+export interface DeviceInfo {
+    brand: string;
+    model: string;
+    manufacturer: string;
+    device: string;
+    systemVersion: string;
+    apiLevel: number;
+    platform: string;
+    screenWidth: number;
+    screenHeight: number;
+    density: number;
+    densityDpi: number;
+    deviceId: string;
+    language: string;
+    country: string;
+}
+export interface ActionSheetOptions {
+    title?: string;
+    options: string[];
+    cancelButtonText?: string;
+}
+export interface ActionSheetResult {
+    index: number;
+    value?: string;
+    cancelled: boolean;
+}
+export interface ShareOptions {
+    title?: string;
+    text?: string;
+    url?: string;
+}
+export interface DownloadFileOptions {
+    url: string;
+    fileName?: string;
+    title?: string;
+    description?: string;
+    mimeType?: string;
+}
+export interface DownloadFileResult {
+    success: boolean;
+    downloadId: number;
+    fileName: string;
+}
+export interface OpenFileOptions {
+    path: string;
+    directory?: 'documents' | 'cache' | 'temp' | string;
+    mimeType?: string;
+}

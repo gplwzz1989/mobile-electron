@@ -55,4 +55,12 @@ export declare class AppModule {
      * 退出当前应用程序
      */
     exit(): Promise<void>;
+    /**
+     * 将应用程序压入后台并返回手机系统桌面 (等同于用户按下手机 Home 键)
+     */
+    minimize(): Promise<void>;
+    /**
+     * 重启当前应用程序 (常用于热更新应用生效后重启容器)
+     */
+    relaunch(): Promise<void>;
 }

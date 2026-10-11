@@ -3,8 +3,11 @@ package com.example.cookiebrowser.plugins;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.widget.Toast;
 
 import com.example.cookiebrowser.bridge.BridgeCallback;
@@ -13,8 +16,11 @@ import com.example.cookiebrowser.security.DomainWhitelistManager;
 
 import org.json.JSONObject;
 
+import java.util.Locale;
+
 /**
- * 原生设备交互与界面提示插件
+ * 原生设备交互与硬件系统信息插件 (electron.device)
+ * 支持设备型号、厂商、系统版本、屏幕分辨率、UUID 获取与轻量交互
  */
 public class DevicePlugin implements IBridgePlugin {
 
@@ -32,7 +38,7 @@ public class DevicePlugin implements IBridgePlugin {
 
     @Override
     public int getRequiredTier(String action) {
-        if ("toast".equals(action)) {
+        if ("toast".equals(action) || "getInfo".equals(action)) {
             return DomainWhitelistManager.TIER_0_PUBLIC;
         }
         return DomainWhitelistManager.TIER_1_BUSINESS;
@@ -41,6 +47,31 @@ public class DevicePlugin implements IBridgePlugin {
     @Override
     public void handleAction(String callingUrl, String action, JSONObject params, BridgeCallback callback) throws Exception {
         switch (action) {
+            case "getInfo": {
+                DisplayMetrics dm = context.getResources().getDisplayMetrics();
+                String androidId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+                Locale locale = Locale.getDefault();
+
+                JSONObject res = new JSONObject();
+                res.put("brand", Build.BRAND);
+                res.put("model", Build.MODEL);
+                res.put("manufacturer", Build.MANUFACTURER);
+                res.put("device", Build.DEVICE);
+                res.put("systemVersion", Build.VERSION.RELEASE);
+                res.put("apiLevel", Build.VERSION.SDK_INT);
+                res.put("platform", "android");
+                res.put("screenWidth", dm.widthPixels);
+                res.put("screenHeight", dm.heightPixels);
+                res.put("density", dm.density);
+                res.put("densityDpi", dm.densityDpi);
+                res.put("deviceId", androidId != null ? androidId : "");
+                res.put("language", locale.getLanguage());
+                res.put("country", locale.getCountry());
+
+                callback.success(res);
+                break;
+            }
+
             case "toast": {
                 String message = params.optString("message", "");
                 mainHandler.post(() -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show());

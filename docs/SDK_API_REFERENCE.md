@@ -311,22 +311,126 @@ console.log('快照导出:', {
 
 ### 2.9 原生弹窗与对话框交互 (`electron.dialog`)
 
-提供非阻塞的原生 Material (Android) 与 Cupertino (iOS) 风格对话框。
+提供非阻塞的原生 Material (Android) 与 Cupertino (iOS) 风格对话框、底部 ActionSheet 及系统级 Share 原生分享。
 
 | 方法名 | 参数 | 返回值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | `alert(message, title?)` | `string \| AlertOptions` | `Promise<boolean>` | 原生提示弹窗 |
 | `confirm(message, title?)` | `string \| ConfirmOptions` | `Promise<boolean>` | 原生确认选择弹窗（返回 true/false） |
 | `prompt(message, defaultVal?)` | `string \| PromptOptions` | `Promise<string \| null>` | 原生文本输入弹窗（取消返回 null） |
+| `actionSheet(options)` | `ActionSheetOptions` | `Promise<ActionSheetResult>` | 原生底部选择菜单（返回选中项索引与内容） |
+| `share(options)` | `ShareOptions` | `Promise<boolean>` | 调起系统原生分享面板 (分享文本、URL至微信等) |
 
 #### 示例：
 ```typescript
-// 原生确认对话框
-const ok = await electron.dialog.confirm('是否确定提交订单？', '系统确认');
-if (ok) {
-    const remark = await electron.dialog.prompt('请输入订单备注：');
+// 1. 弹出底部 ActionSheet 菜单
+const res = await electron.dialog.actionSheet({
+    title: '选择图片来源',
+    options: ['拍照', '从手机相册选择']
+});
+if (!res.cancelled) {
+    console.log('选中第', res.index, '项:', res.value);
 }
+
+// 2. 调起系统级原生分享
+await electron.dialog.share({
+    title: '分享好物',
+    text: '快来看看这个精彩内容！',
+    url: 'https://example.com/item/1001'
+});
 ```
+
+---
+
+### 2.10 系统状态栏与沉浸式 UI (`electron.statusBar`)
+
+用于动态操控原生顶部状态栏背景色、文字明暗模式、安全区高度与全屏沉浸。
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `setStyle(style)` | `'light' \| 'dark'` | `Promise<boolean>` | 状态栏文字图标深色/浅色（适配深浅色模式） |
+| `setColor(color)` | `string` (如 `'#FFFFFF'`) | `Promise<boolean>` | 动态改变状态栏背景色 |
+| `setTransparent(transparent)` | `boolean` (默认 `true`) | `Promise<boolean>` | 沉浸式全屏透明（网页内容穿透至状态栏下方） |
+| `show()` | 无 | `Promise<boolean>` | 显示状态栏 |
+| `hide()` | 无 | `Promise<boolean>` | 隐藏状态栏（进入沉浸模式） |
+| `getInfo()` | 无 | `Promise<StatusBarInfo>` | 获取状态栏高度（用于前端安全区 paddingTop 动态适配） |
+
+---
+
+### 2.11 屏幕与显示控制模块 (`electron.screen`)
+
+控制屏幕方向、锁定横竖屏、防息屏常亮以及屏幕亮度控制。
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `setOrientation(orientation)`| `'portrait' \| 'landscape' \| 'sensor' \| 'auto'` | `Promise<boolean>` | 锁定或切换横竖屏方向 |
+| `getOrientation()` | 无 | `Promise<'portrait' \| 'landscape'>` | 获取当前屏幕方向 |
+| `setKeepScreenOn(keepOn)` | `boolean` (默认 `true`) | `Promise<boolean>` | 设置屏幕防息屏常亮（常用于视频播放、阅读） |
+| `setBrightness(brightness)` | `number` (0.0 ~ 1.0, -1 为自动) | `Promise<boolean>` | 调节当前窗口屏幕亮度 |
+| `getBrightness()` | 无 | `Promise<number>` | 获取当前窗口屏幕亮度 |
+
+---
+
+### 2.12 软键盘交互与避让高度感知 (`electron.keyboard`)
+
+解决移动端 Web 页面中输入框被软键盘遮挡的经典难题。
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `hide()` | 无 | `Promise<boolean>` | 手动收起隐藏系统软键盘 |
+| `show()` | 无 | `Promise<boolean>` | 呼出软键盘 |
+| `isVisible()` | 无 | `Promise<KeyboardVisibilityEvent>` | 查询软键盘当前显隐状态及弹起高度 |
+| `onVisibilityChange(callback)`| `(event) => void` | `() => void` | 监听软键盘弹起/收起与弹起高度动态变化 |
+
+#### 示例：
+```typescript
+// 监听软键盘弹起，动态给页面底部追加 padding 避免遮挡提交按钮
+const unsub = electron.keyboard.onVisibilityChange(evt => {
+    if (evt.visible) {
+        document.body.style.paddingBottom = `${evt.height}px`;
+    } else {
+        document.body.style.paddingBottom = '0px';
+    }
+});
+```
+
+---
+
+### 2.13 电池电量与状态感知 (`electron.battery`)
+
+感知设备电量与充电状态，便于执行长任务节能控制。
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `getStatus()` | 无 | `Promise<BatteryStatus>` | 获取电量百分比(0-100)、是否在充电、充电接口类型 |
+| `onChange(callback)` | `(status) => void` | `() => void` | 监听设备电量或充电状态变更 |
+
+---
+
+### 2.14 设备硬件参数与唯一标识 (`electron.device.getInfo`)
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `getInfo()` | 无 | `Promise<DeviceInfo>` | 获取物理设备品牌、型号、系统版本、物理屏幕像素、Android ID/UUID、语言国家等 |
+
+---
+
+### 2.15 系统级文件下载与打开 (`electron.file`)
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `downloadFile(options)` | `DownloadFileOptions` | `Promise<DownloadFileResult>` | 调用系统 DownloadManager 后台下载带通知栏进度 |
+| `openFile(options)` | `OpenFileOptions \| string` | `Promise<boolean>` | 调用系统默认关联应用打开本地文件 (PDF/图片/Word/Excel等) |
+
+---
+
+### 2.16 应用生命周期与进程控制 (`electron.app`)
+
+| 方法名 | 参数 | 返回值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `exit()` | 无 | `Promise<void>` | 完全退出当前应用程序 |
+| `minimize()` | 无 | `Promise<void>` | 将应用程序压入后台返回手机桌面 (等同 Home 键) |
+| `relaunch()` | 无 | `Promise<void>` | 重启当前应用程序 (热更新后重载) |
 
 ---
 
@@ -334,6 +438,7 @@ if (ok) {
 
 当在本地浏览器环境（例如 `http://localhost:5173`）调试时：
 - SDK 会自动识别非容器环境，将 `electron.platform` 标记为 `'web-mock'`；
-- 调用接口不会发生未捕获异常崩溃；
+- 调用全部 23+ 个原生接口不会发生未捕获异常崩溃；
 - 控制台将打印黄色提示：`[MobileElectron Mock] (module.action) called outside of native container.`，并返回合理的模拟数据；
 - 极大提升前端开发者“纯浏览器开发、无缝真机运行”的开发体验。
+

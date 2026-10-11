@@ -23,6 +23,10 @@ import { CameraModule } from './modules/camera';
 import { IpcModule } from './modules/ipc';
 import { ClipboardModule } from './modules/clipboard';
 import { NotificationModule } from './modules/notification';
+import { StatusBarModule } from './modules/statusBar';
+import { ScreenModule } from './modules/screen';
+import { KeyboardModule } from './modules/keyboard';
+import { BatteryModule } from './modules/battery';
 
 export * from './types';
 export { MobileElectronClient, Page } from './client';
@@ -45,10 +49,14 @@ export { CameraModule } from './modules/camera';
 export { IpcModule } from './modules/ipc';
 export { ClipboardModule } from './modules/clipboard';
 export { NotificationModule } from './modules/notification';
+export { StatusBarModule } from './modules/statusBar';
+export { ScreenModule } from './modules/screen';
+export { KeyboardModule } from './modules/keyboard';
+export { BatteryModule } from './modules/battery';
 export { MockEngine } from './mock';
 
 /**
- * Mobile Electron 综合门面 SDK 对象
+ * Mobile Electron 综合门面 SDK 对象 (涵盖 23+ 个全栈移动原生能力)
  */
 export class MobileElectron {
     public readonly client: MobileElectronClient;
@@ -72,6 +80,10 @@ export class MobileElectron {
     public readonly ipc: IpcModule;
     public readonly clipboard: ClipboardModule;
     public readonly notification: NotificationModule;
+    public readonly statusBar: StatusBarModule;
+    public readonly screen: ScreenModule;
+    public readonly keyboard: KeyboardModule;
+    public readonly battery: BatteryModule;
 
     constructor() {
         this.client = new MobileElectronClient();
@@ -95,6 +107,10 @@ export class MobileElectron {
         this.ipc = new IpcModule(this.client);
         this.clipboard = new ClipboardModule(this.client);
         this.notification = new NotificationModule(this.client);
+        this.statusBar = new StatusBarModule(this.client);
+        this.screen = new ScreenModule(this.client);
+        this.keyboard = new KeyboardModule(this.client);
+        this.battery = new BatteryModule(this.client);
     }
 
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
