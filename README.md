@@ -147,6 +147,7 @@ npm run pack:all
 ## 📖 核心文档索引
 
 * [在线/本地双模打包使用指南](docs/DUAL_MODE_PACKAGING_GUIDE.md)
+* [商业化正式发布与数字签名配置指南 (必读)](docs/SIGNING_AND_RELEASE_GUIDE.md)
 * [框架整体架构设计与产品规范](docs/MOBILE_ELECTRON_FRAMEWORK_ARCHITECTURE.md)
 * [前端 SDK 接口使用规范手册](docs/SDK_API_REFERENCE.md)
 * [iOS 原生容器实现蓝图](docs/IOS_IMPLEMENTATION_BLUEPRINT.md)

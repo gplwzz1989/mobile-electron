@@ -201,10 +201,20 @@ npm run run:android
 ./gradlew assembleDebug
 # (产物输出至: app/build/outputs/apk/debug/app-debug.apk)
 
-# 9. 编译 Android Release 签名包
-./gradlew assembleRelease
+# 9. 编译 Android Release 发布包 (自动检测 key.properties 进行正式 V1+V2 签名)
+npm run build:apk:release
+# (产物输出至: app/build/outputs/apk/release/app-release.apk)
 
-# 10. NPM 生态子包归档打包 (产出 @mobile-electron/core, cli, create-mobile-electron-app 离线 tarball)
+# 10. 编译 Google Play 官方上架专用 AAB 安装包
+npm run build:aab
+# (产物输出至: app/build/outputs/bundle/release/app-release.aab)
+
+# 11. 初始化商业化数字签名模板与证书指引
+npm run sign:setup
+
+# 12. NPM 生态子包归档打包 (产出 @mobile-electron/core, cli, create-mobile-electron-app 离线 tarball)
 npm run pack:all
 # (产物输出至: release/npm/*.tgz)
 ```
+
+> 详细的数字签名配置、密钥库生成及各大应用市场上架实战指南，请参阅：[docs/SIGNING_AND_RELEASE_GUIDE.md](SIGNING_AND_RELEASE_GUIDE.md)。

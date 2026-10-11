@@ -1,0 +1,21 @@
+# ==============================================================================
+# Mobile Electron Android 发布签名配置文件模板 (key.properties.example)
+#
+# 使用指南：
+# 1. 复制本文件为 key.properties (该文件已在 .gitignore 中，密码不会泄露至仓库):
+#    cp key.properties.example key.properties
+# 2. 填写下方您的正式 JKS 证书绝对或相对路径及密钥密码；
+# 3. 执行 ./gradlew assembleRelease 即可自动生成带有正式数字签名的 APK 安装包！
+# ==============================================================================
+
+# 密钥库密码
+storePassword=your_store_password_here
+
+# 别名条目密码 (若与 storePassword 相同则填相同值)
+keyPassword=your_key_password_here
+
+# 证书别名 (生成证书时指定的 -alias 参数)
+keyAlias=your_key_alias_here
+
+# 密钥库文件路径 (支持绝对路径或相对于项目根目录的相对路径，例如 release.jks)
+storeFile=release.jks

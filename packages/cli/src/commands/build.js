@@ -39,12 +39,34 @@ function buildCommand(args = {}) {
       }
     }
 
-    // 5. 可选：直接触发 Gradle 构建 APK
-    if (buildApk) {
-      console.log(`\n${logger.colors.cyan}[Gradle]${logger.colors.reset} 正在编译 Android APK 安装包...`);
-      const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-      execSync(`${gradlew} assembleDebug`, { cwd: root, stdio: 'inherit' });
-      logger.success('Android Debug APK 构建完成！(app/build/outputs/apk/debug/)');
+    // 5. 可选：触发 Gradle 构建 Android 安装包
+    const isRelease = !!args.release;
+    const isAab = !!args.aab;
+    const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+
+    if (buildApk || isRelease || isAab) {
+      const hasKeyProps = fs.existsSync(path.join(root, 'key.properties')) || fs.existsSync(path.join(root, 'app', 'key.properties'));
+      if (isRelease || isAab) {
+        if (hasKeyProps) {
+          console.log(`\n${logger.colors.green}🔒 [Signing] 已检测到 key.properties 正式签名配置，将打包带正式数字签名的 Release 包...${logger.colors.reset}`);
+        } else {
+          console.log(`\n${logger.colors.yellow}ℹ️ [Signing] 未检测到 key.properties，将使用调试签名打包 Release。正式发布前请配置 key.properties。${logger.colors.reset}`);
+        }
+
+        if (isAab) {
+          console.log(`\n${logger.colors.cyan}[Gradle]${logger.colors.reset} 正在编译 Google Play Release AAB Bundle...`);
+          execSync(`${gradlew} bundleRelease`, { cwd: root, stdio: 'inherit' });
+          logger.success('Release AAB 构建完成！(app/build/outputs/bundle/release/)');
+        } else {
+          console.log(`\n${logger.colors.cyan}[Gradle]${logger.colors.reset} 正在编译 Android Release APK...`);
+          execSync(`${gradlew} assembleRelease`, { cwd: root, stdio: 'inherit' });
+          logger.success('Android Release APK 构建完成！(app/build/outputs/apk/release/)');
+        }
+      } else {
+        console.log(`\n${logger.colors.cyan}[Gradle]${logger.colors.reset} 正在编译 Android Debug APK 安装包...`);
+        execSync(`${gradlew} assembleDebug`, { cwd: root, stdio: 'inherit' });
+        logger.success('Android Debug APK 构建完成！(app/build/outputs/apk/debug/)');
+      }
     }
 
     console.log('\n' + '='.repeat(60));

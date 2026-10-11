@@ -41,9 +41,12 @@ captures/
 *.iml
 .idea/
 
-# Keystore files
+# Keystore files & Signing secrets
 *.jks
 *.keystore
+*.p12
+*.mobileprovision
+key.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild

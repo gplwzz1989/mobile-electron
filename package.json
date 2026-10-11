@@ -17,6 +17,9 @@
     "doctor": "node packages/cli/bin/mobile-electron.js doctor",
     "run:android": "node packages/cli/bin/mobile-electron.js run android",
     "run:ios": "node packages/cli/bin/mobile-electron.js run ios",
+    "sign:setup": "node packages/cli/bin/mobile-electron.js sign:setup",
+    "build:apk:release": "node packages/cli/bin/mobile-electron.js build --release",
+    "build:aab": "node packages/cli/bin/mobile-electron.js build --release --aab",
     "pack:all": "node scripts/pack-packages.js",
     "test": "node tests/run-all.js"
   },

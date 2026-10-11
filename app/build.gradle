@@ -2,6 +2,22 @@ plugins {
     id 'com.android.application'
 }
 
+// 动态检索数字签名配置文件 (优先级: 根目录 key.properties > app/key.properties)
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (!keystorePropertiesFile.exists()) {
+    keystorePropertiesFile = file("key.properties")
+}
+def keystoreProperties = new Properties()
+def hasKeystoreFile = false
+if (keystorePropertiesFile.exists()) {
+    try {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+        hasKeystoreFile = true
+    } catch (Exception e) {
+        println "⚠️ [MobileElectron] 读取 key.properties 异常: " + e.message
+    }
+}
+
 android {
     namespace 'com.example.cookiebrowser'
     compileSdk 34
@@ -14,11 +30,50 @@ android {
         versionName "1.0.0"
     }
 
+    signingConfigs {
+        debug {
+            // Android 默认开发调试签名
+        }
+        release {
+            if (hasKeystoreFile && keystoreProperties['storeFile'] != null) {
+                def storeFilePath = keystoreProperties['storeFile']
+                def resolvedStoreFile = file(storeFilePath)
+                if (!resolvedStoreFile.exists()) {
+                    resolvedStoreFile = rootProject.file(storeFilePath)
+                }
+                storeFile resolvedStoreFile
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                v1SigningEnabled true
+                v2SigningEnabled true
+                println "🔒 [MobileElectron] 成功载入正式发布签名配置: " + resolvedStoreFile.name
+            } else if (System.getenv("KEYSTORE_PATH") != null) {
+                storeFile file(System.getenv("KEYSTORE_PATH"))
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+                v1SigningEnabled true
+                v2SigningEnabled true
+                println "🔒 [MobileElectron] 从系统环境变量载入发布签名配置: " + System.getenv("KEYSTORE_PATH")
+            } else {
+                storeFile signingConfigs.debug.storeFile
+                storePassword signingConfigs.debug.storePassword
+                keyAlias signingConfigs.debug.keyAlias
+                keyPassword signingConfigs.debug.keyPassword
+                println "ℹ️ [MobileElectron] 未检测到正式签名配置 (key.properties)，Release 将使用调试签名回退。正式上线前请配置 key.properties。"
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 
