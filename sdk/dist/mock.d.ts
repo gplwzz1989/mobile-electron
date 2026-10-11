@@ -8,5 +8,6 @@ export declare class MockEngine {
     private static memoryStorage;
     private static memorySecureStorage;
     private static mockFloatingWindows;
+    private static mockClipboardText;
     static mockInvoke<T = any>(module: string, action: string, params?: Record<string, any>): Promise<T>;
 }

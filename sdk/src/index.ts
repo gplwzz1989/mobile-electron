@@ -21,6 +21,8 @@ import { BiometricsModule } from './modules/biometrics';
 import { SecureStorageModule } from './modules/secureStorage';
 import { CameraModule } from './modules/camera';
 import { IpcModule } from './modules/ipc';
+import { ClipboardModule } from './modules/clipboard';
+import { NotificationModule } from './modules/notification';
 
 export * from './types';
 export { MobileElectronClient, Page } from './client';
@@ -41,6 +43,8 @@ export { BiometricsModule } from './modules/biometrics';
 export { SecureStorageModule } from './modules/secureStorage';
 export { CameraModule } from './modules/camera';
 export { IpcModule } from './modules/ipc';
+export { ClipboardModule } from './modules/clipboard';
+export { NotificationModule } from './modules/notification';
 export { MockEngine } from './mock';
 
 /**
@@ -66,6 +70,8 @@ export class MobileElectron {
     public readonly secureStorage: SecureStorageModule;
     public readonly camera: CameraModule;
     public readonly ipc: IpcModule;
+    public readonly clipboard: ClipboardModule;
+    public readonly notification: NotificationModule;
 
     constructor() {
         this.client = new MobileElectronClient();
@@ -87,6 +93,8 @@ export class MobileElectron {
         this.secureStorage = new SecureStorageModule(this.client);
         this.camera = new CameraModule(this.client);
         this.ipc = new IpcModule(this.client);
+        this.clipboard = new ClipboardModule(this.client);
+        this.notification = new NotificationModule(this.client);
     }
 
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */

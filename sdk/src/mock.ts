@@ -11,6 +11,7 @@ export class MockEngine {
     private static memoryStorage = new Map<string, string>();
     private static memorySecureStorage = new Map<string, string>();
     private static mockFloatingWindows = new Map<string, any>();
+    private static mockClipboardText: string = '';
 
     public static mockInvoke<T = any>(module: string, action: string, params: Record<string, any> = {}): Promise<T> {
         console.warn(`[MobileElectron Mock] (${module}.${action}) called outside of native container. Returning mock fallback.`, params);
@@ -644,6 +645,33 @@ export class MockEngine {
                 } else {
                     return Promise.reject(new Error('用户取消了扫码 (Mock)'));
                 }
+
+            case 'clipboard.readText':
+                return Promise.resolve({ text: MockEngine.mockClipboardText || '' } as unknown as T);
+
+            case 'clipboard.writeText':
+                MockEngine.mockClipboardText = params?.text || '';
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'clipboard.hasText':
+                return Promise.resolve({ hasText: Boolean(MockEngine.mockClipboardText) } as unknown as T);
+
+            case 'clipboard.clear':
+                MockEngine.mockClipboardText = '';
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'notification.show': {
+                const notifId = params?.id || 'mock_notif_' + Date.now();
+                console.info('[Mock Notification]', params?.title, params?.body || params?.message);
+                return Promise.resolve({ success: true, id: notifId } as unknown as T);
+            }
+
+            case 'notification.cancel':
+            case 'notification.cancelAll':
+                return Promise.resolve({ success: true } as unknown as T);
+
+            case 'notification.areNotificationsEnabled':
+                return Promise.resolve({ enabled: true } as unknown as T);
 
             default:
                 return Promise.resolve({ success: true, mock: true } as unknown as T);

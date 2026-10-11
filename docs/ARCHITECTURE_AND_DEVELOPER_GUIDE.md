@@ -43,6 +43,8 @@ flowchart TD
             P6["haptics / biometrics / camera"]
             P7["tabBar (原生动态底栏切换)"]
             P8["dialog (原生 Alert / Confirm / Prompt)"]
+            P9["clipboard (系统剪贴板读写/清空)"]
+            P10["notification (本地通知派发与管理)"]
         end
     end
 
@@ -57,7 +59,7 @@ flowchart TD
 
 ---
 
-## 二、 14 大核心特权模块与 SDK 接口速查
+## 二、 16 大核心特权模块与 SDK 接口速查
 
 前端引入方式：
 ```bash
@@ -72,6 +74,8 @@ import { electron } from '@mobile-electron/core';
 | **`electron.app`** | 应用元信息、生命周期监听与云控配置 | `getInfo()`, `onStateChange(fn)`, `getConfigStatus()`, `fetchRemoteConfig()` | Tier 0 / Tier 1 |
 | **`electron.network`** | 原生网络连通性与类型监听 | `getStatus()`, `onNetworkChange(fn)` | Tier 0 |
 | **`electron.window`** | 沉浸式状态栏、全屏与画中画悬浮窗 | `setStatusBar()`, `createFloatingWindow()`, `minimizeFloatingWindow()` | Tier 1 |
+| **`electron.clipboard`** | 系统剪贴板纯文本读写与清空 | `readText()`, `writeText()`, `hasText()`, `clear()` | Tier 0 |
+| **`electron.notification`** | 系统级本地通知派发与管理 (支持点击唤醒) | `show()`, `cancel()`, `cancelAll()`, `areNotificationsEnabled()` | Tier 1 |
 | **`electron.cookie`** | 原生 Cookie 全量读写（支持 HttpOnly） | `getAll()`, `set()`, `remove()`, `clear()` | Tier 1 |
 | **`electron.storage`** | 轻量级沙箱 Key-Value 存储 | `get()`, `set()`, `remove()`, `clear()`, `keys()` | Tier 0 |
 | **`electron.secureStorage`** | 硬件级加密安全存储 (KeyStore / KeyChain) | `setItem()`, `getItem()`, `removeItem()` | Tier 1 |

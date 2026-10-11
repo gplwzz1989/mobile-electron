@@ -473,4 +473,26 @@ export interface IpcSendResult {
     targetId?: string;
 }
 
+export interface NotificationOptions {
+    /** 通知标题 (默认 App 应用名称) */
+    title?: string;
+    /** 通知正文内容 */
+    body?: string;
+    /** 通知正文内容 (别名兼容) */
+    message?: string;
+    /** 唯一通知 ID (可选，未指定则自增生成) */
+    id?: number | string;
+    /** 应用桌面角标数字 (可选) */
+    badge?: number;
+    /** 点击通知随意携带的自定义业务数据 (JSON 字符串或任意对象) */
+    data?: any;
+    /** 是否播放默认提示音 (默认 true) */
+    sound?: boolean;
+}
+
+export interface NotificationResult {
+    success: boolean;
+    id: number | string;
+}
+
 

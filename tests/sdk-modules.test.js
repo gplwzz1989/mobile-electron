@@ -144,7 +144,48 @@ async function testSdkModules() {
 
   unsubIpc();
 
-  console.log('    ✔ SDK 15 大核心模块、跨窗口全双工 IPC、网络感知及画中画小窗校验 100% 通过');
+  // 11. 剪贴板模块测试 (Clipboard Module)
+  assert.ok(electron.clipboard, 'electron.clipboard 必须存在');
+  assert.strictEqual(typeof electron.clipboard.readText, 'function');
+  assert.strictEqual(typeof electron.clipboard.writeText, 'function');
+  assert.strictEqual(typeof electron.clipboard.hasText, 'function');
+  assert.strictEqual(typeof electron.clipboard.clear, 'function');
+
+  await electron.clipboard.writeText('Hello Mobile Electron Clipboard!');
+  const clipText = await electron.clipboard.readText();
+  assert.strictEqual(clipText, 'Hello Mobile Electron Clipboard!');
+  const hasTextBefore = await electron.clipboard.hasText();
+  assert.strictEqual(hasTextBefore, true);
+
+  await electron.clipboard.clear();
+  const hasTextAfter = await electron.clipboard.hasText();
+  assert.strictEqual(hasTextAfter, false);
+
+  // 12. 本地系统通知模块测试 (Notification Module)
+  assert.ok(electron.notification, 'electron.notification 必须存在');
+  assert.strictEqual(typeof electron.notification.show, 'function');
+  assert.strictEqual(typeof electron.notification.cancel, 'function');
+  assert.strictEqual(typeof electron.notification.cancelAll, 'function');
+  assert.strictEqual(typeof electron.notification.areNotificationsEnabled, 'function');
+
+  const notifRes = await electron.notification.show({
+    title: '系统通知测试',
+    body: '这是一条单元测试通知',
+    id: 9999
+  });
+  assert.strictEqual(notifRes.success, true);
+  assert.strictEqual(notifRes.id, 9999);
+
+  const cancelRes = await electron.notification.cancel(9999);
+  assert.strictEqual(cancelRes, true);
+
+  const cancelAllRes = await electron.notification.cancelAll();
+  assert.strictEqual(cancelAllRes, true);
+
+  const notifEnabled = await electron.notification.areNotificationsEnabled();
+  assert.strictEqual(notifEnabled, true);
+
+  console.log('    ✔ SDK 17 大核心原生模块、剪贴板读写、本地系统通知、IPC 与小窗校验 100% 通过');
 }
 
 module.exports = testSdkModules;
