@@ -21,6 +21,7 @@ var MobileElectronFacade = (() => {
   var index_exports = {};
   __export(index_exports, {
     AppModule: () => AppModule,
+    BatteryModule: () => BatteryModule,
     BiometricsModule: () => BiometricsModule,
     BrowserModule: () => BrowserModule,
     CameraModule: () => CameraModule,
@@ -33,13 +34,16 @@ var MobileElectronFacade = (() => {
     HapticsModule: () => HapticsModule,
     HotUpdateModule: () => HotUpdateModule,
     IpcModule: () => IpcModule,
+    KeyboardModule: () => KeyboardModule,
     MobileElectron: () => MobileElectron,
     MobileElectronClient: () => MobileElectronClient,
     MockEngine: () => MockEngine,
     NetworkModule: () => NetworkModule,
     NotificationModule: () => NotificationModule,
     Page: () => Page,
+    ScreenModule: () => ScreenModule,
     SecureStorageModule: () => SecureStorageModule,
+    StatusBarModule: () => StatusBarModule,
     StorageModule: () => StorageModule,
     TabBarModule: () => TabBarModule,
     WindowModule: () => WindowModule,
@@ -51,7 +55,7 @@ var MobileElectronFacade = (() => {
   // src/mock.ts
   var _MockEngine = class _MockEngine {
     static mockInvoke(module, action, params = {}) {
-      var _a, _b;
+      var _a, _b, _c, _d;
       console.warn(`[MobileElectron Mock] (${module}.${action}) called outside of native container. Returning mock fallback.`, params);
       switch (`${module}.${action}`) {
         case "app.getInfo":
@@ -620,6 +624,84 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
           return Promise.resolve({ success: true });
         case "notification.areNotificationsEnabled":
           return Promise.resolve({ enabled: true });
+        // ================= 状态栏 Mock =================
+        case "statusBar.setStyle":
+        case "statusBar.setColor":
+        case "statusBar.setTransparent":
+        case "statusBar.show":
+        case "statusBar.hide":
+          return Promise.resolve({ success: true });
+        case "statusBar.getInfo":
+          return Promise.resolve({ height: 24 });
+        // ================= 屏幕与显示控制 Mock =================
+        case "screen.setOrientation":
+          return Promise.resolve({ success: true, orientation: (params == null ? void 0 : params.orientation) || "portrait" });
+        case "screen.getOrientation":
+          return Promise.resolve({ orientation: "portrait" });
+        case "screen.setKeepScreenOn":
+          return Promise.resolve({ success: true, keepScreenOn: (_c = params == null ? void 0 : params.keepScreenOn) != null ? _c : true });
+        case "screen.setBrightness":
+          return Promise.resolve({ success: true, brightness: (_d = params == null ? void 0 : params.brightness) != null ? _d : 1 });
+        case "screen.getBrightness":
+          return Promise.resolve({ brightness: 1 });
+        // ================= 软键盘 Mock =================
+        case "keyboard.hide":
+        case "keyboard.show":
+          return Promise.resolve({ success: true });
+        case "keyboard.isVisible":
+          return Promise.resolve({ visible: false, height: 0 });
+        // ================= 电池感知 Mock =================
+        case "battery.getStatus":
+          return Promise.resolve({
+            level: 98,
+            isCharging: true,
+            plugged: "ac"
+          });
+        // ================= 设备信息 Mock =================
+        case "device.getInfo":
+          return Promise.resolve({
+            brand: "Google",
+            model: "Pixel 8 Pro (Mock)",
+            manufacturer: "Google",
+            device: "husky",
+            systemVersion: "14",
+            apiLevel: 34,
+            platform: "web-mock",
+            screenWidth: typeof window !== "undefined" ? window.innerWidth : 1080,
+            screenHeight: typeof window !== "undefined" ? window.innerHeight : 2400,
+            density: 2.625,
+            densityDpi: 420,
+            deviceId: "mock_device_uuid_8888",
+            language: "zh",
+            country: "CN"
+          });
+        // ================= 交互与原生分享 Mock =================
+        case "dialog.actionSheet":
+          return Promise.resolve({
+            index: 0,
+            value: (params == null ? void 0 : params.options) && params.options.length > 0 ? params.options[0] : "",
+            cancelled: false
+          });
+        case "dialog.share":
+          console.info("[Mock Share]", params == null ? void 0 : params.title, params == null ? void 0 : params.text, params == null ? void 0 : params.url);
+          return Promise.resolve({ success: true });
+        // ================= 文件下载与打开 Mock =================
+        case "file.downloadFile":
+          return Promise.resolve({
+            success: true,
+            downloadId: Date.now(),
+            fileName: (params == null ? void 0 : params.fileName) || "downloaded_mock.dat"
+          });
+        case "file.openFile":
+          console.info("[Mock Open File]", params == null ? void 0 : params.path, params == null ? void 0 : params.mimeType);
+          return Promise.resolve({ success: true, path: (params == null ? void 0 : params.path) || "" });
+        // ================= 应用生命周期 Mock =================
+        case "app.minimize":
+          console.info("[Mock App Minimize] app.minimize() called");
+          return Promise.resolve({ success: true });
+        case "app.relaunch":
+          console.info("[Mock App Relaunch] app.relaunch() called");
+          return Promise.resolve({ success: true });
         default:
           return Promise.resolve({ success: true, mock: true });
       }
@@ -1048,6 +1130,12 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
       this.client = client;
     }
     /**
+     * 获取当前物理设备的软硬件核心信息 (机型、系统版本、屏幕物理分辨率、UUID/设备唯一标识等)
+     */
+    async getInfo() {
+      return this.client.invoke("device", "getInfo");
+    }
+    /**
      * 读取原生系统剪贴板文本
      */
     async getClipboard() {
@@ -1257,6 +1345,18 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
     async exit() {
       await this.client.invoke("app", "exit");
     }
+    /**
+     * 将应用程序压入后台并返回手机系统桌面 (等同于用户按下手机 Home 键)
+     */
+    async minimize() {
+      await this.client.invoke("app", "minimize");
+    }
+    /**
+     * 重启当前应用程序 (常用于热更新应用生效后重启容器)
+     */
+    async relaunch() {
+      await this.client.invoke("app", "relaunch");
+    }
   };
 
   // src/modules/file.ts
@@ -1328,6 +1428,22 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
      */
     async download(options) {
       return this.client.invoke("file", "download", options);
+    }
+    /**
+     * 使用系统级下载管理器 (DownloadManager) 下载文件
+     * 自动在系统通知栏展示下载进度与完成通知，支持后台断点下载
+     */
+    async downloadFile(options) {
+      return this.client.invoke("file", "downloadFile", options);
+    }
+    /**
+     * 调用系统关联应用程序打开本地文件 (例如调用外部阅读器打开 PDF、图片、Word、Excel 文档)
+     */
+    async openFile(options) {
+      var _a;
+      const opts = typeof options === "string" ? { path: options } : options;
+      const res = await this.client.invoke("file", "openFile", opts);
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
     }
   };
 
@@ -1482,6 +1598,22 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
       const options = typeof arg1 === "string" ? { message: arg1, defaultValue: defaultValue || "", title: title || "\u8BF7\u8F93\u5165" } : arg1;
       const res = await this.client.invoke("dialog", "prompt", options);
       return res.confirmed ? res.value : null;
+    }
+    /**
+     * 弹出原生操作选择列表 (ActionSheet 底部菜单)
+     * @param options 包含 options 选项数组、标题与取消文本
+     */
+    async actionSheet(options) {
+      return this.client.invoke("dialog", "actionSheet", options);
+    }
+    /**
+     * 唤起系统级原生分享面板 (ShareSheet)
+     * 支持分享文本、网页 URL 链接至微信、系统好友等
+     */
+    async share(options) {
+      var _a;
+      const res = await this.client.invoke("dialog", "share", options);
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
     }
   };
 
@@ -1964,6 +2096,168 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
     }
   };
 
+  // src/modules/statusBar.ts
+  var StatusBarModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 设置状态栏文字与图标明暗风格
+     * @param style 'light' (浅色白字，适用于深色背景) 或 'dark' (深色黑字，适用于浅色背景)
+     */
+    async setStyle(style) {
+      var _a;
+      const res = await this.client.invoke("statusBar", "setStyle", { style });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 设置状态栏背景颜色 (十六进制，例如 '#FFFFFF' 或 '#0F172A')
+     */
+    async setColor(color) {
+      var _a;
+      const res = await this.client.invoke("statusBar", "setColor", { color });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 设置是否开启沉浸式全屏透明状态栏 (网页延伸至状态栏下方)
+     */
+    async setTransparent(transparent = true) {
+      var _a;
+      const res = await this.client.invoke("statusBar", "setTransparent", { transparent });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 显示状态栏
+     */
+    async show() {
+      var _a;
+      const res = await this.client.invoke("statusBar", "show");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 隐藏状态栏 (进入全屏无干扰体验)
+     */
+    async hide() {
+      var _a;
+      const res = await this.client.invoke("statusBar", "hide");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 获取状态栏详细物理尺寸 (例如状态栏高度，用于前端自定义导航栏安全区 paddingTop)
+     */
+    async getInfo() {
+      return this.client.invoke("statusBar", "getInfo");
+    }
+  };
+
+  // src/modules/screen.ts
+  var ScreenModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 锁定或切换屏幕方向
+     * @param orientation 'portrait' (竖屏) | 'landscape' (横屏) | 'sensor' | 'auto' (随重力感应自动旋转)
+     */
+    async setOrientation(orientation) {
+      var _a;
+      const res = await this.client.invoke("screen", "setOrientation", { orientation });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 获取当前屏幕方向 ('portrait' 或 'landscape')
+     */
+    async getOrientation() {
+      var _a;
+      const res = await this.client.invoke("screen", "getOrientation");
+      return (_a = res == null ? void 0 : res.orientation) != null ? _a : "portrait";
+    }
+    /**
+     * 设置屏幕防息屏常亮 (常用于视频播放、扫码或阅读场景)
+     */
+    async setKeepScreenOn(keepScreenOn = true) {
+      var _a;
+      const res = await this.client.invoke("screen", "setKeepScreenOn", { keepScreenOn });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 调节当前窗口屏幕亮度
+     * @param brightness 亮度浮点数值 0.0 ~ 1.0 (传入 -1 恢复系统默认自动亮度)
+     */
+    async setBrightness(brightness) {
+      var _a;
+      const res = await this.client.invoke("screen", "setBrightness", { brightness });
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 获取当前窗口屏幕亮度
+     */
+    async getBrightness() {
+      var _a;
+      const res = await this.client.invoke("screen", "getBrightness");
+      return (_a = res == null ? void 0 : res.brightness) != null ? _a : -1;
+    }
+  };
+
+  // src/modules/keyboard.ts
+  var KeyboardModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 手动收起并隐藏系统软键盘
+     */
+    async hide() {
+      var _a;
+      const res = await this.client.invoke("keyboard", "hide");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 尝试拉起软键盘
+     */
+    async show() {
+      var _a;
+      const res = await this.client.invoke("keyboard", "show");
+      return (_a = res == null ? void 0 : res.success) != null ? _a : true;
+    }
+    /**
+     * 查询当前软键盘是否处于可见弹起状态及其弹起高度
+     */
+    async isVisible() {
+      return this.client.invoke("keyboard", "isVisible");
+    }
+    /**
+     * 监听系统软键盘弹起与收起事件，以及软键盘弹起高度变化
+     * (解决移动端 Web 输入框被软键盘遮挡时的页面自适应上推避让)
+     * @param listener 状态回调函数
+     * @returns 解除监听的函数
+     */
+    onVisibilityChange(listener) {
+      return this.client.on("keyboard.onVisibilityChange", listener);
+    }
+  };
+
+  // src/modules/battery.ts
+  var BatteryModule = class {
+    constructor(client) {
+      this.client = client;
+    }
+    /**
+     * 获取当前系统电池状态 (电量百分比 0-100、是否在充电、充电方式)
+     */
+    async getStatus() {
+      return this.client.invoke("battery", "getStatus");
+    }
+    /**
+     * 监听系统电池电量或充电状态变化
+     * @param listener 状态回调函数
+     * @returns 解除监听的函数
+     */
+    onChange(listener) {
+      return this.client.on("battery.onChange", listener);
+    }
+  };
+
   // src/index.ts
   var MobileElectron = class {
     constructor() {
@@ -1988,6 +2282,10 @@ ${(params == null ? void 0 : params.description) || "\u6A21\u62DF\u6307\u7EB9/\u
       this.ipc = new IpcModule(this.client);
       this.clipboard = new ClipboardModule(this.client);
       this.notification = new NotificationModule(this.client);
+      this.statusBar = new StatusBarModule(this.client);
+      this.screen = new ScreenModule(this.client);
+      this.keyboard = new KeyboardModule(this.client);
+      this.battery = new BatteryModule(this.client);
     }
     /** 当前运行平台: 'android' | 'ios' | 'web-mock' */
     get platform() {

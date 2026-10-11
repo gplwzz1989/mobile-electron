@@ -41,14 +41,22 @@ android {
                 if (!resolvedStoreFile.exists()) {
                     resolvedStoreFile = rootProject.file(storeFilePath)
                 }
-                storeFile resolvedStoreFile
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                v1SigningEnabled true
-                v2SigningEnabled true
-                println "🔒 [MobileElectron] 成功载入正式发布签名配置: " + resolvedStoreFile.name
-            } else if (System.getenv("KEYSTORE_PATH") != null) {
+                if (resolvedStoreFile.exists()) {
+                    storeFile resolvedStoreFile
+                    storePassword keystoreProperties['storePassword']
+                    keyAlias keystoreProperties['keyAlias']
+                    keyPassword keystoreProperties['keyPassword']
+                    v1SigningEnabled true
+                    v2SigningEnabled true
+                    println "🔒 [MobileElectron] 成功载入正式发布签名配置: " + resolvedStoreFile.name
+                } else {
+                    storeFile signingConfigs.debug.storeFile
+                    storePassword signingConfigs.debug.storePassword
+                    keyAlias signingConfigs.debug.keyAlias
+                    keyPassword signingConfigs.debug.keyPassword
+                    println "⚠️ [MobileElectron] key.properties 中指定的密钥库文件不存在 (" + storeFilePath + ")，Release 临时使用调试签名打包。如需正式签名请运行 keytool 生成私钥。"
+                }
+            } else if (System.getenv("KEYSTORE_PATH") != null && file(System.getenv("KEYSTORE_PATH")).exists()) {
                 storeFile file(System.getenv("KEYSTORE_PATH"))
                 storePassword System.getenv("KEYSTORE_PASSWORD")
                 keyAlias System.getenv("KEY_ALIAS")
